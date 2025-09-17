@@ -1,0 +1,120 @@
+/**
+ * ARIA Design System - Base Styles
+ * 
+ * @package Aria
+ * @version 2.0.0
+ */
+
+// Import Professional Fonts
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+// ===================================
+// CSS CUSTOM PROPERTIES
+// ===================================
+:root {
+  // Colors
+  --aria-primary: #{$aria-primary};
+  --aria-primary-hover: #{$aria-primary-hover};
+  --aria-primary-light: #{$aria-primary-light};
+  --aria-navy: #{$aria-navy};
+  --aria-slate: #{$aria-slate};
+  
+  // Neutrals
+  --aria-white: #{$aria-white};
+  --aria-gray-50: #{$aria-gray-50};
+  --aria-gray-100: #{$aria-gray-100};
+  --aria-gray-200: #{$aria-gray-200};
+  --aria-gray-300: #{$aria-gray-300};
+  --aria-gray-400: #{$aria-gray-400};
+  --aria-gray-500: #{$aria-gray-500};
+  --aria-gray-600: #{$aria-gray-600};
+  --aria-gray-700: #{$aria-gray-700};
+  --aria-gray-800: #{$aria-gray-800};
+  --aria-gray-900: #{$aria-gray-900};
+  
+  // Semantic
+  --aria-success: #{$aria-success};
+  --aria-success-light: #{$aria-success-light};
+  --aria-warning: #{$aria-warning};
+  --aria-warning-light: #{$aria-warning-light};
+  --aria-error: #{$aria-error};
+  --aria-error-light: #{$aria-error-light};
+  
+  // Spacing
+  --aria-space-1: #{$aria-space-1};
+  --aria-space-2: #{$aria-space-2};
+  --aria-space-3: #{$aria-space-3};
+  --aria-space-4: #{$aria-space-4};
+  --aria-space-6: #{$aria-space-6};
+  --aria-space-8: #{$aria-space-8};
+  
+  // Border radius
+  --aria-radius-sm: #{$aria-radius-sm};
+  --aria-radius-base: #{$aria-radius-base};
+  --aria-radius-md: #{$aria-radius-md};
+  --aria-radius-lg: #{$aria-radius-lg};
+  --aria-radius-full: #{$aria-radius-full};
+}
+
+// ===================================
+// GLOBAL STYLES
+// ===================================
+
+// Reset WordPress Admin Styles for ARIA pages
+.wrap[class*="aria-"] {
+  margin: 0;
+  
+  // Override WordPress typography
+  h1, h2, h3, h4, h5, h6, p, a, span, div, td, th, label {
+    font-family: $aria-font-primary !important;
+  }
+  
+  // Remove WordPress default margins
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+  }
+}
+
+// Base Typography
+body.wp-admin {
+  .wrap[class*="aria-"] {
+    font-family: $aria-font-primary;
+    font-size: $aria-text-base;
+    line-height: $aria-leading-normal;
+    color: $aria-navy;
+  }
+}
+
+// Override WordPress notices in ARIA pages
+.wrap[class*="aria-"] {
+  .notice {
+    border-radius: $aria-radius-md;
+    border-left-width: 4px;
+    padding: $aria-space-4;
+    margin: $aria-space-4 0;
+    
+    &.notice-success {
+      background: $aria-success-light;
+      border-left-color: $aria-success;
+      color: $aria-success-dark;
+    }
+    
+    &.notice-warning {
+      background: $aria-warning-light;
+      border-left-color: $aria-warning;
+      color: $aria-warning-dark;
+    }
+    
+    &.notice-error {
+      background: $aria-error-light;
+      border-left-color: $aria-error;
+      color: $aria-error-dark;
+    }
+    
+    &.notice-info {
+      background: $aria-info-light;
+      border-left-color: $aria-info;
+      color: $aria-info-dark;
+    }
+  }
+}

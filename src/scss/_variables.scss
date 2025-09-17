@@ -1,0 +1,144 @@
+/**
+ * ARIA Design System - Variables & Design Tokens
+ * 
+ * @package Aria
+ * @version 2.0.0
+ */
+
+// ===================================
+// TYPOGRAPHY SYSTEM
+// ===================================
+$aria-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$aria-font-mono: 'JetBrains Mono', 'Monaco', 'Consolas', monospace;
+
+// Typography Scale
+$aria-text-xs: 0.75rem;    // 12px
+$aria-text-sm: 0.875rem;   // 14px
+$aria-text-base: 1rem;     // 16px
+$aria-text-lg: 1.125rem;   // 18px
+$aria-text-xl: 1.25rem;    // 20px
+$aria-text-2xl: 1.5rem;    // 24px
+$aria-text-3xl: 1.875rem;  // 30px
+$aria-text-4xl: 2.25rem;   // 36px
+$aria-text-5xl: 3rem;      // 48px
+
+// Font Weights
+$aria-font-normal: 400;
+$aria-font-medium: 500;
+$aria-font-semibold: 600;
+$aria-font-bold: 700;
+$aria-font-extrabold: 800;
+
+// Line Heights
+$aria-leading-none: 1;
+$aria-leading-tight: 1.25;
+$aria-leading-snug: 1.375;
+$aria-leading-normal: 1.5;
+$aria-leading-relaxed: 1.625;
+$aria-leading-loose: 2;
+
+// ===================================
+// COLOR PALETTE
+// ===================================
+
+// Primary Colors
+$aria-primary: #0066FF;
+$aria-primary-hover: #0052CC;
+$aria-primary-light: #E6F0FF;
+$aria-primary-dark: #0047B3;
+
+$aria-navy: #1A2842;
+$aria-slate: #64748B;
+
+// Neutrals
+$aria-white: #FFFFFF;
+$aria-gray-50: #F8FAFC;
+$aria-gray-100: #F1F5F9;
+$aria-gray-200: #E2E8F0;
+$aria-gray-300: #CBD5E1;
+$aria-gray-400: #94A3B8;
+$aria-gray-500: #64748B;
+$aria-gray-600: #475569;
+$aria-gray-700: #334155;
+$aria-gray-800: #1E293B;
+$aria-gray-900: #0F172A;
+
+// Semantic Colors
+$aria-success: #10B981;
+$aria-success-light: #D1FAE5;
+$aria-success-dark: #065F46;
+
+$aria-warning: #F59E0B;
+$aria-warning-light: #FEF3C7;
+$aria-warning-dark: #92400E;
+
+$aria-error: #EF4444;
+$aria-error-light: #FEE2E2;
+$aria-error-dark: #991B1B;
+
+$aria-info: #3B82F6;
+$aria-info-light: #DBEAFE;
+$aria-info-dark: #1E40AF;
+
+// ===================================
+// SPACING SCALE
+// ===================================
+$aria-space-0: 0;
+$aria-space-1: 0.25rem;   // 4px
+$aria-space-2: 0.5rem;    // 8px
+$aria-space-3: 0.75rem;   // 12px
+$aria-space-4: 1rem;      // 16px
+$aria-space-5: 1.25rem;   // 20px
+$aria-space-6: 1.5rem;    // 24px
+$aria-space-8: 2rem;      // 32px
+$aria-space-10: 2.5rem;   // 40px
+$aria-space-12: 3rem;     // 48px
+$aria-space-16: 4rem;     // 64px
+$aria-space-20: 5rem;     // 80px
+
+// ===================================
+// BORDER RADIUS
+// ===================================
+$aria-radius-none: 0;
+$aria-radius-sm: 0.375rem;   // 6px
+$aria-radius-base: 0.5rem;   // 8px
+$aria-radius-md: 0.75rem;    // 12px
+$aria-radius-lg: 1rem;       // 16px
+$aria-radius-xl: 1.5rem;     // 24px
+$aria-radius-full: 9999px;
+
+// ===================================
+// SHADOWS
+// ===================================
+$aria-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+$aria-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+$aria-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+$aria-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+$aria-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+$aria-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+// ===================================
+// TRANSITIONS
+// ===================================
+$aria-transition-fast: 150ms;
+$aria-transition-base: 200ms;
+$aria-transition-slow: 300ms;
+
+// ===================================
+// BREAKPOINTS
+// ===================================
+$aria-screen-sm: 640px;
+$aria-screen-md: 768px;
+$aria-screen-lg: 1024px;
+$aria-screen-xl: 1280px;
+$aria-screen-2xl: 1536px;
+
+// ===================================
+// Z-INDEX SCALE
+// ===================================
+$aria-z-0: 0;
+$aria-z-10: 10;
+$aria-z-20: 20;
+$aria-z-30: 30;
+$aria-z-40: 40;
+$aria-z-50: 50;

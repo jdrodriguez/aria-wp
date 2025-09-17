@@ -1,0 +1,242 @@
+/**
+ * ARIA Design System - Professional Badge Components
+ * 
+ * @package Aria
+ * @version 2.0.0
+ */
+
+// ===================================
+// PROFESSIONAL BADGE SYSTEM
+// ===================================
+
+.aria-badge {
+  @include aria-badge-base;
+  
+  // Enhanced professional styling
+  font-weight: $aria-font-semibold;
+  font-size: $aria-text-xs;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: $aria-space-1;
+  border-radius: $aria-radius-full;
+  padding: $aria-space-1 $aria-space-3;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+  
+  // Icon within badge
+  svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+  
+  // Subtle animation on creation
+  animation: badge-appear 0.3s ease-out;
+  
+  &--success {
+    @include aria-badge-success;
+    
+    background: linear-gradient(135deg, $aria-success-light 0%, lighten($aria-success-light, 5%) 100%);
+    color: $aria-success-dark;
+    border-color: $aria-success;
+    box-shadow: 0 1px 3px rgba($aria-success, 0.2);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: badge-shimmer 2s infinite;
+    }
+  }
+  
+  &--warning {
+    @include aria-badge-warning;
+    
+    background: linear-gradient(135deg, $aria-warning-light 0%, lighten($aria-warning-light, 5%) 100%);
+    color: $aria-warning-dark;
+    border-color: $aria-warning;
+    box-shadow: 0 1px 3px rgba($aria-warning, 0.2);
+  }
+  
+  &--error {
+    @include aria-badge-error;
+    
+    background: linear-gradient(135deg, $aria-error-light 0%, lighten($aria-error-light, 5%) 100%);
+    color: $aria-error-dark;
+    border-color: $aria-error;
+    box-shadow: 0 1px 3px rgba($aria-error, 0.2);
+  }
+  
+  &--info {
+    @include aria-badge-info;
+    
+    background: linear-gradient(135deg, $aria-primary-light 0%, lighten($aria-primary-light, 5%) 100%);
+    color: $aria-primary-dark;
+    border-color: $aria-primary;
+    box-shadow: 0 1px 3px rgba($aria-primary, 0.2);
+  }
+  
+  &--default {
+    background: linear-gradient(135deg, $aria-gray-100 0%, lighten($aria-gray-100, 3%) 100%);
+    color: $aria-gray-700;
+    border-color: $aria-gray-300;
+    box-shadow: 0 1px 3px rgba($aria-gray-500, 0.1);
+  }
+}
+
+@keyframes badge-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes badge-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+// ===================================
+// SPECIALIZED DASHBOARD BADGES
+// ===================================
+
+// Setup Card Status Badges
+.aria-setup-card__badge {
+  @extend .aria-badge;
+  
+  font-size: $aria-text-xs;
+  padding: $aria-space-1 $aria-space-2;
+  
+  &--completed {
+    @extend .aria-badge--success;
+    
+    &::before {
+      content: '✓ ';
+      font-weight: bold;
+      animation: none;
+    }
+  }
+  
+  &--pending {
+    @extend .aria-badge--warning;
+    
+    &::before {
+      content: '⏱ ';
+      animation: none;
+    }
+  }
+}
+
+// Conversation Status Badges
+.aria-conversation-item__badge {
+  @extend .aria-badge;
+  
+  &--active {
+    @extend .aria-badge--success;
+    
+    &::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: currentColor;
+      border-radius: 50%;
+      margin-left: $aria-space-1;
+      animation: pulse 2s infinite;
+    }
+  }
+  
+  &--closed {
+    @extend .aria-badge--default;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+// Trial Notice Enhancement
+.aria-trial-notice {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+  border: 1px solid #FB923C;
+  border-radius: $aria-radius-lg;
+  padding: $aria-space-4;
+  margin-top: $aria-space-6;
+  
+  .aria-trial-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $aria-space-4;
+    
+    @media (max-width: $aria-screen-md) {
+      flex-direction: column;
+      text-align: center;
+      gap: $aria-space-3;
+    }
+  }
+  
+  .aria-trial-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #FB923C;
+    color: white;
+    border-radius: $aria-radius-lg;
+    flex-shrink: 0;
+    
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+  
+  .aria-trial-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: $aria-space-1;
+    
+    @media (max-width: $aria-screen-md) {
+      align-items: center;
+    }
+  }
+  
+  .aria-trial-title {
+    font-weight: $aria-font-bold;
+    font-size: $aria-text-base;
+    color: #9A3412;
+  }
+  
+  .aria-trial-days {
+    font-size: $aria-text-sm;
+    color: #C2410C;
+    font-weight: $aria-font-medium;
+  }
+  
+  .aria-trial-action {
+    @extend .aria-btn;
+    @extend .aria-btn--primary;
+    @extend .aria-btn--small;
+    
+    background: linear-gradient(135deg, #FB923C 0%, #F97316 100%);
+    border-color: #FB923C;
+    
+    &:hover {
+      background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+    }
+  }
+}

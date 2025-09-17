@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aria AJAX Debug</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Aria AJAX Debug Tool</h1>
+    
+    <h2>Test AJAX Nonce</h2>
+    <button id="test-nonce">Test Nonce Verification</button>
+    <div id="nonce-result"></div>
+    
+    <h2>Configuration</h2>
+    <div>
+        <label>AJAX URL: <input type="text" id="ajax-url" value="http://localhost:8080/wp-admin/admin-ajax.php" style="width: 400px;"></label><br>
+        <label>Nonce: <input type="text" id="nonce" placeholder="Enter nonce from page" style="width: 400px;"></label><br>
+        <small>Get nonce by inspecting the page and looking for ariaChat.nonce in JavaScript</small>
+    </div>
+    
+    <h2>Start Conversation</h2>
+    <button id="start-conversation">Start Conversation</button>
+    <div id="start-result"></div>
+    
+    <h2>Send Message</h2>
+    <input type="text" id="message" placeholder="Enter message" style="width: 300px;">
+    <button id="send-message">Send Message</button>
+    <div id="message-result"></div>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        $('#test-nonce').click(function() {
+            const ajaxUrl = $('#ajax-url').val();
+            const nonce = $('#nonce').val();
+            
+            if (!nonce) {
+                $('#nonce-result').html('<p style="color: red;">Please enter a nonce value</p>');
+                return;
+            }
+            
+            $('#nonce-result').html('<p>Testing nonce...</p>');
+            
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'aria_start_conversation',
+                    nonce: nonce,
+                    page_url: window.location.href,
+                    page_title: 'Debug Test'
+                },
+                success: function(response) {
+                    $('#nonce-result').html('<pre style="background: #f0f0f0; padding: 10px;">' + JSON.stringify(response, null, 2) + '</pre>');
+                    if (response.data && response.data.session_id) {
+                        sessionStorage.setItem('aria_debug_session_id', response.data.session_id);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#nonce-result').html('<p style="color: red;">Error: ' + error + '</p><pre>' + xhr.responseText + '</pre>');
+                }
+            });
+        });
+        
+        $('#start-conversation').click(function() {
+            const ajaxUrl = $('#ajax-url').val();
+            const nonce = $('#nonce').val();
+            
+            $('#start-result').html('<p>Starting conversation...</p>');
+            
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'aria_start_conversation',
+                    nonce: nonce,
+                    page_url: window.location.href,
+                    page_title: 'Debug Test'
+                },
+                success: function(response) {
+                    $('#start-result').html('<pre style="background: #f0f0f0; padding: 10px;">' + JSON.stringify(response, null, 2) + '</pre>');
+                    if (response.data && response.data.session_id) {
+                        sessionStorage.setItem('aria_debug_session_id', response.data.session_id);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#start-result').html('<p style="color: red;">Error: ' + error + '</p><pre>' + xhr.responseText + '</pre>');
+                }
+            });
+        });
+        
+        $('#send-message').click(function() {
+            const ajaxUrl = $('#ajax-url').val();
+            const nonce = $('#nonce').val();
+            const message = $('#message').val();
+            const sessionId = sessionStorage.getItem('aria_debug_session_id') || 'test_session_' + Date.now();
+            
+            if (!message) {
+                $('#message-result').html('<p style="color: red;">Please enter a message</p>');
+                return;
+            }
+            
+            $('#message-result').html('<p>Sending message...</p>');
+            
+            $.ajax({
+                url: ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'aria_send_message',
+                    nonce: nonce,
+                    message: message,
+                    session_id: sessionId,
+                    conversation_id: 0
+                },
+                success: function(response) {
+                    $('#message-result').html('<pre style="background: #f0f0f0; padding: 10px;">' + JSON.stringify(response, null, 2) + '</pre>');
+                },
+                error: function(xhr, status, error) {
+                    $('#message-result').html('<p style="color: red;">Error: ' + error + '</p><pre>' + xhr.responseText + '</pre>');
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

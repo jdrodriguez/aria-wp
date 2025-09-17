@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aria Dark Theme Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #2271b1;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 10000;
+        }
+        
+        body.dark {
+            background: #121212;
+            color: #e0e0e0;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #121212;
+                color: #e0e0e0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Aria Dark Theme Test</h1>
+    <p>This page tests the dark theme implementation for the Aria chat widget.</p>
+    
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+    
+    <h2>Features to test:</h2>
+    <ul>
+        <li>Widget header should have white background in light mode</li>
+        <li>Widget header should have dark background (#2a2a2a) in dark mode</li>
+        <li>Logo should switch from aria.png to aria-lite.png in dark mode</li>
+        <li>All text colors should adapt to the theme</li>
+        <li>Message bubbles should have appropriate contrast</li>
+    </ul>
+    
+    <h2>Embed Form Test</h2>
+    <div id="embed-test" style="max-width: 600px; margin: 40px auto;">
+        <!-- This would be replaced with the actual [aria_chat] shortcode in WordPress -->
+        <div class="aria-embed-container" data-aria-embed="true">
+            <p style="padding: 40px; text-align: center; background: #f5f5f5; border-radius: 8px;">
+                In a WordPress environment, the [aria_chat] shortcode would render here.
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Theme toggle function
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            
+            // Update aria widgets if they exist
+            const widgets = document.querySelectorAll('.aria-chat-widget');
+            const embeds = document.querySelectorAll('.aria-embed-container');
+            
+            widgets.forEach(widget => {
+                if (document.body.classList.contains('dark')) {
+                    widget.classList.add('aria-theme-dark');
+                } else {
+                    widget.classList.remove('aria-theme-dark');
+                }
+            });
+            
+            embeds.forEach(embed => {
+                if (document.body.classList.contains('dark')) {
+                    embed.setAttribute('data-theme', 'dark');
+                } else {
+                    embed.setAttribute('data-theme', 'light');
+                }
+            });
+        }
+        
+        // Detect system theme
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('dark');
+        }
+    </script>
+</body>
+</html>
+</parameter>
+</invoke>

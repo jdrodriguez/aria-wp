@@ -1,0 +1,2914 @@
+<?php
+/**
+ * Handle AJAX requests
+ *
+ * @package    Aria
+ * @subpackage Aria/includes
+ */
+
+/**
+ * Handle AJAX requests for the plugin.
+ */
+class Aria_Ajax_Handler {
+
+	/**
+	 * Handle send message AJAX request.
+	 */
+	public function handle_send_message() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_public_nonce', 'nonce', false ) ) {
+			// Log for debugging
+			error_log( 'Aria AJAX - Nonce check failed. Expected: aria_public_nonce, Received: ' . ( isset( $_POST['nonce'] ) ? $_POST['nonce'] : 'none' ) );
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Get and sanitize input
+		$message         = isset( $_POST['message'] ) ? sanitize_textarea_field( $_POST['message'] ) : '';
+		$conversation_id = isset( $_POST['conversation_id'] ) ? intval( $_POST['conversation_id'] ) : 0;
+		$session_id      = isset( $_POST['session_id'] ) ? sanitize_text_field( $_POST['session_id'] ) : '';
+		$name            = isset( $_POST['name'] ) ? sanitize_text_field( $_POST['name'] ) : '';
+		$email           = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
+		$phone           = isset( $_POST['phone'] ) ? sanitize_text_field( $_POST['phone'] ) : '';
+
+		if ( empty( $message ) ) {
+			wp_send_json_error( array( 'message' => __( 'Message cannot be empty.', 'aria' ) ) );
+		}
+
+		// Create or get conversation
+		if ( ! $conversation_id ) {
+			$conversation_id = $this->get_or_create_conversation( $session_id, $name, $email, $phone, $message );
+		}
+
+		// Get AI response
+		$ai_provider = $this->get_ai_provider();
+		if ( ! $ai_provider ) {
+			wp_send_json_error( array( 'message' => __( 'AI service is not configured.', 'aria' ) ) );
+		}
+
+		// Get relevant knowledge
+		$knowledge = $this->get_relevant_knowledge( $message );
+		error_log( 'Aria - Knowledge retrieved: ' . ( empty( $knowledge ) ? 'EMPTY' : 'Found ' . strlen( $knowledge ) . ' characters' ) );
+
+		// Get personality settings
+		$personality = $this->get_personality_settings();
+		error_log( 'Aria - Business type: ' . $personality['business_type'] );
+
+		// Build prompt
+		$prompt = $this->build_prompt( $message, $knowledge, $personality );
+		error_log( 'Aria - Prompt length: ' . strlen( $prompt ) );
+		error_log( 'Aria - First 500 chars of prompt: ' . substr( $prompt, 0, 500 ) );
+
+		try {
+			// Get AI response
+			$response = $ai_provider->generate_response( $prompt, $this->get_conversation_context( $conversation_id ) );
+
+			// Save to conversation log
+			$this->save_to_conversation( $conversation_id, $message, $response, 'user' );
+			$this->save_to_conversation( $conversation_id, $response, $response, 'aria' );
+
+			// Track learning data
+			$this->track_learning_data( $conversation_id, $message, $response );
+
+			wp_send_json_success( array(
+				'response'        => stripslashes( $response ),
+				'conversation_id' => $conversation_id,
+			) );
+
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to get response. Please try again.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Handle start conversation AJAX request.
+	 */
+	public function handle_start_conversation() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_public_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$page_url   = isset( $_POST['page_url'] ) ? esc_url_raw( $_POST['page_url'] ) : '';
+		$page_title = isset( $_POST['page_title'] ) ? sanitize_text_field( $_POST['page_title'] ) : '';
+		$name       = isset( $_POST['name'] ) ? sanitize_text_field( $_POST['name'] ) : '';
+		$email      = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
+		$phone      = isset( $_POST['phone'] ) ? sanitize_text_field( $_POST['phone'] ) : '';
+
+		// Get personalized greeting message
+		$greeting = Aria_Personality::get_greeting_message( $name );
+
+		// Generate session ID
+		$session_id = 'aria_' . time() . '_' . wp_generate_password( 8, false );
+
+		// Create initial conversation if name and email provided
+		$conversation_id = null;
+		if ( ! empty( $name ) && ! empty( $email ) ) {
+			$conversation_id = $this->get_or_create_conversation( $session_id, $name, $email, '' );
+		}
+
+		wp_send_json_success( array(
+			'conversation_id' => $conversation_id,
+			'greeting'        => stripslashes( $greeting ),
+			'session_id'      => $session_id,
+		) );
+	}
+
+	/**
+	 * Handle get conversation AJAX request.
+	 */
+	public function handle_get_conversation() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_public_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$session_id = isset( $_POST['session_id'] ) ? sanitize_text_field( $_POST['session_id'] ) : '';
+
+		if ( empty( $session_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid session.', 'aria' ) ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_conversations';
+
+		$conversation = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM $table WHERE session_id = %s AND site_id = %d ORDER BY created_at DESC LIMIT 1",
+				$session_id,
+				get_current_blog_id()
+			),
+			ARRAY_A
+		);
+
+		if ( $conversation ) {
+			$messages = json_decode( $conversation['conversation_log'], true );
+			wp_send_json_success( array(
+				'conversation_id' => $conversation['id'],
+				'messages'        => $messages ? $messages : array(),
+			) );
+		} else {
+			wp_send_json_success( array(
+				'conversation_id' => null,
+				'messages'        => array(),
+			) );
+		}
+	}
+
+	/**
+	 * Handle save knowledge AJAX request.
+	 */
+	public function handle_save_knowledge() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$id       = isset( $_POST['entry_id'] ) ? intval( $_POST['entry_id'] ) : 0;
+		$title    = isset( $_POST['title'] ) ? sanitize_text_field( $_POST['title'] ) : '';
+		$content  = isset( $_POST['content'] ) ? wp_kses_post( $_POST['content'] ) : '';
+		$context  = isset( $_POST['context'] ) ? sanitize_textarea_field( $_POST['context'] ) : '';
+		$response_instructions = isset( $_POST['response_instructions'] ) ? sanitize_textarea_field( $_POST['response_instructions'] ) : '';
+		$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
+		$tags     = isset( $_POST['tags'] ) ? sanitize_text_field( $_POST['tags'] ) : '';
+		$language = isset( $_POST['language'] ) ? sanitize_text_field( $_POST['language'] ) : 'en';
+		$priority = isset( $_POST['priority'] ) ? intval( $_POST['priority'] ) : 0;
+
+		if ( empty( $title ) || empty( $content ) ) {
+			wp_send_json_error( array( 'message' => __( 'Title and content are required.', 'aria' ) ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_knowledge_entries';
+
+		$data = array(
+			'title'    => $title,
+			'content'  => $content,
+			'context'  => $context,
+			'response_instructions' => $response_instructions,
+			'category' => $category,
+			'tags'     => $tags,
+			'language' => $language,
+			'priority' => $priority,
+			'status'   => 'pending_processing',
+			'site_id'  => get_current_blog_id(),
+		);
+
+		if ( $id > 0 ) {
+			// Update existing
+			$data['updated_at'] = current_time( 'mysql' );
+			$result = $wpdb->update( $table, $data, array( 'id' => $id ) );
+		} else {
+			// Insert new
+			$data['created_at'] = current_time( 'mysql' );
+			$result = $wpdb->insert( $table, $data );
+			$id     = $wpdb->insert_id;
+		}
+
+		if ( false === $result ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to save knowledge.', 'aria' ) ) );
+		}
+
+		// Schedule background processing for the entry
+		try {
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
+			
+			$processor = new Aria_Background_Processor();
+			$scheduled = $processor->schedule_embedding_generation( $id );
+			
+			if ( $scheduled ) {
+				error_log( "Aria: Scheduled processing for knowledge entry {$id}" );
+			}
+		} catch ( Exception $e ) {
+			error_log( "Aria: Failed to schedule processing for entry {$id}: " . $e->getMessage() );
+		}
+
+		wp_send_json_success( array(
+			'message' => __( 'Knowledge saved successfully and scheduled for processing.', 'aria' ),
+			'entry_id' => $id,
+		) );
+	}
+
+	/**
+	 * Handle get knowledge data AJAX request.
+	 */
+	public function handle_get_knowledge_data() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_knowledge_entries';
+
+		// Get all knowledge entries
+		$entries = $wpdb->get_results( 
+			$wpdb->prepare( 
+				"SELECT id, title, content, context, response_instructions, category, tags, language, created_at, updated_at 
+				FROM {$table} 
+				WHERE site_id = %d 
+				ORDER BY updated_at DESC",
+				get_current_blog_id()
+			), 
+			ARRAY_A 
+		);
+
+		// Get statistics
+		$total_entries = count( $entries );
+		$categories = array_unique( array_filter( array_column( $entries, 'category' ) ) );
+		$categories_count = count( $categories );
+		
+		// Calculate last updated
+		$last_updated = 'Never';
+		if ( ! empty( $entries ) ) {
+			$last_updated_time = strtotime( $entries[0]['updated_at'] );
+			$last_updated = human_time_diff( $last_updated_time, current_time( 'timestamp' ) ) . ' ago';
+		}
+
+		// For usage stats, we could track this in the future
+		$usage_stats = 0;
+
+		wp_send_json_success( array(
+			'entries' => $entries,
+			'totalEntries' => $total_entries,
+			'categories' => $categories_count,
+			'lastUpdated' => $last_updated,
+			'usageStats' => $usage_stats,
+		) );
+	}
+
+	/**
+	 * Handle delete knowledge entry AJAX request.
+	 */
+	public function handle_delete_knowledge_entry() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$entry_id = isset( $_POST['entry_id'] ) ? intval( $_POST['entry_id'] ) : 0;
+
+		if ( $entry_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid entry ID.', 'aria' ) ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_knowledge_entries';
+
+		// Delete the entry
+		$result = $wpdb->delete( 
+			$table, 
+			array( 
+				'id' => $entry_id,
+				'site_id' => get_current_blog_id()
+			),
+			array( '%d', '%d' )
+		);
+
+		if ( false === $result ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to delete knowledge entry.', 'aria' ) ) );
+		}
+
+		if ( 0 === $result ) {
+			wp_send_json_error( array( 'message' => __( 'Knowledge entry not found.', 'aria' ) ) );
+		}
+
+		wp_send_json_success( array(
+			'message' => __( 'Knowledge entry deleted successfully.', 'aria' ),
+		) );
+	}
+
+	/**
+	 * Handle test API AJAX request.
+	 */
+	public function handle_test_api() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$provider = isset( $_POST['provider'] ) ? sanitize_text_field( $_POST['provider'] ) : '';
+		$api_key  = isset( $_POST['api_key'] ) ? sanitize_text_field( $_POST['api_key'] ) : '';
+
+		if ( empty( $provider ) || empty( $api_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Provider and API key are required.', 'aria' ) ) );
+		}
+
+		// Test the API connection
+		try {
+			$ai_provider = $this->create_ai_provider( $provider, $api_key );
+			$result      = $ai_provider->test_connection();
+
+			if ( $result ) {
+				wp_send_json_success( array( 'message' => __( 'API connection successful!', 'aria' ) ) );
+			} else {
+				wp_send_json_error( array( 'message' => __( 'API connection failed. Please check your credentials.', 'aria' ) ) );
+			}
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Handle test saved API AJAX request.
+	 */
+	public function handle_test_saved_api() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$provider = isset( $_POST['provider'] ) ? sanitize_text_field( $_POST['provider'] ) : get_option( 'aria_ai_provider', 'openai' );
+		
+		// Get saved API key
+		$encrypted_key = get_option( 'aria_ai_api_key' );
+		if ( empty( $encrypted_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'No API key found. Please save an API key first.', 'aria' ) ) );
+		}
+
+		// Decrypt the key
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-security.php';
+		$api_key = Aria_Security::decrypt( $encrypted_key );
+		
+		// Debug logging
+		error_log( 'Aria Test Saved API - Provider: ' . $provider );
+		error_log( 'Aria Test Saved API - Encrypted key exists: ' . ( $encrypted_key ? 'yes' : 'no' ) );
+		error_log( 'Aria Test Saved API - Decrypted key exists: ' . ( $api_key ? 'yes' : 'no' ) );
+		error_log( 'Aria Test Saved API - Decrypted key length: ' . strlen( $api_key ) );
+		
+		if ( empty( $api_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to decrypt API key. Please re-enter your API key.', 'aria' ) ) );
+		}
+
+		// Test the API connection
+		try {
+			error_log( 'Aria Test Saved API - About to create provider' );
+			$ai_provider = $this->create_ai_provider( $provider, $api_key );
+			error_log( 'Aria Test Saved API - Provider created, testing connection' );
+			$result      = $ai_provider->test_connection();
+			error_log( 'Aria Test Saved API - Test result: ' . ( $result ? 'success' : 'failed' ) );
+
+			if ( $result ) {
+				wp_send_json_success( array( 'message' => __( 'API connection successful!', 'aria' ) ) );
+			} else {
+				error_log( 'Aria Test Saved API - Connection test returned false' );
+				wp_send_json_error( array( 'message' => __( 'API connection failed. Please check your credentials.', 'aria' ) ) );
+			}
+		} catch ( Exception $e ) {
+			error_log( 'Aria Test Saved API - Exception: ' . $e->getMessage() );
+			error_log( 'Aria Test Saved API - Exception trace: ' . $e->getTraceAsString() );
+			wp_send_json_error( array( 'message' => 'Error: ' . $e->getMessage() ) );
+		}
+	}
+
+
+	/**
+	 * Handle track event AJAX request.
+	 */
+	public function handle_track_event() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_public_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$event           = isset( $_POST['event'] ) ? sanitize_text_field( $_POST['event'] ) : '';
+		$conversation_id = isset( $_POST['conversation_id'] ) ? intval( $_POST['conversation_id'] ) : 0;
+
+		// For now, just log the event
+		if ( $event ) {
+			do_action( 'aria_track_event', $event, $conversation_id );
+		}
+
+		wp_send_json_success();
+	}
+
+	/**
+	 * Handle submit feedback AJAX request.
+	 */
+	public function handle_submit_feedback() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_public_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$conversation_id = isset( $_POST['conversation_id'] ) ? intval( $_POST['conversation_id'] ) : 0;
+		$rating          = isset( $_POST['rating'] ) ? sanitize_text_field( $_POST['rating'] ) : '';
+
+		if ( ! $conversation_id || ! in_array( $rating, array( 'positive', 'negative' ) ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid feedback data.', 'aria' ) ) );
+		}
+
+		// Update learning data with feedback
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_learning_data';
+
+		$wpdb->update(
+			$table,
+			array( 'feedback_rating' => $rating ),
+			array( 'conversation_id' => $conversation_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		wp_send_json_success( array( 'message' => __( 'Thank you for your feedback!', 'aria' ) ) );
+	}
+
+	/**
+	 * Get or create conversation.
+	 *
+	 * @param string $session_id Session ID.
+	 * @param string $name Guest name.
+	 * @param string $email Guest email.
+	 * @param string $phone Guest phone.
+	 * @param string $initial_question Initial question.
+	 * @return int Conversation ID.
+	 */
+	private function get_or_create_conversation( $session_id, $name, $email, $phone, $initial_question ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_conversations';
+
+		// Try to get existing conversation
+		$conversation = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id FROM $table WHERE session_id = %s AND site_id = %d AND status = 'active' ORDER BY created_at DESC LIMIT 1",
+				$session_id,
+				get_current_blog_id()
+			)
+		);
+
+		if ( $conversation ) {
+			// Update name, email, and phone if provided
+			if ( ! empty( $name ) || ! empty( $email ) || ! empty( $phone ) ) {
+				$wpdb->update(
+					$table,
+					array(
+						'guest_name'  => $name,
+						'guest_email' => $email,
+						'guest_phone' => $phone,
+					),
+					array( 'id' => $conversation->id )
+				);
+			}
+			return $conversation->id;
+		}
+
+		// Create new conversation
+		$wpdb->insert(
+			$table,
+			array(
+				'session_id'        => $session_id,
+				'guest_name'        => $name,
+				'guest_email'       => $email,
+				'guest_phone'       => $phone,
+				'initial_question'  => $initial_question,
+				'conversation_log'  => json_encode( array() ),
+				'status'            => 'active',
+				'site_id'           => get_current_blog_id(),
+				'gdpr_consent'      => 1, // Assuming consent was given
+			)
+		);
+
+		$conversation_id = $wpdb->insert_id;
+		
+		// Send new conversation notification
+		if ( $conversation_id && ! empty( $name ) && ! empty( $email ) && ! empty( $initial_question ) ) {
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-email-handler.php';
+			$email_handler = new Aria_Email_Handler();
+			$email_handler->send_new_conversation_notification( $conversation_id, $name, $email, $initial_question );
+		}
+
+		return $conversation_id;
+	}
+
+	/**
+	 * Get AI provider instance.
+	 *
+	 * @return object|false AI provider instance or false.
+	 */
+	private function get_ai_provider() {
+		$provider = get_option( 'aria_ai_provider', 'openai' );
+		$encrypted_key  = get_option( 'aria_ai_api_key' );
+
+		if ( empty( $encrypted_key ) ) {
+			return false;
+		}
+
+		// Decrypt the API key
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-security.php';
+		$api_key = Aria_Security::decrypt( $encrypted_key );
+
+		return $this->create_ai_provider( $provider, $api_key );
+	}
+
+	/**
+	 * Create AI provider instance.
+	 *
+	 * @param string $provider Provider name.
+	 * @param string $api_key API key.
+	 * @return object AI provider instance.
+	 */
+	private function create_ai_provider( $provider, $api_key ) {
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-ai-provider.php';
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-personality.php';
+
+		switch ( $provider ) {
+			case 'openai':
+				require_once ARIA_PLUGIN_PATH . 'includes/providers/class-aria-openai-provider.php';
+				return new Aria_OpenAI_Provider( $api_key );
+
+			case 'gemini':
+				require_once ARIA_PLUGIN_PATH . 'includes/providers/class-aria-gemini-provider.php';
+				return new Aria_Gemini_Provider( $api_key );
+
+			default:
+				throw new Exception( __( 'Invalid AI provider.', 'aria' ) );
+		}
+	}
+
+	/**
+	 * Get relevant knowledge for a question.
+	 *
+	 * @param string $question User question.
+	 * @return string Relevant knowledge.
+	 */
+	private function get_relevant_knowledge( $question ) {
+		// Try vector search first if enabled
+		if ( get_option( 'aria_vector_enabled', true ) ) {
+			$vector_knowledge = $this->get_vector_knowledge( $question );
+			if ( ! empty( $vector_knowledge ) ) {
+				return $vector_knowledge;
+			}
+		}
+		
+		// Fallback to legacy keyword search
+		return $this->get_legacy_knowledge( $question );
+	}
+
+	/**
+	 * Get knowledge using vector search system.
+	 *
+	 * @param string $question User question.
+	 * @return string Vector search results.
+	 */
+	private function get_vector_knowledge( $question ) {
+		$all_knowledge = array();
+
+		try {
+			// 1. Search WordPress content vectors
+			$content_vectorizer = new Aria_Content_Vectorizer();
+			$content_results = $content_vectorizer->search_similar_content( $question, 3, 0.3 );
+			
+			if ( ! empty( $content_results ) ) {
+				$content_knowledge = array();
+				foreach ( $content_results as $result ) {
+					$metadata = json_decode( $result['metadata'], true );
+					$content_knowledge[] = sprintf(
+						"Content from %s (%s):\n%s\nURL: %s\n",
+						$metadata['title'] ?? 'Untitled',
+						$result['content_type'],
+						$result['content_text'],
+						$metadata['url'] ?? ''
+					);
+				}
+				$all_knowledge[] = "WordPress Content:\n" . implode( "\n---\n", $content_knowledge );
+				error_log( 'Aria: Found ' . count( $content_results ) . ' WordPress content matches' );
+			}
+
+			// 2. Search knowledge base vectors (existing system)
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-query-handler.php';
+			
+			$query_handler = new Aria_Query_Handler();
+			
+			// Get conversation context for enhanced search
+			$conversation_context = $this->get_conversation_context( $this->conversationId );
+			$context_array = array();
+			
+			if ( ! empty( $conversation_context ) ) {
+				// Parse conversation context into array format
+				$lines = explode( "\n", $conversation_context );
+				foreach ( $lines as $line ) {
+					if ( strpos( $line, ':' ) !== false ) {
+						list( $role, $content ) = explode( ':', $line, 2 );
+						$context_array[] = array(
+							'sender' => trim( strtolower( $role ) ),
+							'content' => trim( $content )
+						);
+					}
+				}
+			}
+			
+			// Get relevant context using multi-stage retrieval
+			$kb_knowledge = $query_handler->find_relevant_context( $question, $context_array );
+			
+			if ( ! empty( $kb_knowledge ) ) {
+				$all_knowledge[] = "Knowledge Base:\n" . $kb_knowledge;
+				error_log( 'Aria: Found knowledge base matches' );
+			}
+			
+			// Combine all knowledge sources
+			if ( ! empty( $all_knowledge ) ) {
+				$combined_knowledge = implode( "\n\n=================\n\n", $all_knowledge );
+				error_log( 'Aria: Using combined vector search results for question: ' . substr( $question, 0, 50 ) );
+				return $combined_knowledge;
+			}
+			
+		} catch ( Exception $e ) {
+			error_log( 'Aria Vector Search Error: ' . $e->getMessage() );
+		}
+		
+		return '';
+	}
+
+	/**
+	 * Get knowledge using legacy keyword search.
+	 *
+	 * @param string $question User question.
+	 * @return string Legacy search results.
+	 */
+	private function get_legacy_knowledge( $question ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_knowledge_base';
+
+		// Debug logging
+		error_log( 'Aria Knowledge Search - Question: ' . $question );
+		error_log( 'Aria Knowledge Search - Current blog ID: ' . get_current_blog_id() );
+
+		// First, let's check both with and without site_id filter
+		$test_query = "SELECT COUNT(*) FROM $table WHERE site_id = %d";
+		$count_with_site = $wpdb->get_var( $wpdb->prepare( $test_query, get_current_blog_id() ) );
+		
+		$test_query_all = "SELECT COUNT(*) FROM $table";
+		$count_all = $wpdb->get_var( $test_query_all );
+		
+		error_log( 'Aria Knowledge Search - Entries with site_id ' . get_current_blog_id() . ': ' . $count_with_site );
+		error_log( 'Aria Knowledge Search - Total entries in table: ' . $count_all );
+
+		if ( $count_all == 0 ) {
+			error_log( 'Aria Knowledge Search - WARNING: No knowledge base entries found in table!' );
+			return '';
+		}
+		
+		// If no entries for current site but table has data, try without site_id filter
+		$use_site_filter = ( $count_with_site > 0 );
+
+		// Simple keyword search that should definitely work
+		$keywords = explode( ' ', strtolower( $question ) );
+		$where    = array();
+
+		// Add common employment-related synonyms
+		$employment_keywords = array( 'job', 'work', 'career', 'employment', 'hiring', 'position', 'opening' );
+		$has_employment_query = false;
+		
+		foreach ( $keywords as $keyword ) {
+			if ( in_array( $keyword, $employment_keywords ) ) {
+				$has_employment_query = true;
+				// Add all employment synonyms to search
+				foreach ( $employment_keywords as $emp_keyword ) {
+					$where[] = $wpdb->prepare( 
+						'(title LIKE %s OR content LIKE %s OR tags LIKE %s)', 
+						'%' . $wpdb->esc_like( $emp_keyword ) . '%', 
+						'%' . $wpdb->esc_like( $emp_keyword ) . '%',
+						'%' . $wpdb->esc_like( $emp_keyword ) . '%'
+					);
+				}
+				break;
+			}
+		}
+
+		// Regular keyword search for other terms
+		if ( ! $has_employment_query ) {
+			foreach ( $keywords as $keyword ) {
+				if ( strlen( $keyword ) > 2 ) {
+					$where[] = $wpdb->prepare( 
+						'(title LIKE %s OR content LIKE %s OR context LIKE %s OR response_instructions LIKE %s OR tags LIKE %s)', 
+						'%' . $wpdb->esc_like( $keyword ) . '%', 
+						'%' . $wpdb->esc_like( $keyword ) . '%',
+						'%' . $wpdb->esc_like( $keyword ) . '%',
+						'%' . $wpdb->esc_like( $keyword ) . '%',
+						'%' . $wpdb->esc_like( $keyword ) . '%'
+					);
+				}
+			}
+		}
+
+		if ( empty( $where ) ) {
+			error_log( 'Aria Knowledge Search - No valid search terms' );
+			// If no valid search terms, at least search for the full question
+			$where[] = $wpdb->prepare( 
+				'(content LIKE %s)', 
+				'%' . $wpdb->esc_like( $question ) . '%'
+			);
+		}
+
+		// Build query based on whether we need site filter
+		if ( $use_site_filter ) {
+			$sql = "SELECT title, content, context, response_instructions FROM $table WHERE site_id = %d AND (" . implode( ' OR ', $where ) . ') LIMIT 5';
+			$params = array( get_current_blog_id() );
+		} else {
+			// Try without site_id filter if no entries for current site
+			$sql = "SELECT title, content, context, response_instructions FROM $table WHERE " . implode( ' OR ', $where ) . ' LIMIT 5';
+			$params = array();
+		}
+		
+		// Debug the final query
+		if ( $use_site_filter ) {
+			$final_query = $wpdb->prepare( $sql, $params );
+		} else {
+			$final_query = $sql;
+		}
+		error_log( 'Aria Knowledge Search - SQL Query: ' . $final_query );
+
+		$results = $wpdb->get_results( $final_query, ARRAY_A );
+
+		if ( empty( $results ) ) {
+			error_log( 'Aria Knowledge Search - No results found with search criteria, fetching all entries' );
+			// If no specific matches, get ALL knowledge base entries
+			if ( $use_site_filter ) {
+				$fallback_sql = "SELECT title, content, context, response_instructions FROM $table WHERE site_id = %d LIMIT 10";
+				$results = $wpdb->get_results(
+					$wpdb->prepare( $fallback_sql, get_current_blog_id() ),
+					ARRAY_A
+				);
+			} else {
+				$fallback_sql = "SELECT title, content, context, response_instructions FROM $table LIMIT 10";
+				$results = $wpdb->get_results( $fallback_sql, ARRAY_A );
+			}
+			
+			if ( empty( $results ) ) {
+				error_log( 'Aria Knowledge Search - No knowledge base entries at all!' );
+				return '';
+			}
+		}
+
+		error_log( 'Aria Knowledge Search - Found ' . count( $results ) . ' results' );
+		$knowledge = "=== RELEVANT KNOWLEDGE FROM DATABASE ===\n\n";
+		
+		// If searching for employment/careers, prioritize that content
+		$is_employment_query = false;
+		$employment_terms = array( 'job', 'work', 'career', 'employment', 'hiring', 'position', 'opening', 'apply' );
+		foreach ( $employment_terms as $term ) {
+			if ( stripos( $question, $term ) !== false ) {
+				$is_employment_query = true;
+				break;
+			}
+		}
+
+		foreach ( $results as $index => $result ) {
+			$knowledge .= "--- Knowledge Entry " . ($index + 1) . " ---\n";
+			$knowledge .= "Title: " . $result['title'] . "\n";
+			
+			// Include context if available
+			if ( ! empty( $result['context'] ) ) {
+				$knowledge .= "When to use: " . $result['context'] . "\n";
+			}
+			
+			// For long content, try to extract relevant sections
+			$content = $result['content'];
+			if ( strlen( $content ) > 1000 && $is_employment_query ) {
+				// Try to find career/employment section
+				foreach ( $employment_terms as $term ) {
+					if ( preg_match( '/(.{0,200}' . preg_quote( $term, '/' ) . '.{0,500})/i', $content, $matches ) ) {
+						$knowledge .= "Relevant Section: " . trim( $matches[0] ) . "\n";
+						break;
+					}
+				}
+			} else {
+				$knowledge .= "Information: " . $content . "\n";
+			}
+			
+			// Include response instructions if available
+			if ( ! empty( $result['response_instructions'] ) ) {
+				$knowledge .= "How to respond: " . $result['response_instructions'] . "\n";
+			}
+			
+			$knowledge .= "\n";
+		}
+
+		$knowledge .= "=== END OF KNOWLEDGE BASE ===\n";
+
+		return $knowledge;
+	}
+
+	/**
+	 * Get personality settings.
+	 *
+	 * @return array Personality settings.
+	 */
+	private function get_personality_settings() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_personality_settings';
+
+		$settings = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM $table WHERE site_id = %d",
+				get_current_blog_id()
+			),
+			ARRAY_A
+		);
+
+		if ( ! $settings ) {
+			return array(
+				'business_type'      => 'general',
+				'tone_setting'       => 'professional',
+				'personality_traits' => 'helpful,knowledgeable,friendly',
+				'greeting_message'   => __( 'Hello! I\'m Aria, your assistant. How can I help you today?', 'aria' ),
+			);
+		}
+
+		return $settings;
+	}
+
+	/**
+	 * Build AI prompt.
+	 *
+	 * @param string $message User message.
+	 * @param string $knowledge Relevant knowledge.
+	 * @param array  $personality Personality settings.
+	 * @return string AI prompt.
+	 */
+	private function build_prompt( $message, $knowledge, $personality ) {
+		// Handle the business type properly
+		$business_name = ( $personality['business_type'] === 'general' ) ? 'this business' : $personality['business_type'];
+		
+		// Start with a very clear role definition
+		$prompt = "You are Aria, a customer service assistant for " . $business_name . ".\n\n";
+		
+		// Immediate context
+		$prompt .= "SITUATION: A customer named " . ( ! empty( $_POST['name'] ) ? $_POST['name'] : 'a visitor' ) . " has asked you: \"" . $message . "\"\n\n";
+		
+		// Simple, clear instructions
+		$prompt .= "YOUR JOB:\n";
+		$prompt .= "1. Answer their question directly\n";
+		$prompt .= "2. Use we/us/our when referring to the company\n";
+		$prompt .= "3. Be " . $personality['tone_setting'] . " and " . str_replace( ',', ', ', $personality['personality_traits'] ) . "\n\n";
+		
+		// Knowledge base section
+		if ( ! empty( $knowledge ) ) {
+			$prompt .= "INFORMATION AVAILABLE TO YOU:\n";
+			$prompt .= $knowledge . "\n\n";
+			$prompt .= "INSTRUCTIONS:\n";
+			$prompt .= "1. Review each knowledge entry above\n";
+			$prompt .= "2. Pay attention to the 'When to use' context to ensure relevance\n";
+			$prompt .= "3. Use the 'Information' section for facts and details\n";
+			$prompt .= "4. Follow any 'How to respond' instructions for tone and approach\n";
+			$prompt .= "5. If multiple entries apply, combine them appropriately\n";
+		} else {
+			$prompt .= "NOTE: No specific information was found in the knowledge base for this question.\n";
+			$prompt .= "INSTRUCTIONS: Politely explain that you don't have that information but will forward their question to the team.\n";
+		}
+		
+		$prompt .= "\nIMPORTANT RULES:\n";
+		$prompt .= "- NEVER ask for knowledge base documents - you already have what you need\n";
+		$prompt .= "- NEVER say you're waiting for information\n";
+		$prompt .= "- ALWAYS give a direct response to their question\n";
+		$prompt .= "- Follow any response instructions provided in the knowledge entries\n";
+		$prompt .= "- If you don't know, say: \"I don't have that specific information, but I'll make sure to forward your question to our team.\"\n";
+		
+		$prompt .= "\nNow respond to their question:";
+
+		return $prompt;
+	}
+
+	/**
+	 * Get conversation context.
+	 *
+	 * @param int $conversation_id Conversation ID.
+	 * @return string Conversation context.
+	 */
+	private function get_conversation_context( $conversation_id ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_conversations';
+
+		$conversation = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT conversation_log FROM $table WHERE id = %d",
+				$conversation_id
+			)
+		);
+
+		if ( ! $conversation ) {
+			return '';
+		}
+
+		$messages = json_decode( $conversation, true );
+		if ( ! is_array( $messages ) ) {
+			return '';
+		}
+
+		// Get last 5 messages for context
+		$recent_messages = array_slice( $messages, -5 );
+		$context         = '';
+
+		foreach ( $recent_messages as $msg ) {
+			$context .= $msg['role'] . ': ' . $msg['content'] . "\n";
+		}
+
+		return $context;
+	}
+
+	/**
+	 * Save message to conversation.
+	 *
+	 * @param int    $conversation_id Conversation ID.
+	 * @param string $message Message content.
+	 * @param string $full_content Full content for logging.
+	 * @param string $role Message role (user/aria).
+	 */
+	private function save_to_conversation( $conversation_id, $message, $full_content, $role ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_conversations';
+
+		// Get existing conversation log
+		$conversation_log = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT conversation_log FROM $table WHERE id = %d",
+				$conversation_id
+			)
+		);
+
+		$messages = json_decode( $conversation_log, true );
+		if ( ! is_array( $messages ) ) {
+			$messages = array();
+		}
+
+		// Add new message
+		$messages[] = array(
+			'sender'    => $role,
+			'content'   => $message,
+			'timestamp' => current_time( 'mysql' ),
+		);
+
+		// Update conversation
+		$wpdb->update(
+			$table,
+			array(
+				'conversation_log' => json_encode( $messages ),
+				'updated_at'       => current_time( 'mysql' ),
+			),
+			array( 'id' => $conversation_id )
+		);
+	}
+
+	/**
+	 * Track learning data.
+	 *
+	 * @param int    $conversation_id Conversation ID.
+	 * @param string $question User question.
+	 * @param string $response AI response.
+	 */
+	private function track_learning_data( $conversation_id, $question, $response ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'aria_learning_data';
+
+		$wpdb->insert(
+			$table,
+			array(
+				'conversation_id' => $conversation_id,
+				'question'        => $question,
+				'response'        => $response,
+				'site_id'         => get_current_blog_id(),
+			)
+		);
+	}
+	
+	/**
+	 * Handle test notification AJAX request.
+	 */
+	public function handle_test_notification() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_test_notification', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+		
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+		
+		// Get notification settings
+		$notification_settings = get_option( 'aria_notification_settings', array() );
+		
+		if ( empty( $notification_settings['enabled'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Email notifications are disabled. Please enable them first.', 'aria' ) ) );
+		}
+		
+		// Create test conversation data
+		$test_data = array(
+			'conversation_id' => 999999,
+			'user_name'       => 'Test User',
+			'user_email'      => 'test@example.com',
+			'initial_message' => 'This is a test message to verify email notifications are working correctly.',
+			'page_url'        => home_url(),
+			'timestamp'       => current_time( 'mysql' ),
+		);
+		
+		// Send test email
+		$email_handler = new Aria_Email_Handler();
+		$subject = sprintf(
+			'[%s] Test Notification - Aria Chat',
+			get_bloginfo( 'name' )
+		);
+		
+		$message = $email_handler->format_new_conversation_email( $test_data );
+		$headers = array(
+			'Content-Type: text/html; charset=UTF-8',
+			'From: ' . get_bloginfo( 'name' ) . ' <' . get_option( 'admin_email' ) . '>',
+		);
+		
+		$recipients = $email_handler->get_recipient_emails( $notification_settings );
+		
+		if ( empty( $recipients ) ) {
+			wp_send_json_error( array( 'message' => __( 'No recipients configured. Please add email recipients.', 'aria' ) ) );
+		}
+		
+		$sent = wp_mail( $recipients, $subject, $message, $headers );
+		
+		if ( $sent ) {
+			wp_send_json_success( array( 
+				'message' => sprintf( 
+					__( 'Test email sent successfully to: %s', 'aria' ), 
+					implode( ', ', $recipients ) 
+				) 
+			) );
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Failed to send test email. Please check your WordPress email configuration.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Handle process knowledge entry AJAX request.
+	 */
+	public function handle_process_knowledge_entry() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$entry_id = isset( $_POST['entry_id'] ) ? intval( $_POST['entry_id'] ) : 0;
+
+		if ( ! $entry_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid entry ID.', 'aria' ) ) );
+		}
+
+		try {
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
+			
+			$processor = new Aria_Background_Processor();
+			$scheduled = $processor->schedule_embedding_generation( $entry_id );
+
+			if ( $scheduled ) {
+				wp_send_json_success( array( 'message' => __( 'Entry processing scheduled successfully.', 'aria' ) ) );
+			} else {
+				wp_send_json_error( array( 'message' => __( 'Failed to schedule entry processing.', 'aria' ) ) );
+			}
+
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Handle get vector stats AJAX request.
+	 */
+	public function handle_get_vector_stats() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		try {
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-cache-manager.php';
+			
+			$processor = new Aria_Background_Processor();
+			$cache_manager = new Aria_Cache_Manager();
+			
+			$stats = array(
+				'processing' => $processor->get_processing_stats(),
+				'cache' => $cache_manager->get_cache_stats()
+			);
+
+			wp_send_json_success( $stats );
+
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Handle test vector system AJAX request.
+	 */
+	public function handle_test_vector_system() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		try {
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-vector-engine.php';
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-knowledge-processor.php';
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-query-handler.php';
+			
+			$test_results = array();
+			
+			// Test vector engine
+			$vector_engine = new Aria_Vector_Engine();
+			$test_results['vector_engine'] = $vector_engine->test_vector_engine();
+			
+			// Test knowledge processor
+			$knowledge_processor = new Aria_Knowledge_Processor();
+			$test_results['knowledge_processor'] = $knowledge_processor->test_knowledge_processor();
+			
+			// Test query handler
+			$query_handler = new Aria_Query_Handler();
+			$test_results['query_handler'] = $query_handler->test_query_handler();
+
+			wp_send_json_success( array( 
+				'message' => __( 'Vector system test completed.', 'aria' ),
+				'results' => $test_results
+			) );
+
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Handle retry failed processing AJAX request.
+	 */
+	public function handle_retry_failed_processing() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		try {
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
+			
+			$processor = new Aria_Background_Processor();
+			$entry_ids = isset( $_POST['entry_ids'] ) ? array_map( 'intval', $_POST['entry_ids'] ) : array();
+			
+			$scheduled_count = $processor->retry_failed_entries( $entry_ids );
+
+			wp_send_json_success( array( 
+				'message' => sprintf( 
+					__( 'Scheduled %d entries for retry processing.', 'aria' ), 
+					$scheduled_count 
+				)
+			) );
+
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Handle AI knowledge generation AJAX request.
+	 */
+	public function handle_generate_knowledge_entry() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_generate_knowledge', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$raw_content = isset( $_POST['content'] ) ? sanitize_textarea_field( $_POST['content'] ) : '';
+
+		if ( empty( $raw_content ) ) {
+			wp_send_json_error( array( 'message' => __( 'Content is required.', 'aria' ) ) );
+		}
+
+		try {
+			// Get AI provider
+			$ai_provider = $this->get_ai_provider();
+			if ( ! $ai_provider ) {
+				wp_send_json_error( array( 'message' => __( 'AI service is not configured.', 'aria' ) ) );
+			}
+
+			// Create knowledge generation prompt
+			$prompt = $this->build_knowledge_generation_prompt( $raw_content );
+
+			// Generate the knowledge entry data
+			$response = $ai_provider->generate_response( $prompt, '' );
+
+			// Parse the AI response into structured data
+			$generated_data = $this->parse_knowledge_generation_response( $response );
+
+			if ( ! $generated_data ) {
+				wp_send_json_error( array( 'message' => __( 'Failed to parse AI response. Please try again.', 'aria' ) ) );
+			}
+
+			wp_send_json_success( $generated_data );
+
+		} catch ( Exception $e ) {
+			error_log( 'Aria Knowledge Generation Error: ' . $e->getMessage() );
+			wp_send_json_error( array( 'message' => __( 'Failed to generate knowledge entry. Please try again.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Build prompt for knowledge generation.
+	 *
+	 * @param string $raw_content Raw content to process.
+	 * @return string Generation prompt.
+	 */
+	private function build_knowledge_generation_prompt( $raw_content ) {
+		$business_name = get_bloginfo( 'name' );
+		$business_description = get_bloginfo( 'description' );
+
+		$prompt = "You are an AI assistant helping to structure knowledge base content for a customer service chatbot named Aria.\n\n";
+		$prompt .= "BUSINESS CONTEXT:\n";
+		$prompt .= "Business Name: {$business_name}\n";
+		if ( $business_description ) {
+			$prompt .= "Business Description: {$business_description}\n";
+		}
+		$prompt .= "\n";
+
+		$prompt .= "TASK: Analyze the following content and generate structured knowledge base fields.\n\n";
+		$prompt .= "RAW CONTENT:\n";
+		$prompt .= $raw_content . "\n\n";
+
+		$prompt .= "Generate the following fields in EXACTLY this JSON format:\n";
+		$prompt .= "{\n";
+		$prompt .= '  "title": "Clear, descriptive title (max 100 characters)",' . "\n";
+		$prompt .= '  "context": "When should Aria use this information? Describe situations, questions, or topics (2-3 sentences)",' . "\n";
+		$prompt .= '  "content": "Clean, well-formatted version of the main information",' . "\n";
+		$prompt .= '  "response_instructions": "How should Aria communicate this? Include tone and special instructions (2-3 sentences)",' . "\n";
+		$prompt .= '  "category": "Single category name (e.g., Products, Policies, Support, FAQs)",' . "\n";
+		$prompt .= '  "tags": "Comma-separated keywords for better matching",' . "\n";
+		$prompt .= '  "language": "en"' . "\n";
+		$prompt .= "}\n\n";
+
+		$prompt .= "GUIDELINES:\n";
+		$prompt .= "- Title: Make it clear and searchable\n";
+		$prompt .= "- Context: Focus on when customers would ask about this\n";
+		$prompt .= "- Content: Keep factual information, improve formatting\n";
+		$prompt .= "- Instructions: Consider tone (helpful, professional) and any special handling\n";
+		$prompt .= "- Category: Choose appropriate business category\n";
+		$prompt .= "- Tags: Include keywords customers might use\n";
+		$prompt .= "- Language: Default to 'en' unless content is clearly in another language\n\n";
+
+		$prompt .= "IMPORTANT: Respond ONLY with valid JSON. No additional text or explanations.";
+
+		return $prompt;
+	}
+
+	/**
+	 * Parse AI response for knowledge generation.
+	 *
+	 * @param string $response AI response.
+	 * @return array|false Parsed data or false on failure.
+	 */
+	private function parse_knowledge_generation_response( $response ) {
+		// Clean up the response
+		$response = trim( $response );
+
+		// Try to extract JSON from response
+		$json_start = strpos( $response, '{' );
+		$json_end = strrpos( $response, '}' );
+
+		if ( $json_start === false || $json_end === false ) {
+			return false;
+		}
+
+		$json_string = substr( $response, $json_start, $json_end - $json_start + 1 );
+		$data = json_decode( $json_string, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			return false;
+		}
+
+		// Validate required fields
+		$required_fields = array( 'title', 'content' );
+		foreach ( $required_fields as $field ) {
+			if ( empty( $data[ $field ] ) ) {
+				return false;
+			}
+		}
+
+		// Sanitize and validate fields
+		$sanitized_data = array(
+			'title' => sanitize_text_field( substr( $data['title'], 0, 200 ) ),
+			'context' => isset( $data['context'] ) ? sanitize_textarea_field( $data['context'] ) : '',
+			'content' => isset( $data['content'] ) ? wp_kses_post( $data['content'] ) : '',
+			'response_instructions' => isset( $data['response_instructions'] ) ? sanitize_textarea_field( $data['response_instructions'] ) : '',
+			'category' => isset( $data['category'] ) ? sanitize_text_field( $data['category'] ) : '',
+			'tags' => isset( $data['tags'] ) ? sanitize_text_field( $data['tags'] ) : '',
+			'language' => isset( $data['language'] ) ? sanitize_text_field( $data['language'] ) : 'en',
+		);
+
+		return $sanitized_data;
+	}
+
+	/**
+	 * Handle vector system migration AJAX request.
+	 */
+	public function handle_migrate_vector_system() {
+		// Verify nonce
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Check permissions
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		try {
+			global $wpdb;
+
+			// Force database migration
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-db-updater.php';
+			
+			// Reset version to force migration
+			delete_option( 'aria_db_version' );
+			update_option( 'aria_db_version', '1.0.0' );
+			
+			// Run migration
+			Aria_DB_Updater::update();
+
+			// Check results
+			$old_table = $wpdb->prefix . 'aria_knowledge_base';
+			$new_table = $wpdb->prefix . 'aria_knowledge_entries';
+
+			$old_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$old_table}" );
+			$new_count = $wpdb->get_var( "SELECT COUNT(*) FROM {$new_table}" );
+
+			// Schedule processing for any pending entries
+			$pending_entries = $wpdb->get_col( $wpdb->prepare(
+				"SELECT id FROM {$new_table} WHERE status = %s",
+				'pending_processing'
+			) );
+
+			if ( ! empty( $pending_entries ) ) {
+				require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
+				$processor = new Aria_Background_Processor();
+				
+				foreach ( $pending_entries as $entry_id ) {
+					$processor->schedule_embedding_generation( $entry_id );
+				}
+			}
+
+			wp_send_json_success( array(
+				'message' => sprintf( 
+					__( 'Migration completed! Migrated %d entries to vector system. Processing will begin shortly.', 'aria' ), 
+					$new_count
+				),
+				'old_count' => $old_count,
+				'new_count' => $new_count,
+				'pending_count' => count( $pending_entries )
+			) );
+
+		} catch ( Exception $e ) {
+			error_log( 'Aria Vector Migration Error: ' . $e->getMessage() );
+			wp_send_json_error( array( 'message' => __( 'Migration failed. Please try again or check the error logs.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Debug vector system status (for troubleshooting).
+	 */
+	public function handle_debug_vector_system() {
+		// Verify nonce and permissions
+		if ( ! check_ajax_referer( 'aria_debug_vector', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		global $wpdb;
+		$debug_info = array();
+
+		// Check database tables
+		$tables = array( 'aria_knowledge_entries', 'aria_knowledge_chunks', 'aria_search_cache' );
+		foreach ( $tables as $table ) {
+			$full_table = $wpdb->prefix . $table;
+			$exists = $wpdb->get_var( "SHOW TABLES LIKE '{$full_table}'" );
+			$count = $exists ? $wpdb->get_var( "SELECT COUNT(*) FROM {$full_table}" ) : 0;
+			$debug_info['tables'][$table] = array( 'exists' => (bool) $exists, 'count' => $count );
+		}
+
+		// Check entry statuses
+		$entries_table = $wpdb->prefix . 'aria_knowledge_entries';
+		$status_counts = $wpdb->get_results( "SELECT status, COUNT(*) as count FROM {$entries_table} GROUP BY status", ARRAY_A );
+		$debug_info['entry_statuses'] = $status_counts;
+
+		// Check WordPress cron
+		$debug_info['wp_cron'] = array(
+			'enabled' => ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ),
+			'aria_events' => 0
+		);
+
+		$cron_events = _get_cron_array();
+		foreach ( $cron_events as $timestamp => $events ) {
+			foreach ( $events as $hook => $event_data ) {
+				if ( strpos( $hook, 'aria_' ) === 0 ) {
+					$debug_info['wp_cron']['aria_events']++;
+				}
+			}
+		}
+
+		// Check AI configuration
+		$debug_info['ai_config'] = array(
+			'provider' => get_option( 'aria_ai_provider', 'openai' ),
+			'api_key_set' => ! empty( get_option( 'aria_ai_api_key', '' ) )
+		);
+
+		// Test background processor
+		try {
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
+			$processor = new Aria_Background_Processor();
+			$debug_info['background_processor'] = array(
+				'loaded' => true,
+				'stats' => $processor->get_processing_stats()
+			);
+		} catch ( Exception $e ) {
+			$debug_info['background_processor'] = array(
+				'loaded' => false,
+				'error' => $e->getMessage()
+			);
+		}
+
+		wp_send_json_success( $debug_info );
+	}
+
+	/**
+	 * Manually process one pending entry (for testing).
+	 */
+	public function handle_test_process_entry() {
+		// Verify nonce and permissions
+		if ( ! check_ajax_referer( 'aria_test_process', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		global $wpdb;
+		$entries_table = $wpdb->prefix . 'aria_knowledge_entries';
+
+		// Get one entry that needs processing (any status that indicates it needs processing)
+		$pending_entry = $wpdb->get_row( $wpdb->prepare(
+			"SELECT id, title, status FROM {$entries_table} WHERE status IN (%s, %s, %s) LIMIT 1",
+			'pending_processing',
+			'processing_scheduled',
+			'failed'
+		) );
+
+		if ( ! $pending_entry ) {
+			wp_send_json_error( array( 'message' => __( 'No entries found that need processing.', 'aria' ) ) );
+		}
+
+		try {
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
+			$processor = new Aria_Background_Processor();
+			
+			// Reset status to pending_processing before attempting to process
+			$wpdb->update(
+				$entries_table,
+				array( 'status' => 'pending_processing' ),
+				array( 'id' => $pending_entry->id ),
+				array( '%s' ),
+				array( '%d' )
+			);
+			
+			$result = $processor->process_embeddings_async( $pending_entry->id );
+			
+			if ( false !== $result ) {
+				wp_send_json_success( array( 
+					'message' => sprintf( __( 'Successfully processed entry: %s (was %s)', 'aria' ), $pending_entry->title, $pending_entry->status ),
+					'entry_id' => $pending_entry->id
+				) );
+			} else {
+				wp_send_json_error( array( 'message' => __( 'Processing failed for unknown reason.', 'aria' ) ) );
+			}
+			
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Process all stuck entries (for fixing the queue).
+	 */
+	public function handle_process_all_stuck_entries() {
+		// Verify nonce and permissions
+		if ( ! check_ajax_referer( 'aria_process_all', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		global $wpdb;
+		$entries_table = $wpdb->prefix . 'aria_knowledge_entries';
+
+		// Get all stuck entries
+		$stuck_entries = $wpdb->get_results( $wpdb->prepare(
+			"SELECT id, title, status FROM {$entries_table} WHERE status IN (%s, %s, %s) ORDER BY created_at ASC",
+			'pending_processing',
+			'processing_scheduled',
+			'failed'
+		) );
+
+		if ( empty( $stuck_entries ) ) {
+			wp_send_json_error( array( 'message' => __( 'No stuck entries found to process.', 'aria' ) ) );
+		}
+
+		try {
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
+			$processor = new Aria_Background_Processor();
+			
+			$processed_count = 0;
+			$failed_count = 0;
+			$results = array();
+
+			foreach ( $stuck_entries as $entry ) {
+				try {
+					// Reset status to pending_processing
+					$wpdb->update(
+						$entries_table,
+						array( 'status' => 'pending_processing' ),
+						array( 'id' => $entry->id ),
+						array( '%s' ),
+						array( '%d' )
+					);
+					
+					$result = $processor->process_embeddings_async( $entry->id );
+					
+					if ( false !== $result ) {
+						$processed_count++;
+						$results[] = "✅ {$entry->title}";
+					} else {
+						$failed_count++;
+						$results[] = "❌ {$entry->title} (processing failed)";
+					}
+					
+				} catch ( Exception $e ) {
+					$failed_count++;
+					$results[] = "❌ {$entry->title} (error: {$e->getMessage()})";
+				}
+			}
+
+			wp_send_json_success( array( 
+				'message' => sprintf( 
+					__( 'Processing complete! %d processed, %d failed out of %d total entries.', 'aria' ), 
+					$processed_count, 
+					$failed_count, 
+					count( $stuck_entries ) 
+				),
+				'processed_count' => $processed_count,
+				'failed_count' => $failed_count,
+				'total_count' => count( $stuck_entries ),
+				'details' => $results
+			) );
+			
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Toggle immediate processing setting.
+	 */
+	public function handle_toggle_immediate_processing() {
+		// Verify nonce and permissions
+		if ( ! check_ajax_referer( 'aria_toggle_immediate', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$enabled = isset( $_POST['enabled'] ) ? (bool) intval( $_POST['enabled'] ) : false;
+		
+		update_option( 'aria_immediate_processing', $enabled );
+		
+		$message = $enabled ? 
+			__( 'Immediate processing enabled. New entries will be processed immediately.', 'aria' ) :
+			__( 'Immediate processing disabled. Using WordPress cron scheduling.', 'aria' );
+
+		wp_send_json_success( array( 'message' => $message, 'enabled' => $enabled ) );
+	}
+
+	/**
+	 * Handle CSV export of conversations.
+	 */
+	public function handle_export_conversations_csv() {
+		// Verify nonce and permissions
+		if ( ! check_ajax_referer( 'aria_export_conversations', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		// Get all conversations for export
+		$conversations = Aria_Database::get_conversations( array(
+			'limit'  => 999999, // Export all conversations
+			'offset' => 0,
+		) );
+		
+		if ( empty( $conversations ) ) {
+			wp_send_json_error( array( 'message' => __( 'No conversations found to export.', 'aria' ) ) );
+		}
+
+		// Generate filename
+		$filename = 'aria-conversations-' . date( 'Y-m-d-H-i-s' ) . '.csv';
+		
+		// Clear any previous output
+		if ( ob_get_level() ) {
+			ob_end_clean();
+		}
+		
+		// Set headers for CSV download
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+		header( 'Pragma: no-cache' );
+		header( 'Expires: 0' );
+		header( 'Cache-Control: must-revalidate, post-check=0, pre-check=0' );
+		
+		// Create CSV output
+		$output = fopen( 'php://output', 'w' );
+		
+		// Add BOM for UTF-8
+		fprintf( $output, chr(0xEF).chr(0xBB).chr(0xBF) );
+		
+		// Add CSV headers
+		fputcsv( $output, array(
+			'ID',
+			'Guest Name',
+			'Guest Email',
+			'Guest Phone',
+			'Status',
+			'Created At',
+			'Updated At',
+			'Page Title',
+			'Page URL',
+			'Initial Question',
+			'Total Messages',
+			'Conversation Log'
+		) );
+		
+		// Add conversation data
+		foreach ( $conversations as $conversation ) {
+			$messages = json_decode( $conversation['conversation_log'], true );
+			$message_count = is_array( $messages ) ? count( $messages ) : 0;
+			
+			// Format conversation log for CSV (simple text format)
+			$conversation_text = '';
+			if ( is_array( $messages ) ) {
+				foreach ( $messages as $message ) {
+					$sender = $message['sender'] === 'user' ? ( $conversation['guest_name'] ?: 'Visitor' ) : 'Aria';
+					$conversation_text .= $sender . ': ' . strip_tags( $message['content'] ) . "\n";
+				}
+			}
+			
+			fputcsv( $output, array(
+				$conversation['id'],
+				$conversation['guest_name'],
+				$conversation['guest_email'],
+				$conversation['guest_phone'],
+				$conversation['status'],
+				$conversation['created_at'],
+				$conversation['updated_at'],
+				isset( $conversation['page_title'] ) ? $conversation['page_title'] : '',
+				isset( $conversation['page_url'] ) ? $conversation['page_url'] : '',
+				$conversation['initial_question'],
+				$message_count,
+				$conversation_text
+			) );
+		}
+		
+		fclose( $output );
+		exit;
+	}
+	
+	/**
+	 * Handle update conversation status AJAX request.
+	 */
+	public function handle_update_conversation_status() {
+		// Check nonce and permissions
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$conversation_id = isset( $_POST['conversation_id'] ) ? intval( $_POST['conversation_id'] ) : 0;
+		$status = isset( $_POST['status'] ) ? sanitize_text_field( $_POST['status'] ) : '';
+
+		if ( ! $conversation_id || ! in_array( $status, array( 'active', 'resolved' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'aria' ) ) );
+		}
+
+		if ( Aria_Database::update_conversation( $conversation_id, array( 'status' => $status ) ) ) {
+			wp_send_json_success( array( 
+				'message' => sprintf( __( 'Conversation marked as %s.', 'aria' ), $status ),
+				'status' => $status
+			) );
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Failed to update conversation status.', 'aria' ) ) );
+		}
+	}
+	
+	/**
+	 * Handle email transcript AJAX request.
+	 */
+	public function handle_email_transcript() {
+		// Check nonce and permissions
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$conversation_id = isset( $_POST['conversation_id'] ) ? intval( $_POST['conversation_id'] ) : 0;
+		$email = isset( $_POST['email'] ) ? sanitize_email( $_POST['email'] ) : '';
+
+		if ( ! $conversation_id || ! is_email( $email ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'aria' ) ) );
+		}
+
+		// Get conversation data
+		$conversation = Aria_Database::get_conversation( $conversation_id );
+		$messages = Aria_Database::get_conversation_messages( $conversation_id );
+
+		if ( ! $conversation ) {
+			wp_send_json_error( array( 'message' => __( 'Conversation not found.', 'aria' ) ) );
+		}
+
+		// Generate transcript
+		$transcript = "Conversation Transcript\n";
+		$transcript .= "===================\n\n";
+		$transcript .= sprintf( "Visitor: %s\n", $conversation['guest_name'] ?: 'Anonymous' );
+		if ( $conversation['guest_email'] ) {
+			$transcript .= sprintf( "Email: %s\n", $conversation['guest_email'] );
+		}
+		$transcript .= sprintf( "Date: %s\n", wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $conversation['created_at'] ) ) );
+		$transcript .= sprintf( "Status: %s\n\n", ucfirst( $conversation['status'] ) );
+
+		$transcript .= "Messages:\n";
+		$transcript .= "---------\n\n";
+
+		foreach ( $messages as $message ) {
+			$sender = ( $message['sender'] === 'user' ) ? ( $conversation['guest_name'] ?: 'Visitor' ) : 'Aria';
+			$timestamp = wp_date( get_option( 'time_format' ), strtotime( $message['timestamp'] ) );
+			$transcript .= sprintf( "[%s] %s: %s\n\n", $timestamp, $sender, wp_strip_all_tags( $message['content'] ) );
+		}
+
+		// Send email
+		$subject = sprintf( __( 'Conversation Transcript - %s', 'aria' ), get_bloginfo( 'name' ) );
+		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
+
+		if ( wp_mail( $email, $subject, $transcript, $headers ) ) {
+			wp_send_json_success( array( 'message' => __( 'Transcript sent successfully.', 'aria' ) ) );
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Failed to send transcript.', 'aria' ) ) );
+		}
+	}
+	
+	/**
+	 * Handle add conversation note AJAX request.
+	 */
+	public function handle_add_conversation_note() {
+		// Check nonce and permissions
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$conversation_id = isset( $_POST['conversation_id'] ) ? intval( $_POST['conversation_id'] ) : 0;
+		$note = isset( $_POST['note'] ) ? sanitize_textarea_field( $_POST['note'] ) : '';
+
+		if ( ! $conversation_id || empty( $note ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'aria' ) ) );
+		}
+
+		// Get current conversation
+		$conversation = Aria_Database::get_conversation( $conversation_id );
+		if ( ! $conversation ) {
+			wp_send_json_error( array( 'message' => __( 'Conversation not found.', 'aria' ) ) );
+		}
+
+		// Get current metadata and add note
+		$metadata = isset( $conversation['conversation_metadata'] ) ? maybe_unserialize( $conversation['conversation_metadata'] ) : array();
+		if ( ! is_array( $metadata ) ) {
+			$metadata = array();
+		}
+		
+		if ( ! isset( $metadata['notes'] ) ) {
+			$metadata['notes'] = array();
+		}
+
+		$metadata['notes'][] = array(
+			'note' => $note,
+			'author' => wp_get_current_user()->display_name,
+			'timestamp' => current_time( 'mysql' )
+		);
+
+		// Update conversation metadata
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'aria_conversations';
+		
+		$result = $wpdb->update(
+			$table_name,
+			array( 'conversation_metadata' => maybe_serialize( $metadata ) ),
+			array( 'id' => $conversation_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		if ( $result !== false ) {
+			wp_send_json_success( array( 'message' => __( 'Note added successfully.', 'aria' ) ) );
+		} else {
+			wp_send_json_error( array( 'message' => __( 'Failed to add note.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Handle reindex all content AJAX request.
+	 */
+	public function handle_reindex_all_content() {
+		// Verify nonce and capability
+		if ( ! check_ajax_referer( 'aria_content_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		try {
+			// Check if AI provider is configured
+			$ai_provider = get_option( 'aria_ai_provider', 'openai' );
+			$encrypted_api_key = get_option( 'aria_ai_api_key', '' );
+			
+			if ( empty( $encrypted_api_key ) ) {
+				wp_send_json_error( array( 
+					'message' => __( 'Please configure your AI provider API key in the AI Configuration page before indexing content.', 'aria' ),
+					'action_needed' => 'configure_api'
+				) );
+			}
+			
+			// Decrypt the API key
+			try {
+				require_once ARIA_PLUGIN_PATH . 'includes/class-aria-security.php';
+				
+				if ( ! class_exists( 'Aria_Security' ) ) {
+					wp_send_json_error( array( 
+						'message' => __( 'Security class not found. Please check plugin installation.', 'aria' ),
+						'action_needed' => 'configure_api'
+					) );
+				}
+				
+				$api_key = Aria_Security::decrypt( $encrypted_api_key );
+				
+				if ( empty( $api_key ) ) {
+					wp_send_json_error( array( 
+						'message' => __( 'Failed to decrypt API key. Please reconfigure your API key in the AI Configuration page.', 'aria' ),
+						'action_needed' => 'configure_api'
+					) );
+				}
+			} catch ( Exception $e ) {
+				error_log( 'Aria Content Indexing - Decryption error: ' . $e->getMessage() );
+				wp_send_json_error( array( 
+					'message' => __( 'API key decryption failed. Please reconfigure your API key.', 'aria' ),
+					'action_needed' => 'configure_api'
+				) );
+			}
+
+			// Reset indexing progress
+			delete_option( 'aria_indexing_offset' );
+			delete_option( 'aria_initial_indexing_complete' );
+
+			// Clear existing content vectors
+			global $wpdb;
+			$table = $wpdb->prefix . 'aria_content_vectors';
+			$wpdb->query( "TRUNCATE TABLE $table" );
+
+			// Load required classes for content vectorization
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-content-vectorizer.php';
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-content-filter.php';
+			
+			// Test API connection before starting bulk indexing
+			$test_result = $this->test_embedding_generation();
+			if ( ! $test_result['success'] ) {
+				wp_send_json_error( array( 
+					'message' => $test_result['message'],
+					'action_needed' => 'fix_api'
+				) );
+			}
+
+			// Start immediate indexing of first batch to provide instant feedback
+			$this->process_immediate_indexing_batch();
+
+			// Schedule additional batches
+			wp_schedule_single_event( time() + 10, 'aria_initial_content_indexing' );
+
+			wp_send_json_success( array( 
+				'message' => __( 'Content indexing started successfully. Check the details below for progress.', 'aria' ),
+				'immediate_results' => true
+			) );
+		} catch ( Exception $e ) {
+			error_log( 'Aria: Reindex error - ' . $e->getMessage() );
+			wp_send_json_error( array( 'message' => __( 'Failed to start reindexing: ', 'aria' ) . $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Test embedding generation with a simple text.
+	 *
+	 * @return array Result with success status and message.
+	 */
+	private function test_embedding_generation() {
+		try {
+			// Load required class
+			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-content-vectorizer.php';
+			
+			$vectorizer = new Aria_Content_Vectorizer();
+			
+			// Use reflection to access private method for testing
+			$reflection = new ReflectionClass( $vectorizer );
+			$method = $reflection->getMethod( 'generate_embedding' );
+			$method->setAccessible( true );
+			
+			$test_text = 'This is a test for content vectorization.';
+			$embedding = $method->invoke( $vectorizer, $test_text );
+			
+			if ( $embedding && is_array( $embedding ) && count( $embedding ) > 0 ) {
+				return array( 'success' => true, 'message' => 'API connection successful' );
+			} else {
+				return array( 'success' => false, 'message' => __( 'API key is invalid or embedding generation failed.', 'aria' ) );
+			}
+		} catch ( Exception $e ) {
+			return array( 'success' => false, 'message' => __( 'API connection failed: ', 'aria' ) . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Process immediate indexing batch for instant feedback.
+	 */
+	private function process_immediate_indexing_batch() {
+		// Load required classes
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-content-filter.php';
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-content-vectorizer.php';
+		
+		$filter = new Aria_Content_Filter();
+		$vectorizer = new Aria_Content_Vectorizer();
+
+		// Get first 3 items for immediate processing
+		$posts = $filter->get_public_content_batch( 3, 0 );
+		$success_count = 0;
+
+		foreach ( $posts as $post ) {
+			if ( $filter->is_content_public( $post->ID, $post->post_type ) ) {
+				$success = $vectorizer->index_content( $post->ID, $post->post_type );
+				if ( $success ) {
+					$success_count++;
+					error_log( "Aria: Immediately indexed {$post->post_type} {$post->ID}" );
+				}
+			}
+		}
+
+		// Update offset to skip these items in background processing
+		if ( count( $posts ) > 0 ) {
+			update_option( 'aria_indexing_offset', count( $posts ) );
+		}
+
+		error_log( "Aria: Immediate indexing completed {$success_count} items" );
+	}
+
+	/**
+	 * Handle test content search AJAX request.
+	 */
+	public function handle_test_content_search() {
+		// Verify nonce and capability
+		if ( ! check_ajax_referer( 'aria_content_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$query = isset( $_POST['query'] ) ? sanitize_text_field( $_POST['query'] ) : '';
+		if ( empty( $query ) ) {
+			wp_send_json_error( array( 'message' => __( 'Query cannot be empty.', 'aria' ) ) );
+		}
+
+		try {
+			$content_vectorizer = new Aria_Content_Vectorizer();
+			
+			$html = '<div class="aria-search-results">';
+			$html .= '<h4>' . sprintf( __( 'Deep Analysis for "%s"', 'aria' ), esc_html( $query ) ) . '</h4>';
+			
+			// Step 1: Test embedding generation for the query
+			$html .= '<div class="debug-section">';
+			$html .= '<h5>Step 1: Query Embedding Generation</h5>';
+			
+			// Check API configuration first
+			$ai_provider = get_option( 'aria_ai_provider', 'openai' );
+			$encrypted_api_key = get_option( 'aria_ai_api_key', '' );
+			
+			$html .= '<p><strong>AI Provider:</strong> ' . esc_html( $ai_provider ) . '</p>';
+			$html .= '<p><strong>API Key Configured:</strong> ' . ( ! empty( $encrypted_api_key ) ? 'Yes' : 'No' ) . '</p>';
+			
+			if ( empty( $encrypted_api_key ) ) {
+				$html .= '<p style="color: red;">❌ No API key configured. Please configure your AI provider in the AI Configuration page.</p>';
+				$html .= '</div>';
+				$html .= '</div>';
+				wp_send_json_success( array( 'html' => $html ) );
+				return;
+			}
+			
+			// Use reflection to access private method
+			$reflection = new ReflectionClass( $content_vectorizer );
+			$method = $reflection->getMethod( 'generate_embedding' );
+			$method->setAccessible( true );
+			
+			try {
+				$query_embedding = $method->invoke( $content_vectorizer, $query );
+				
+				if ( $query_embedding && is_array( $query_embedding ) ) {
+					$html .= '<p style="color: green;">✅ Query embedding generated successfully (' . count( $query_embedding ) . ' dimensions)</p>';
+					$html .= '<p>First 5 values: ' . implode( ', ', array_slice( $query_embedding, 0, 5 ) ) . '...</p>';
+				} else {
+					$html .= '<p style="color: red;">❌ Failed to generate embedding for query</p>';
+					$html .= '<p>Returned value type: ' . gettype( $query_embedding ) . '</p>';
+					if ( is_string( $query_embedding ) ) {
+						$html .= '<p>Error message: ' . esc_html( $query_embedding ) . '</p>';
+					}
+					$html .= '</div>';
+					$html .= '</div>';
+					wp_send_json_success( array( 'html' => $html ) );
+					return;
+				}
+			} catch ( Exception $e ) {
+				$html .= '<p style="color: red;">❌ Exception during embedding generation: ' . esc_html( $e->getMessage() ) . '</p>';
+				$html .= '</div>';
+				$html .= '</div>';
+				wp_send_json_success( array( 'html' => $html ) );
+				return;
+			}
+			$html .= '</div>';
+			
+			// Step 2: Get all vectors from database
+			$html .= '<div class="debug-section">';
+			$html .= '<h5>Step 2: Database Vector Analysis</h5>';
+			
+			global $wpdb;
+			$vectors_table = $wpdb->prefix . 'aria_content_vectors';
+			$all_vectors = $wpdb->get_results( "SELECT * FROM $vectors_table ORDER BY created_at DESC", ARRAY_A );
+			
+			$html .= '<p>Total vectors in database: ' . count( $all_vectors ) . '</p>';
+			
+			if ( empty( $all_vectors ) ) {
+				$html .= '<p style="color: red;">❌ No vectors found in database</p>';
+				$html .= '</div>';
+				$html .= '</div>';
+				wp_send_json_success( array( 'html' => $html ) );
+				return;
+			}
+			$html .= '</div>';
+			
+			// Step 3: Manual similarity calculation with detailed output
+			$html .= '<div class="debug-section">';
+			$html .= '<h5>Step 3: Manual Similarity Calculations</h5>';
+			
+			$similarities = array();
+			foreach ( $all_vectors as $vector ) {
+				$content_vector = json_decode( $vector['content_vector'], true );
+				if ( ! $content_vector || ! is_array( $content_vector ) ) {
+					continue;
+				}
+				
+				$similarity = $this->calculate_cosine_similarity( $query_embedding, $content_vector );
+				$metadata = json_decode( $vector['metadata'], true );
+				
+				$similarities[] = array(
+					'vector' => $vector,
+					'similarity' => $similarity,
+					'title' => $metadata['title'] ?? 'Untitled',
+					'content_preview' => wp_trim_words( $vector['content_text'], 10 )
+				);
+			}
+			
+			// Sort by similarity
+			usort( $similarities, function( $a, $b ) {
+				return $b['similarity'] <=> $a['similarity'];
+			});
+			
+			$html .= '<p>Top 10 similarity scores:</p>';
+			$html .= '<table style="width: 100%; border-collapse: collapse; margin: 10px 0;">';
+			$html .= '<thead><tr style="background: #f5f5f5;"><th style="padding: 8px; border: 1px solid #ddd;">Similarity</th><th style="padding: 8px; border: 1px solid #ddd;">Title</th><th style="padding: 8px; border: 1px solid #ddd;">Content Preview</th></tr></thead>';
+			
+			for ( $i = 0; $i < min( 10, count( $similarities ) ); $i++ ) {
+				$sim = $similarities[$i];
+				$similarity_percent = round( $sim['similarity'] * 100, 3 );
+				$html .= '<tr>';
+				$html .= '<td style="padding: 8px; border: 1px solid #ddd;">' . $similarity_percent . '%</td>';
+				$html .= '<td style="padding: 8px; border: 1px solid #ddd;">' . esc_html( $sim['title'] ) . '</td>';
+				$html .= '<td style="padding: 8px; border: 1px solid #ddd;">' . esc_html( $sim['content_preview'] ) . '</td>';
+				$html .= '</tr>';
+			}
+			$html .= '</table>';
+			$html .= '</div>';
+			
+			// Step 4: Look specifically for the Italian restaurant content
+			$html .= '<div class="debug-section">';
+			$html .= '<h5>Step 4: Italian Restaurant Content Analysis</h5>';
+			
+			$found_italian = false;
+			foreach ( $similarities as $sim ) {
+				if ( stripos( $sim['title'], 'mangia' ) !== false || stripos( $sim['content_preview'], 'mangia' ) !== false ) {
+					$found_italian = true;
+					$similarity_percent = round( $sim['similarity'] * 100, 3 );
+					$html .= '<p style="color: blue;">🔍 Found Italian content with ' . $similarity_percent . '% similarity:</p>';
+					$html .= '<p><strong>Title:</strong> ' . esc_html( $sim['title'] ) . '</p>';
+					$html .= '<p><strong>Content:</strong> ' . esc_html( $sim['vector']['content_text'] ) . '</p>';
+					
+					// Step 5: Deep embedding comparison
+					$html .= '<h6>🔬 Deep Embedding Analysis</h6>';
+					
+					// Check if "Bevi" appears in the content
+					$content_lower = strtolower( $sim['vector']['content_text'] );
+					$query_lower = strtolower( $query );
+					
+					if ( strpos( $content_lower, $query_lower ) !== false ) {
+						$html .= '<p style="color: green;">✅ "' . esc_html( $query ) . '" found in content (exact match)</p>';
+					} else {
+						$html .= '<p style="color: orange;">⚠️ "' . esc_html( $query ) . '" not found as exact match in content</p>';
+					}
+					
+					// Test different variations
+					$variations = array( 
+						$query,
+						strtolower( $query ),
+						ucfirst( strtolower( $query ) ),
+						strtoupper( $query ),
+						$query . '.',
+						$query . ',',
+					);
+					
+					$html .= '<p><strong>Testing query variations:</strong></p>';
+					$html .= '<ul>';
+					foreach ( $variations as $variation ) {
+						$var_embedding = $method->invoke( $content_vectorizer, $variation );
+						if ( $var_embedding ) {
+							$content_vector = json_decode( $sim['vector']['content_vector'], true );
+							$var_similarity = $this->calculate_cosine_similarity( $var_embedding, $content_vector );
+							$var_percent = round( $var_similarity * 100, 3 );
+							$html .= '<li>"' . esc_html( $variation ) . '": ' . $var_percent . '%</li>';
+						}
+					}
+					$html .= '</ul>';
+					
+					// Test if individual words in the content get better matches
+					$content_words = explode( ' ', $sim['vector']['content_text'] );
+					$word_similarities = array();
+					
+					foreach ( $content_words as $word ) {
+						$clean_word = trim( strtolower( preg_replace( '/[^\w\s]/', '', $word ) ) );
+						if ( strlen( $clean_word ) > 2 ) {
+							$word_embedding = $method->invoke( $content_vectorizer, $clean_word );
+							if ( $word_embedding ) {
+								$word_similarity = $this->calculate_cosine_similarity( $query_embedding, $word_embedding );
+								$word_similarities[$clean_word] = $word_similarity;
+							}
+						}
+					}
+					
+					// Show top 5 word matches
+					arsort( $word_similarities );
+					$top_words = array_slice( $word_similarities, 0, 5, true );
+					
+					$html .= '<p><strong>Top word similarities from content:</strong></p>';
+					$html .= '<ul>';
+					foreach ( $top_words as $word => $similarity ) {
+						$word_percent = round( $similarity * 100, 3 );
+						$html .= '<li>"' . esc_html( $word ) . '": ' . $word_percent . '%</li>';
+					}
+					$html .= '</ul>';
+					
+					break;
+				}
+			}
+			
+			if ( ! $found_italian ) {
+				$html .= '<p style="color: red;">❌ No Italian restaurant content found in top results</p>';
+			}
+			
+			$html .= '</div>';
+			$html .= '</div>';
+
+			wp_send_json_success( array( 'html' => $html ) );
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => __( 'Search test failed.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Handle clear search cache AJAX request.
+	 */
+	public function handle_clear_search_cache() {
+		// Verify nonce and capability
+		if ( ! check_ajax_referer( 'aria_content_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		try {
+			// Clear WordPress object cache
+			wp_cache_flush();
+
+			// Clear any custom search cache if it exists
+			global $wpdb;
+			$cache_table = $wpdb->prefix . 'aria_search_cache';
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$cache_table'" ) === $cache_table ) {
+				$wpdb->query( "TRUNCATE TABLE $cache_table" );
+			}
+
+			wp_send_json_success( array( 'message' => __( 'Search cache cleared successfully.', 'aria' ) ) );
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to clear cache.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Handle save content settings AJAX request.
+	 */
+	public function handle_save_content_settings() {
+		// Verify nonce and capability
+		if ( ! check_ajax_referer( 'aria_content_settings', 'aria_content_nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		try {
+			$excluded_types = isset( $_POST['excluded_content_types'] ) ? array_map( 'sanitize_text_field', $_POST['excluded_content_types'] ) : array();
+			
+			// Save excluded content types
+			update_option( 'aria_excluded_content_types', $excluded_types );
+
+			// Log privacy action
+			$content_filter = new Aria_Content_Filter();
+			$content_filter->log_privacy_action( 'settings_updated', array(
+				'excluded_types' => $excluded_types,
+				'user_id' => get_current_user_id(),
+			) );
+
+			wp_send_json_success( array( 'message' => __( 'Content settings saved successfully.', 'aria' ) ) );
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to save settings.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Handle individual content indexing.
+	 */
+	public function handle_index_single_item() {
+		// Verify nonce and capability
+		if ( ! check_ajax_referer( 'aria_content_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$content_id = absint( $_POST['content_id'] ?? 0 );
+		$content_type = sanitize_text_field( $_POST['content_type'] ?? '' );
+
+		if ( ! $content_id || ! $content_type ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid content ID or type.', 'aria' ) ) );
+		}
+
+		// Verify content exists and is public
+		$content_filter = new Aria_Content_Filter();
+		if ( ! $content_filter->is_content_public( $content_id, $content_type ) ) {
+			wp_send_json_error( array( 'message' => __( 'Content is not public or does not exist.', 'aria' ) ) );
+		}
+
+		try {
+			$content_vectorizer = new Aria_Content_Vectorizer();
+			$success = $content_vectorizer->index_content( $content_id, $content_type );
+
+			if ( $success ) {
+				$post_title = get_the_title( $content_id );
+				$message = sprintf( 
+					__( 'Successfully indexed "%s" (%s).', 'aria' ), 
+					$post_title ?: __( 'Untitled', 'aria' ),
+					ucfirst( $content_type )
+				);
+				wp_send_json_success( array( 'message' => $message ) );
+			} else {
+				wp_send_json_error( array( 'message' => __( 'Failed to index content. Please check your API configuration.', 'aria' ) ) );
+			}
+		} catch ( Exception $e ) {
+			error_log( "Aria: Failed to index {$content_type} {$content_id}: " . $e->getMessage() );
+			wp_send_json_error( array( 'message' => __( 'Failed to index content. Please try again.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Handle debug vectors AJAX request.
+	 */
+	public function handle_debug_vectors() {
+		// Verify nonce and capability
+		if ( ! check_ajax_referer( 'aria_content_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		try {
+			global $wpdb;
+			$vectors_table = $wpdb->prefix . 'aria_content_vectors';
+			
+			// Get all vectors from database
+			$vectors = $wpdb->get_results( "SELECT * FROM $vectors_table ORDER BY created_at DESC LIMIT 50", ARRAY_A );
+			
+			$html = '<div class="aria-debug-vectors">';
+			
+			if ( ! empty( $vectors ) ) {
+				$html .= '<h4>' . sprintf( __( 'Debug: %d Content Vectors (showing latest 50)', 'aria' ), count( $vectors ) ) . '</h4>';
+				$html .= '<div class="debug-vectors-list">';
+				
+				foreach ( $vectors as $vector ) {
+					$metadata = json_decode( $vector['metadata'], true );
+					$content_vector = json_decode( $vector['content_vector'], true );
+					
+					$html .= '<div class="debug-vector-item">';
+					$html .= '<div class="vector-header">';
+					$html .= '<strong>' . esc_html( $metadata['title'] ?? 'Untitled' ) . '</strong>';
+					$html .= '<span class="vector-type">(' . esc_html( $vector['content_type'] ) . ' #' . $vector['content_id'] . ', chunk ' . $vector['chunk_index'] . ')</span>';
+					$html .= '</div>';
+					
+					$html .= '<div class="vector-text">';
+					$html .= '<strong>Text:</strong> ' . esc_html( wp_trim_words( $vector['content_text'], 30 ) );
+					$html .= '</div>';
+					
+					$html .= '<div class="vector-info">';
+					$html .= '<span class="vector-date">Indexed: ' . esc_html( human_time_diff( strtotime( $vector['created_at'] ) ) ) . ' ago</span>';
+					$html .= '<span class="vector-size">Vector size: ' . ( is_array( $content_vector ) ? count( $content_vector ) : 'Invalid' ) . ' dimensions</span>';
+					$html .= '</div>';
+					
+					$html .= '</div>';
+				}
+				
+				$html .= '</div>';
+			} else {
+				$html .= '<p>' . __( 'No content vectors found in database.', 'aria' ) . '</p>';
+			}
+			
+			$html .= '</div>';
+			
+			wp_send_json_success( array( 'html' => $html ) );
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to debug vectors.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Calculate cosine similarity between two vectors.
+	 *
+	 * @param array $vector1 First vector.
+	 * @param array $vector2 Second vector.
+	 * @return float Similarity score (0-1).
+	 */
+	private function calculate_cosine_similarity( $vector1, $vector2 ) {
+		if ( count( $vector1 ) !== count( $vector2 ) ) {
+			return 0;
+		}
+
+		$dot_product = 0;
+		$magnitude1 = 0;
+		$magnitude2 = 0;
+
+		for ( $i = 0; $i < count( $vector1 ); $i++ ) {
+			$dot_product += $vector1[ $i ] * $vector2[ $i ];
+			$magnitude1 += $vector1[ $i ] * $vector1[ $i ];
+			$magnitude2 += $vector2[ $i ] * $vector2[ $i ];
+		}
+
+		$magnitude1 = sqrt( $magnitude1 );
+		$magnitude2 = sqrt( $magnitude2 );
+
+		if ( $magnitude1 == 0 || $magnitude2 == 0 ) {
+			return 0;
+		}
+
+		return $dot_product / ( $magnitude1 * $magnitude2 );
+	}
+
+	/**
+	 * Handle get dashboard data AJAX request.
+	 */
+	public function handle_get_dashboard_data() {
+		// Verify nonce and capability
+		if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'aria_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		try {
+			// Get real dashboard data
+			$dashboard_data = $this->get_real_dashboard_data();
+			
+			// Debug logging for dashboard data
+			error_log( 'Aria Dashboard Data Retrieved: ' . wp_json_encode( $dashboard_data ) );
+			
+			wp_send_json_success( $dashboard_data );
+		} catch ( Exception $e ) {
+			error_log( 'Aria Dashboard Data Error: ' . $e->getMessage() );
+			error_log( 'Aria Dashboard Data Error Stack: ' . $e->getTraceAsString() );
+			wp_send_json_error( array( 'message' => __( 'Failed to load dashboard data.', 'aria' ) ) );
+		}
+	}
+
+	/**
+	 * Get real dashboard data from database.
+	 *
+	 * @return array Dashboard data.
+	 */
+	private function get_real_dashboard_data() {
+		global $wpdb;
+
+		// Get analytics data
+		$today_start = date( 'Y-m-d 00:00:00' );
+		$yesterday_start = date( 'Y-m-d 00:00:00', strtotime( '-1 day' ) );
+
+		// Get conversation counts with enhanced debugging
+		$total_conversations = Aria_Database::get_conversations_count();
+		$conversations_today = Aria_Database::get_conversations_count( array(
+			'date_from' => $today_start,
+		) );
+		$conversations_yesterday = Aria_Database::get_conversations_count( array(
+			'date_from' => $yesterday_start,
+			'date_to' => $today_start,
+		) );
+		
+		// Debug logging for conversation counts
+		error_log( "Aria Conversation Counts - Total: $total_conversations, Today: $conversations_today, Yesterday: $conversations_yesterday" );
+		error_log( "Aria Date Filters - Today Start: $today_start, Yesterday Start: $yesterday_start" );
+		
+		// Check for any actual conversation data to debug fake data issues
+		global $wpdb;
+		$sample_conversations = $wpdb->get_results( $wpdb->prepare( 
+			"SELECT id, guest_name, guest_email, initial_question, created_at, status FROM {$wpdb->prefix}aria_conversations WHERE site_id = %d ORDER BY created_at DESC LIMIT 5",
+			get_current_blog_id()
+		), ARRAY_A );
+		error_log( "Aria Sample Conversations in DB: " . wp_json_encode( $sample_conversations ) );
+
+		// Calculate conversation growth
+		$conversation_growth = 0;
+		if ( $conversations_yesterday > 0 ) {
+			$conversation_growth = round( ( ( $conversations_today - $conversations_yesterday ) / $conversations_yesterday ) * 100, 1 );
+		}
+
+		// Get knowledge entries (check both new and legacy tables)
+		$knowledge_entries = Aria_Database::get_knowledge_entries( array( 'limit' => 9999 ) );
+		$knowledge_count = is_array( $knowledge_entries ) ? count( $knowledge_entries ) : 0;
+		
+		// Also check legacy knowledge base table for content
+		$legacy_table = $wpdb->prefix . 'aria_knowledge_base';
+		$legacy_count = (int) $wpdb->get_var( $wpdb->prepare( 
+			"SELECT COUNT(*) FROM $legacy_table WHERE site_id = %d",
+			get_current_blog_id()
+		) );
+		
+		// Also check WordPress content vectorization system using established method
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-content-vectorizer.php';
+		$content_vectorizer = new Aria_Content_Vectorizer();
+		$indexing_stats = $content_vectorizer->get_indexing_stats();
+		$total_vectors = $indexing_stats['total_vectors'] ?? 0;
+		
+		// For dashboard display, show unique content items (approximate by dividing by average chunks per item)
+		// Or we can show total vectors - let's use total vectors for now since that's what content indexing shows
+		$vectorized_content_count = $total_vectors;
+		
+		// Use the total count from all knowledge sources
+		$manual_knowledge_count = $knowledge_count + $legacy_count;
+		$total_knowledge_count = $manual_knowledge_count + $vectorized_content_count;
+		
+		// Enhanced debug logging for all knowledge sources
+		error_log( "Aria Knowledge Sources Debug:" );
+		error_log( "  - Manual entries (new table): $knowledge_count" );
+		error_log( "  - Manual entries (legacy table): $legacy_count" );
+		error_log( "  - WordPress vectorized content (total vectors): $vectorized_content_count" );
+		error_log( "  - Indexing stats: " . wp_json_encode( $indexing_stats ) );
+		error_log( "  - Total manual knowledge: $manual_knowledge_count" );
+		error_log( "  - TOTAL KNOWLEDGE COUNT: $total_knowledge_count" );
+		
+		// Sample data logging
+		if ( !empty( $knowledge_entries ) ) {
+			error_log( "Aria Knowledge Sample (new): " . wp_json_encode( array_slice( $knowledge_entries, 0, 2 ) ) );
+		}
+		if ( $legacy_count > 0 ) {
+			$legacy_sample = $wpdb->get_results( $wpdb->prepare(
+				"SELECT id, title, LEFT(content, 100) as content_preview FROM $legacy_table WHERE site_id = %d LIMIT 2",
+				get_current_blog_id()
+			), ARRAY_A );
+			error_log( "Aria Knowledge Sample (legacy): " . wp_json_encode( $legacy_sample ) );
+		}
+		if ( $vectorized_content_count > 0 ) {
+			$content_vectors_table = $wpdb->prefix . 'aria_content_vectors';
+			$vectorized_sample = $wpdb->get_results( 
+				"SELECT content_id, content_type, LEFT(content_text, 100) as content_preview 
+				 FROM $content_vectors_table 
+				 ORDER BY id DESC LIMIT 3",
+				ARRAY_A 
+			);
+			error_log( "Aria Vectorized Content Sample: " . wp_json_encode( $vectorized_sample ) );
+		}
+
+		// Get recent knowledge entries (last 7 days)
+		$recent_knowledge_count = 0;
+		if ( is_array( $knowledge_entries ) ) {
+			$seven_days_ago = date( 'Y-m-d H:i:s', strtotime( '-7 days' ) );
+			foreach ( $knowledge_entries as $entry ) {
+				if ( isset( $entry['created_at'] ) && $entry['created_at'] >= $seven_days_ago ) {
+					$recent_knowledge_count++;
+				}
+			}
+		}
+
+		// Calculate average response quality from actual data
+		// For now, we'll calculate based on conversation completion rate
+		$avg_response_quality = 0;
+		$quality_trend = 0;
+		if ( $total_conversations > 0 ) {
+			// Calculate completion rate as a proxy for quality
+			$completed_conversations = Aria_Database::get_conversations_count( array( 'status' => 'completed' ) );
+			$avg_response_quality = round( ( $completed_conversations / $total_conversations ) * 100 );
+			
+			// Calculate trend based on last 7 days vs previous 7 days
+			$week_ago = date( 'Y-m-d 00:00:00', strtotime( '-7 days' ) );
+			$two_weeks_ago = date( 'Y-m-d 00:00:00', strtotime( '-14 days' ) );
+			
+			$recent_completed = Aria_Database::get_conversations_count( array( 
+				'status' => 'completed',
+				'date_from' => $week_ago 
+			) );
+			$previous_completed = Aria_Database::get_conversations_count( array( 
+				'status' => 'completed',
+				'date_from' => $two_weeks_ago,
+				'date_to' => $week_ago
+			) );
+			
+			if ( $previous_completed > 0 ) {
+				$quality_trend = $recent_completed - $previous_completed;
+			}
+		}
+
+		// Calculate response time from actual conversation data
+		// For now, we'll use a default since we need to track actual response times
+		$avg_response_time = null; // No data available yet
+		$response_time_trend = null;
+
+		// Get license status
+		$admin = new Aria_Admin( 'aria', ARIA_VERSION );
+		$license_method = new ReflectionMethod( 'Aria_Admin', 'get_license_status' );
+		$license_method->setAccessible( true );
+		$license_status = $license_method->invoke( $admin );
+
+		// Get setup completion status
+		$api_configured = ! empty( get_option( 'aria_ai_api_key' ) );
+		$personality_configured = get_option( 'aria_personality_configured', false );
+		$design_configured = get_option( 'aria_design_configured', false );
+
+		// Calculate setup progress
+		$setup_steps_total = 4;
+		$setup_steps_completed = 0;
+		if ( $api_configured ) $setup_steps_completed++;
+		if ( $knowledge_count > 0 ) $setup_steps_completed++;
+		if ( $personality_configured ) $setup_steps_completed++;
+		if ( $design_configured ) $setup_steps_completed++;
+		$setup_progress = round( ( $setup_steps_completed / $setup_steps_total ) * 100 );
+
+		// Get recent conversations
+		$recent_conversations = Aria_Database::get_conversations( array( 'limit' => 5 ) );
+		
+		// Debug logging for conversations
+		error_log( 'Aria Recent Conversations Raw: ' . wp_json_encode( $recent_conversations ) );
+
+		// Format conversations for React component
+		$formatted_conversations = array();
+		if ( ! empty( $recent_conversations ) ) {
+			foreach ( $recent_conversations as $conversation ) {
+				$formatted_conversations[] = array(
+					'id' => $conversation['id'],
+					'guest_name' => $conversation['guest_name'] ?: 'Anonymous',
+					'status' => $conversation['status'] ?: 'closed',
+					'initial_question' => $conversation['initial_question'] ?: 'No message',
+					'created_at' => $conversation['created_at'],
+					'messages_count' => isset( $conversation['messages_count'] ) ? $conversation['messages_count'] : 0,
+				);
+			}
+		}
+		
+		// Debug logging for formatted conversations
+		error_log( 'Aria Formatted Conversations: ' . wp_json_encode( $formatted_conversations ) );
+
+		// Build setup steps
+		$setup_steps = array(
+			array(
+				'completed' => $api_configured,
+				'title' => __( 'AI Provider', 'aria' ),
+				'icon' => 'admin-settings',
+				'link' => admin_url( 'admin.php?page=aria-ai-config' ),
+			),
+			array(
+				'completed' => $knowledge_count > 0,
+				'title' => __( 'Knowledge Base', 'aria' ),
+				'icon' => 'book',
+				'link' => admin_url( 'admin.php?page=aria-knowledge' ),
+			),
+			array(
+				'completed' => $personality_configured,
+				'title' => __( 'Personality', 'aria' ),
+				'icon' => 'admin-appearance',
+				'link' => admin_url( 'admin.php?page=aria-personality' ),
+			),
+			array(
+				'completed' => $design_configured,
+				'title' => __( 'Appearance', 'aria' ),
+				'icon' => 'admin-customizer',
+				'link' => admin_url( 'admin.php?page=aria-design' ),
+			),
+		);
+
+		// Final dashboard data structure before returning to React
+		$final_data = array(
+			'conversationsToday' => $conversations_today,
+			'totalConversations' => $total_conversations,
+			'conversationGrowth' => $conversation_growth,
+			'knowledgeCount' => $total_knowledge_count,
+			'recentKnowledgeCount' => $recent_knowledge_count,
+			'avgResponseQuality' => $avg_response_quality,
+			'qualityTrend' => $quality_trend,
+			'avgResponseTime' => $avg_response_time,
+			'responseTimeTrend' => $response_time_trend,
+			'licenseStatus' => $license_status,
+			'setupProgress' => $setup_progress,
+			'setupStepsCompleted' => $setup_steps_completed,
+			'setupStepsTotal' => $setup_steps_total,
+			'recentConversations' => $formatted_conversations,
+			'setupSteps' => $setup_steps,
+			'apiConfigured' => $api_configured,
+			'personalityConfigured' => $personality_configured,
+			'designConfigured' => $design_configured,
+		);
+
+		// Data consistency validation
+		$this->validate_dashboard_data_consistency( $final_data );
+
+		// Final debug log - what's actually being sent to React
+		error_log( "=== ARIA DASHBOARD FINAL DATA BEING SENT TO REACT ===" );
+		error_log( "Conversations Today: {$final_data['conversationsToday']}" );
+		error_log( "Total Conversations: {$final_data['totalConversations']}" );
+		error_log( "Knowledge Count: {$final_data['knowledgeCount']}" );
+		error_log( "Recent Conversations Count: " . count( $final_data['recentConversations'] ) );
+		error_log( "API Configured: " . ( $final_data['apiConfigured'] ? 'YES' : 'NO' ) );
+		error_log( "=== END DASHBOARD DATA ===" );
+
+		return $final_data;
+	}
+
+	/**
+	 * Validate dashboard data consistency across all tables.
+	 *
+	 * @param array $dashboard_data The dashboard data to validate.
+	 */
+	private function validate_dashboard_data_consistency( $dashboard_data ) {
+		global $wpdb;
+		
+		error_log( "=== ARIA DATA CONSISTENCY VALIDATION ===" );
+		
+		// Check table existence
+		$tables_to_check = array(
+			'aria_conversations',
+			'aria_knowledge_entries', 
+			'aria_knowledge_base',
+			'aria_content_vectors'
+		);
+		
+		foreach ( $tables_to_check as $table_name ) {
+			$full_table_name = $wpdb->prefix . $table_name;
+			$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '$full_table_name'" );
+			
+			if ( $table_exists ) {
+				$row_count = $wpdb->get_var( "SELECT COUNT(*) FROM $full_table_name" );
+				error_log( "  ✓ Table $table_name exists with $row_count total rows" );
+				
+				// Check site-specific data for tables that have site_id
+				if ( in_array( $table_name, array( 'aria_conversations', 'aria_knowledge_entries', 'aria_knowledge_base' ) ) ) {
+					$site_count = $wpdb->get_var( $wpdb->prepare( 
+						"SELECT COUNT(*) FROM $full_table_name WHERE site_id = %d",
+						get_current_blog_id()
+					) );
+					error_log( "    → $site_count rows for current site (ID: " . get_current_blog_id() . ")" );
+				}
+			} else {
+				error_log( "  ✗ Table $table_name DOES NOT EXIST" );
+			}
+		}
+		
+		// Validate knowledge count calculation
+		error_log( "Knowledge Count Breakdown:" );
+		error_log( "  - Dashboard reports: {$dashboard_data['knowledgeCount']} total" );
+		
+		// Compare with content indexing page method
+		if ( class_exists( 'Aria_Content_Vectorizer' ) ) {
+			$content_vectorizer = new Aria_Content_Vectorizer();
+			$content_indexing_stats = $content_vectorizer->get_indexing_stats();
+			error_log( "  - Content indexing page shows: " . ( $content_indexing_stats['total_vectors'] ?? 0 ) . " vectors" );
+		}
+		
+		// Check WordPress content availability
+		$wp_posts_count = $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'publish' AND post_type IN ('post', 'page')" );
+		error_log( "  - WordPress has $wp_posts_count published posts/pages available for indexing" );
+		
+		// Validate conversation counts
+		error_log( "Conversation Count Validation:" );
+		error_log( "  - Dashboard reports: {$dashboard_data['totalConversations']} total, {$dashboard_data['conversationsToday']} today" );
+		
+		$direct_total = $wpdb->get_var( $wpdb->prepare( 
+			"SELECT COUNT(*) FROM {$wpdb->prefix}aria_conversations WHERE site_id = %d",
+			get_current_blog_id()
+		) );
+		error_log( "  - Direct query shows: $direct_total total conversations for current site" );
+		
+		error_log( "=== END VALIDATION ===" );
+	}
+
+	/**
+	 * Get AI configuration for React component
+	 */
+	public function handle_get_ai_config() {
+		// Verify nonce and permissions
+		if ( ! wp_verify_nonce( $_POST['nonce'], 'aria_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		// Get current settings
+		$provider = get_option( 'aria_ai_provider', 'openai' );
+		$api_key = get_option( 'aria_ai_api_key', '' );
+		$model_settings = get_option( 'aria_ai_model_settings', array() );
+
+		// Mask API key for display
+		$masked_key = '';
+		if ( ! empty( $api_key ) && class_exists( 'Aria_Security' ) ) {
+			$decrypted = Aria_Security::decrypt( $api_key );
+			if ( $decrypted ) {
+				$masked_key = substr( $decrypted, 0, 8 ) . str_repeat( '*', 20 ) . substr( $decrypted, -4 );
+			}
+		}
+
+		wp_send_json_success( array(
+			'provider' => $provider,
+			'masked_key' => $masked_key,
+			'model_settings' => $model_settings
+		) );
+	}
+
+	/**
+	 * Save AI configuration from React component
+	 */
+	public function handle_save_ai_config() {
+		// Verify nonce and permissions
+		if ( ! wp_verify_nonce( $_POST['nonce'], 'aria_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$provider = sanitize_text_field( $_POST['provider'] );
+		$api_key = sanitize_text_field( $_POST['api_key'] );
+		$model_settings = json_decode( stripslashes( $_POST['model_settings'] ), true );
+
+		// Update provider
+		update_option( 'aria_ai_provider', $provider );
+
+		// Update API key if provided
+		if ( ! empty( $api_key ) && ! strpos( $api_key, '*' ) ) {
+			if ( class_exists( 'Aria_Security' ) && Aria_Security::validate_api_key_format( $api_key, $provider ) ) {
+				$encrypted_key = Aria_Security::encrypt( $api_key );
+				update_option( 'aria_ai_api_key', $encrypted_key );
+			} else {
+				wp_send_json_error( array( 'message' => __( 'Invalid API key format.', 'aria' ) ) );
+			}
+		}
+
+		// Update model settings
+		if ( is_array( $model_settings ) ) {
+			update_option( 'aria_ai_model_settings', $model_settings );
+			
+			// Update specific model options
+			if ( $provider === 'openai' && isset( $model_settings['openai_model'] ) ) {
+				update_option( 'aria_openai_model', sanitize_text_field( $model_settings['openai_model'] ) );
+			} elseif ( $provider === 'gemini' && isset( $model_settings['gemini_model'] ) ) {
+				update_option( 'aria_gemini_model', sanitize_text_field( $model_settings['gemini_model'] ) );
+			}
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Configuration saved successfully!', 'aria' ) ) );
+	}
+
+	/**
+	 * Get usage statistics for React component
+	 */
+	public function handle_get_usage_stats() {
+		// Verify nonce and permissions
+		if ( ! wp_verify_nonce( $_POST['nonce'], 'aria_admin_nonce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		// Get usage statistics
+		$current_month = date( 'Y_m' );
+		$monthly_usage = get_option( 'aria_ai_usage_' . $current_month, 0 );
+		$usage_history = get_option( 'aria_ai_usage_history', array() );
+		$recent_activity = array_slice( array_reverse( $usage_history ), 0, 7 );
+
+		// Calculate estimated cost for OpenAI
+		$estimated_cost = 0;
+		$provider = get_option( 'aria_ai_provider', 'openai' );
+		if ( $provider === 'openai' && class_exists( 'Aria_OpenAI_Provider' ) ) {
+			$model = get_option( 'aria_openai_model', 'gpt-3.5-turbo' );
+			$estimated_cost = Aria_OpenAI_Provider::calculate_cost( $monthly_usage, $model );
+		}
+
+		wp_send_json_success( array(
+			'monthly_usage' => intval( $monthly_usage ),
+			'estimated_cost' => floatval( $estimated_cost ),
+			'recent_activity' => $recent_activity
+		) );
+	}
+}

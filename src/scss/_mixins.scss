@@ -1,0 +1,272 @@
+/**
+ * ARIA Design System - Mixins
+ * 
+ * @package Aria
+ * @version 2.0.0
+ */
+
+// ===================================
+// UTILITY MIXINS
+// ===================================
+
+// Smooth transition mixin
+@mixin aria-transition($properties: all, $duration: $aria-transition-base, $easing: ease) {
+  transition: $properties $duration $easing;
+}
+
+// Hover lift effect
+@mixin aria-hover-lift($distance: -2px) {
+  @include aria-transition(transform);
+  
+  &:hover {
+    transform: translateY($distance);
+  }
+}
+
+// Focus ring
+@mixin aria-focus-ring($color: $aria-primary, $width: 3px, $opacity: 0.2) {
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 $width rgba($color, $opacity);
+  }
+}
+
+// ===================================
+// BUTTON MIXINS
+// ===================================
+
+// Button Base
+@mixin aria-button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $aria-space-2;
+  padding: $aria-space-3 $aria-space-6;
+  font-family: $aria-font-primary;
+  font-size: $aria-text-base;
+  font-weight: $aria-font-semibold;
+  line-height: $aria-leading-tight;
+  text-decoration: none;
+  border-radius: $aria-radius-base;
+  border: none;
+  cursor: pointer;
+  transition: all $aria-transition-base ease;
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba($aria-primary, 0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Primary Button
+@mixin aria-button-primary {
+  @include aria-button-base;
+  background: linear-gradient(135deg, $aria-primary 0%, $aria-primary-dark 100%);
+  color: $aria-white;
+  border: 2px solid $aria-primary;
+  
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, $aria-primary-hover 0%, $aria-primary 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($aria-primary, 0.25);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+// Secondary Button
+@mixin aria-button-secondary {
+  @include aria-button-base;
+  background: $aria-white;
+  color: $aria-navy;
+  border: 2px solid $aria-gray-300;
+  
+  &:hover:not(:disabled) {
+    background: $aria-gray-50;
+    border-color: $aria-primary;
+    color: $aria-primary;
+  }
+}
+
+// Ghost Button
+@mixin aria-button-ghost {
+  @include aria-button-base;
+  background: transparent;
+  color: $aria-primary;
+  padding: $aria-space-2 $aria-space-4;
+  
+  &:hover:not(:disabled) {
+    background: $aria-primary-light;
+  }
+}
+
+// ===================================
+// CARD MIXINS
+// ===================================
+
+// Base Card
+@mixin aria-card-base {
+  background: $aria-white;
+  border: 1px solid $aria-gray-200;
+  border-radius: $aria-radius-lg;
+  padding: $aria-space-6;
+  transition: all $aria-transition-base ease;
+}
+
+// Interactive Card
+@mixin aria-card-interactive {
+  @include aria-card-base;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $aria-shadow-lg;
+    border-color: $aria-gray-300;
+  }
+}
+
+// Professional Card with Gradient
+@mixin aria-card-professional {
+  background: linear-gradient(135deg, $aria-white 0%, $aria-gray-50 100%);
+  border: 2px solid $aria-gray-200;
+  border-radius: $aria-radius-xl;
+  padding: $aria-space-8;
+  transition: all $aria-transition-base ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: $aria-shadow-sm;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $aria-primary 0%, $aria-primary-dark 100%);
+    opacity: 0;
+    transition: opacity $aria-transition-base ease;
+  }
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba($aria-primary, 0.15);
+    border-color: $aria-primary;
+    
+    &::before {
+      opacity: 1;
+    }
+  }
+}
+
+// ===================================
+// FORM MIXINS
+// ===================================
+
+// Form Input
+@mixin aria-form-input {
+  width: 100%;
+  padding: $aria-space-3 $aria-space-4;
+  font-family: $aria-font-primary;
+  font-size: $aria-text-base;
+  line-height: $aria-leading-normal;
+  color: $aria-navy;
+  background: $aria-white;
+  border: 2px solid $aria-gray-300;
+  border-radius: $aria-radius-base;
+  transition: all $aria-transition-base ease;
+  
+  &:focus {
+    outline: none;
+    border-color: $aria-primary;
+    box-shadow: 0 0 0 3px rgba($aria-primary, 0.1);
+  }
+  
+  &::placeholder {
+    color: $aria-gray-500;
+  }
+}
+
+// ===================================
+// LAYOUT MIXINS
+// ===================================
+
+// Container
+@mixin aria-container($max-width: 1600px) {
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 0 $aria-space-6;
+  
+  @media (min-width: $aria-screen-md) {
+    padding: 0 $aria-space-8;
+  }
+}
+
+// Grid System
+@mixin aria-grid($columns: 1, $gap: $aria-space-6) {
+  display: grid;
+  gap: $gap;
+  grid-template-columns: repeat($columns, 1fr);
+}
+
+// Responsive Grid
+@mixin aria-responsive-grid($mobile: 1, $tablet: 2, $desktop: 3, $gap: $aria-space-6) {
+  @include aria-grid($mobile, $gap);
+  
+  @media (min-width: $aria-screen-md) {
+    grid-template-columns: repeat($tablet, 1fr);
+  }
+  
+  @media (min-width: $aria-screen-lg) {
+    grid-template-columns: repeat($desktop, 1fr);
+  }
+}
+
+// ===================================
+// BADGE MIXINS
+// ===================================
+
+@mixin aria-badge-base {
+  display: inline-flex;
+  align-items: center;
+  padding: $aria-space-1 $aria-space-3;
+  font-size: $aria-text-xs;
+  font-weight: $aria-font-semibold;
+  border-radius: $aria-radius-full;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@mixin aria-badge-success {
+  @include aria-badge-base;
+  background: $aria-success-light;
+  color: $aria-success-dark;
+  border: 1px solid $aria-success;
+}
+
+@mixin aria-badge-warning {
+  @include aria-badge-base;
+  background: $aria-warning-light;
+  color: $aria-warning-dark;
+  border: 1px solid $aria-warning;
+}
+
+@mixin aria-badge-error {
+  @include aria-badge-base;
+  background: $aria-error-light;
+  color: $aria-error-dark;
+  border: 1px solid $aria-error;
+}
+
+@mixin aria-badge-info {
+  @include aria-badge-base;
+  background: $aria-info-light;
+  color: $aria-info-dark;
+  border: 1px solid $aria-info;
+}

@@ -1,0 +1,154 @@
+// AI Configuration Page Styles
+// Specific styles for AI Config React components
+
+.aria-ai-config {
+  // React container styles matching Dashboard
+  .aria-ai-config-react {
+    // Header styles matching Dashboard
+    .aria-ai-config-header {
+      margin-bottom: $aria-space-6;
+      
+      h1 {
+        font-size: 28px !important;
+        font-weight: 700 !important;
+        color: #1e1e1e !important;
+        margin-bottom: 8px !important;
+      }
+      
+      p {
+        font-size: 16px !important;
+        color: #6c757d !important;
+        line-height: 1.5 !important;
+        margin-bottom: 0 !important;
+      }
+    }
+  }
+
+  // Grid layout for provider and API key cards
+  .aria-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $aria-space-6;
+    margin-bottom: $aria-space-8;
+    
+    @media (min-width: $aria-screen-lg) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  // Model configuration grid
+  .aria-model-config-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $aria-space-6;
+    
+    @media (min-width: $aria-screen-lg) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  // API key help links
+  a {
+    color: $aria-primary;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  // Recent activity list
+  .aria-recent-activity {
+    .activity-item {
+      display: flex;
+      justify-content: space-between;
+      padding: $aria-space-3 0;
+      border-bottom: 1px solid $aria-gray-200;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      .activity-time {
+        color: $aria-gray-600;
+        font-size: $aria-text-sm;
+      }
+      
+      .activity-tokens {
+        color: $aria-gray-700;
+        font-weight: $aria-font-medium;
+      }
+    }
+  }
+
+  // Metric card value styles
+  .metric-item {
+    text-align: center;
+    padding: $aria-space-4 0;
+    
+    &.large {
+      .item-value {
+        font-size: $aria-text-3xl;
+        font-weight: $aria-font-bold;
+      }
+    }
+    
+    .item-value {
+      display: block;
+      font-size: $aria-text-2xl;
+      font-weight: $aria-font-semibold;
+      margin-bottom: $aria-space-2;
+      
+      &.primary {
+        color: $aria-primary;
+      }
+      
+      &.secondary {
+        color: $aria-success;
+      }
+    }
+    
+    .item-label {
+      display: block;
+      color: $aria-gray-600;
+      font-size: $aria-text-sm;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  // Code display
+  code {
+    background: $aria-gray-100;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: $aria-text-sm;
+    font-family: 'Monaco', 'Consolas', monospace;
+  }
+
+  // Notice adjustments for AI Config context
+  .components-notice {
+    margin-bottom: $aria-space-4;
+  }
+
+  // Color control wrappers for provider settings
+  .aria-color-control {
+    margin-bottom: $aria-space-6;
+    
+    label {
+      display: block;
+      margin-bottom: $aria-space-2;
+      font-weight: $aria-font-medium;
+    }
+    
+    .components-base-control__help {
+      margin-top: $aria-space-2;
+      margin-bottom: $aria-space-3;
+    }
+  }
+
+  // Button alignment
+  .aria-btn-primary {
+    margin-top: $aria-space-2;
+  }
+}

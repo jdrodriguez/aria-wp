@@ -1,0 +1,40 @@
+services:
+  wordpress:
+    image: wordpress:6-php8.2-apache
+    container_name: aria-wordpress
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_DEBUG_LOG: 1
+      WORDPRESS_DEBUG_DISPLAY: 0
+    volumes:
+      - ./:/var/www/html/wp-content/plugins/aria
+    depends_on:
+      - db
+    networks:
+      - aria-network
+
+  db:
+    image: mariadb:10.11
+    container_name: aria-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - aria-network
+
+volumes:
+  db_data:
+
+networks:
+  aria-network:
+    driver: bridge

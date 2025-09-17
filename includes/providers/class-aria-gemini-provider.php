@@ -1,0 +1,336 @@
+<?php
+/**
+ * Google Gemini Provider
+ *
+ * @package    Aria
+ * @subpackage Aria/includes/providers
+ */
+
+/**
+ * Google Gemini API provider implementation.
+ */
+class Aria_Gemini_Provider extends Aria_AI_Provider_Base {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param string $api_key Gemini API key.
+	 */
+	public function __construct( $api_key ) {
+		$this->model = get_option( 'aria_gemini_model', 'gemini-1.5-flash-8b' );
+		$this->api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' . $this->model . ':generateContent';
+		parent::__construct( $api_key );
+	}
+
+	/**
+	 * Authenticate with Google Gemini.
+	 *
+	 * @param string $api_key API key.
+	 * @return bool Success status.
+	 */
+	public function authenticate( $api_key ) {
+		if ( empty( $api_key ) ) {
+			return false;
+		}
+
+		// Decrypt if encrypted
+		if ( class_exists( 'Aria_Security' ) ) {
+			$decrypted = Aria_Security::decrypt( $api_key );
+			if ( ! empty( $decrypted ) ) {
+				$api_key = $decrypted;
+			}
+		}
+
+		$this->api_key = $api_key;
+		return true;
+	}
+
+	/**
+	 * Generate response from Gemini.
+	 *
+	 * @param string $prompt The prompt.
+	 * @param string $context Conversation context.
+	 * @return string AI response.
+	 * @throws Exception If request fails.
+	 */
+	public function generate_response( $prompt, $context ) {
+		$this->check_rate_limit();
+
+		// Check if the prompt already contains role and knowledge base info
+		if ( strpos( $prompt, 'You are Aria' ) === 0 ) {
+			// Use our complete prompt that includes knowledge base
+			$full_prompt = $prompt;
+			
+			if ( ! empty( $context ) ) {
+				$full_prompt .= "\n\nPrevious conversation:\n" . $context;
+			}
+		} else {
+			// Fallback to old behavior
+			$full_prompt = Aria_Personality::generate_prompt_instructions() . "\n\n";
+			
+			if ( ! empty( $context ) ) {
+				$full_prompt .= "Previous conversation:\n" . $context . "\n\n";
+			}
+			
+			$full_prompt .= "User: " . $this->prepare_prompt( $prompt ) . "\n";
+			$full_prompt .= "Assistant:";
+		}
+
+		$request_data = array(
+			'contents' => array(
+				array(
+					'parts' => array(
+						array(
+							'text' => $full_prompt,
+						),
+					),
+				),
+			),
+			'generationConfig' => array(
+				'temperature'     => $this->temperature,
+				'topK'            => 1,
+				'topP'            => 1,
+				'maxOutputTokens' => $this->max_tokens,
+				'stopSequences'   => array(),
+			),
+			'safetySettings' => array(
+				array(
+					'category'  => 'HARM_CATEGORY_HARASSMENT',
+					'threshold' => 'BLOCK_MEDIUM_AND_ABOVE',
+				),
+				array(
+					'category'  => 'HARM_CATEGORY_HATE_SPEECH',
+					'threshold' => 'BLOCK_MEDIUM_AND_ABOVE',
+				),
+				array(
+					'category'  => 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+					'threshold' => 'BLOCK_MEDIUM_AND_ABOVE',
+				),
+				array(
+					'category'  => 'HARM_CATEGORY_DANGEROUS_CONTENT',
+					'threshold' => 'BLOCK_MEDIUM_AND_ABOVE',
+				),
+			),
+		);
+
+		try {
+			// Gemini uses API key as URL parameter
+			$endpoint = $this->api_endpoint . '?key=' . $this->api_key;
+
+			$response_data = $this->make_request( $endpoint, $request_data );
+
+			if ( ! isset( $response_data['candidates'][0]['content']['parts'][0]['text'] ) ) {
+				throw new Exception( 'Invalid response format from Gemini' );
+			}
+
+			$response = $response_data['candidates'][0]['content']['parts'][0]['text'];
+
+			// Check for safety ratings
+			if ( isset( $response_data['candidates'][0]['finishReason'] ) && 
+			     'SAFETY' === $response_data['candidates'][0]['finishReason'] ) {
+				throw new Exception( 'Response blocked due to safety filters' );
+			}
+
+			// Log usage
+			$this->log_usage(
+				array( 'prompt' => $prompt ),
+				array(
+					'response' => $response,
+					'usage'    => array(
+						'total_tokens' => $this->estimate_tokens( $full_prompt . $response ),
+					),
+				)
+			);
+
+			return trim( $response );
+
+		} catch ( Exception $e ) {
+			// Log error
+			error_log( 'Aria Gemini Error: ' . $e->getMessage() );
+			throw $e;
+		}
+	}
+
+	/**
+	 * Test Gemini connection.
+	 *
+	 * @return bool Connection status.
+	 */
+	public function test_connection() {
+		try {
+			// Make a simple API call to test the key
+			$endpoint = $this->api_endpoint . '?key=' . $this->api_key;
+			
+			$request_data = array(
+				'contents' => array(
+					array(
+						'parts' => array(
+							array(
+								'text' => 'Hello, this is a test. Please respond with "Connection successful."',
+							),
+						),
+					),
+				),
+				'generationConfig' => array(
+					'temperature'     => 0.1,
+					'maxOutputTokens' => 50,
+				),
+			);
+
+			$response_data = $this->make_request( $endpoint, $request_data );
+			
+			return isset( $response_data['candidates'][0]['content']['parts'][0]['text'] );
+		} catch ( Exception $e ) {
+			error_log( 'Aria Gemini Test Connection Error: ' . $e->getMessage() );
+			return false;
+		}
+	}
+
+	/**
+	 * Get available Gemini models.
+	 *
+	 * @return array Available models.
+	 */
+	public static function get_available_models() {
+		return array(
+			'gemini-1.5-flash-8b' => array(
+				'label'       => 'Gemini 1.5 Flash-8B',
+				'description' => 'Ultra-compact model optimized for efficiency. Perfect for high-volume customer queries, FAQs, and straightforward conversations. Delivers fast responses at minimal cost.',
+				'max_tokens'  => 8192,
+				'cost_level'  => 'low',
+				'cost_note'   => 'Lowest cost - Free tier (2 RPM), then $0.0375 per million tokens',
+			),
+			'gemini-2.0-flash' => array(
+				'label'       => 'Gemini 2.0 Flash',
+				'description' => 'Latest generation Flash model with enhanced capabilities. Excellent balance of speed, intelligence, and multimodal understanding. Ideal for most business conversations.',
+				'max_tokens'  => 8192,
+				'cost_level'  => 'medium',
+				'cost_note'   => 'Moderate cost - Free tier available, competitive pricing',
+			),
+			'gemini-2.5-flash-lite-preview-06-17' => array(
+				'label'       => 'Gemini 2.5 Flash Lite Preview',
+				'description' => 'Latest experimental model with cutting-edge capabilities. Preview release with advanced features and improvements. Best for testing next-generation AI capabilities.',
+				'max_tokens'  => 8192,
+				'cost_level'  => 'high',
+				'cost_note'   => '⚠️ Premium pricing - $0.10/$0.40 per million tokens (2.7x more than Flash-8B)',
+			),
+		);
+	}
+
+	/**
+	 * Estimate token usage.
+	 *
+	 * @param string $text Text to estimate.
+	 * @return int Estimated tokens.
+	 */
+	private function estimate_tokens( $text ) {
+		// Rough estimation for Gemini
+		return ceil( strlen( $text ) / 4 );
+	}
+
+	/**
+	 * Calculate cost estimate.
+	 *
+	 * @param int    $tokens Token count.
+	 * @param string $model Model name.
+	 * @return float Estimated cost in USD.
+	 */
+	public static function calculate_cost( $tokens, $model = 'gemini-1.5-flash-8b' ) {
+		// Gemini pricing per 1M tokens (averaged input/output)
+		$pricing = array(
+			'gemini-1.5-flash-8b' => 0.0375,  // $0.0375 per 1M tokens
+			'gemini-2.0-flash'    => 0.075,   // Estimated based on typical Flash pricing
+			'gemini-2.5-flash-lite-preview-06-17' => 0.25,    // ($0.10 input + $0.40 output) / 2
+		);
+		
+		$cost_per_million = isset( $pricing[ $model ] ) ? $pricing[ $model ] : $pricing['gemini-1.5-flash-8b'];
+		
+		return ( $tokens / 1000000 ) * $cost_per_million;
+	}
+
+	/**
+	 * Generate embedding for a single text.
+	 *
+	 * @param string $text Text to embed.
+	 * @return array|false Embedding vector or false on failure.
+	 */
+	public function generate_embedding( $text ) {
+		try {
+			$embeddings = $this->create_embeddings( array( $text ) );
+			if ( isset( $embeddings['data'][0]['embedding'] ) ) {
+				return $embeddings['data'][0]['embedding'];
+			}
+			return false;
+		} catch ( Exception $e ) {
+			error_log( 'Aria Gemini Embedding Error: ' . $e->getMessage() );
+			return false;
+		}
+	}
+
+	/**
+	 * Create embeddings for text chunks.
+	 *
+	 * @param array $texts Array of text strings to create embeddings for.
+	 * @return array Array of embedding vectors.
+	 * @throws Exception If embeddings request fails.
+	 */
+	public function create_embeddings( $texts ) {
+		if ( empty( $texts ) ) {
+			return array();
+		}
+
+		$this->check_rate_limit();
+
+		// Gemini embeddings model and endpoint
+		$embedding_model = get_option( 'aria_gemini_embedding_model', 'text-embedding-004' );
+		$embeddings_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' . $embedding_model . ':embedContent';
+
+		$embeddings = array();
+
+		try {
+			// Process each text individually as Gemini requires single text per request
+			foreach ( $texts as $text ) {
+				$request_data = array(
+					'content' => array(
+						'parts' => array(
+							array(
+								'text' => $text,
+							),
+						),
+					),
+				);
+
+				// Gemini uses API key as URL parameter
+				$endpoint = $embeddings_endpoint . '?key=' . $this->api_key;
+
+				$response_data = $this->make_request( $endpoint, $request_data );
+
+				if ( ! isset( $response_data['embedding']['values'] ) ) {
+					throw new Exception( 'Invalid embeddings response format from Gemini' );
+				}
+
+				$embeddings[] = $response_data['embedding']['values'];
+			}
+
+			// Log usage for embeddings
+			$this->log_usage(
+				array( 'texts' => $texts ),
+				array(
+					'embeddings_count' => count( $embeddings ),
+					'model' => $embedding_model,
+				)
+			);
+
+			// Return in the expected format for vector engine
+			return array(
+				'data' => array_map( function( $embedding ) {
+					return array( 'embedding' => $embedding );
+				}, $embeddings )
+			);
+
+		} catch ( Exception $e ) {
+			error_log( 'Aria Gemini Embeddings Error: ' . $e->getMessage() );
+			throw $e;
+		}
+	}
+}

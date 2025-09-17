@@ -1,0 +1,285 @@
+/**
+ * ARIA Design System - Professional Card Components
+ * 
+ * @package Aria
+ * @version 2.0.0
+ */
+
+// ===================================
+// PROFESSIONAL CARD SYSTEM
+// ===================================
+
+// Base Card with enhanced interactions
+.aria-card {
+  @include aria-card-base;
+  
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &--interactive {
+    @include aria-card-interactive;
+    
+    cursor: pointer;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    }
+    
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba($aria-primary, 0.3);
+    }
+    
+    &:active {
+      transform: translateY(-1px);
+      transition-duration: 0.1s;
+    }
+  }
+  
+  &--professional {
+    @include aria-card-professional;
+    
+    // Professional elevation
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.08),
+      0 1px 2px rgba(0, 0, 0, 0.04);
+    
+    &:hover {
+      box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.1),
+        0 3px 10px rgba(0, 0, 0, 0.08);
+    }
+  }
+}
+
+// Enhanced Card Header
+.aria-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $aria-space-6;
+  padding-bottom: $aria-space-4;
+  border-bottom: 2px solid $aria-gray-100;
+  position: relative;
+  
+  // Subtle border accent
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, $aria-primary 0%, transparent 100%);
+  }
+}
+
+.aria-card__title {
+  display: flex;
+  align-items: center;
+  gap: $aria-space-3;
+  margin: 0;
+  font-size: $aria-text-xl;
+  font-weight: $aria-font-bold;
+  color: $aria-navy;
+  line-height: $aria-leading-tight;
+}
+
+.aria-card__actions {
+  display: flex;
+  gap: $aria-space-2;
+  align-items: center;
+}
+
+// Card Body with enhanced typography
+.aria-card__body {
+  line-height: $aria-leading-relaxed;
+  
+  p {
+    color: $aria-gray-700;
+    margin-bottom: $aria-space-4;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// Enhanced Card Footer
+.aria-card__footer {
+  margin-top: $aria-space-6;
+  padding-top: $aria-space-4;
+  border-top: 1px solid $aria-gray-200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $aria-space-4;
+}
+
+// ===================================
+// ENHANCED METRIC CARDS
+// ===================================
+
+.aria-metric-card {
+  @include aria-card-interactive;
+  @extend .aria-card--professional;
+  
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  
+  // Top border accent that appears on hover
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $aria-primary 0%, $aria-primary-dark 100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    transform: translateX(-100%);
+  }
+  
+  &:hover {
+    transform: translateY(-4px);
+    
+    &::before {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    
+    .aria-metric-card__icon {
+      transform: scale(1.1);
+      background: linear-gradient(135deg, $aria-primary 0%, $aria-primary-dark 100%);
+      color: $aria-white;
+    }
+    
+    .aria-metric-card__value {
+      color: $aria-primary-dark;
+    }
+  }
+}
+
+.aria-metric-card__icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto $aria-space-4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, $aria-primary-light 0%, rgba($aria-primary-light, 0.8) 100%);
+  color: $aria-primary;
+  border-radius: $aria-radius-lg;
+  font-size: $aria-text-2xl;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid $aria-primary;
+  box-shadow: 0 4px 12px rgba($aria-primary, 0.15);
+  
+  svg {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.aria-metric-card__value {
+  font-size: $aria-text-5xl;
+  font-weight: $aria-font-extrabold;
+  color: $aria-primary;
+  line-height: $aria-leading-none;
+  margin-bottom: $aria-space-2;
+  letter-spacing: -0.02em;
+  transition: color 0.3s ease;
+  
+  &--secondary {
+    color: $aria-navy;
+  }
+}
+
+.aria-metric-card__label {
+  font-size: $aria-text-sm;
+  font-weight: $aria-font-semibold;
+  color: $aria-gray-600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: $aria-space-2;
+}
+
+.aria-metric-card__change {
+  display: inline-flex;
+  align-items: center;
+  gap: $aria-space-1;
+  margin-top: $aria-space-4;
+  padding: $aria-space-1 $aria-space-3;
+  border-radius: $aria-radius-full;
+  font-size: $aria-text-sm;
+  font-weight: $aria-font-semibold;
+  border: 1px solid transparent;
+  
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  &--positive {
+    background: linear-gradient(135deg, $aria-success-light 0%, lighten($aria-success-light, 3%) 100%);
+    color: $aria-success-dark;
+    border-color: $aria-success;
+  }
+  
+  &--negative {
+    background: linear-gradient(135deg, $aria-error-light 0%, lighten($aria-error-light, 3%) 100%);
+    color: $aria-error-dark;
+    border-color: $aria-error;
+  }
+}
+
+// ===================================
+// SPECIALIZED DASHBOARD CARDS
+// ===================================
+
+// Empty State Card
+.aria-section-empty {
+  text-align: center;
+  padding: $aria-space-12 $aria-space-8;
+  
+  .aria-empty-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto $aria-space-6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, $aria-gray-100 0%, $aria-gray-50 100%);
+    color: $aria-gray-400;
+    border-radius: $aria-radius-xl;
+    border: 2px dashed $aria-gray-300;
+    
+    svg {
+      width: 40px;
+      height: 40px;
+    }
+  }
+  
+  .aria-empty-content {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+  
+  .aria-empty-title {
+    font-size: $aria-text-lg;
+    font-weight: $aria-font-bold;
+    color: $aria-gray-700;
+    margin-bottom: $aria-space-2;
+  }
+  
+  .aria-empty-description {
+    font-size: $aria-text-base;
+    color: $aria-gray-600;
+    margin-bottom: $aria-space-6;
+    line-height: $aria-leading-relaxed;
+  }
+}

@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMP Brand Identity - Colors & Typography</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #F8FAFC;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #1A2842;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .subtitle {
+            color: #64748B;
+            font-size: 1.25rem;
+            margin-bottom: 40px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: #1A2842;
+            font-size: 1.5rem;
+            margin-bottom: 24px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .color-card {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .color-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .color-swatch {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .color-info {
+            background: white;
+            padding: 16px;
+            border-top: 1px solid #E2E8F0;
+        }
+        
+        .color-name {
+            font-weight: 600;
+            color: #1A2842;
+            margin-bottom: 4px;
+        }
+        
+        .color-hex {
+            color: #64748B;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+        
+        .color-description {
+            color: #64748B;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        
+        /* Typography Section */
+        .font-showcase {
+            margin-bottom: 40px;
+            padding: 24px;
+            background: #F8FAFC;
+            border-radius: 8px;
+        }
+        
+        .font-header {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1A2842;
+            margin-bottom: 8px;
+        }
+        
+        .font-description {
+            color: #64748B;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .font-samples {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid #E2E8F0;
+        }
+        
+        .font-inter {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .font-ibm-plex {
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+        
+        .font-jetbrains {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .type-scale {
+            margin-bottom: 32px;
+        }
+        
+        .type-sample {
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        
+        .type-sample:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .type-label {
+            font-size: 12px;
+            color: #64748B;
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Demo Components */
+        .demo-section {
+            margin-top: 40px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .btn-primary {
+            background: #0066FF;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0052CC;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #1A2842;
+            border: 2px solid #E2E8F0;
+        }
+        
+        .btn-secondary:hover {
+            background: #F8FAFC;
+        }
+        
+        .btn-success {
+            background: #10B981;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #F59E0B;
+            color: white;
+        }
+        
+        .btn-error {
+            background: #EF4444;
+            color: white;
+        }
+        
+        .status-badges {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .badge-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        
+        .badge-warning {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+        
+        .badge-error {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+        
+        .badge-info {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+        
+        .card-demo {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            color: #1A2842;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .card-text {
+            color: #64748B;
+            line-height: 1.6;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Dark Theme Demo */
+        .dark-theme-demo {
+            background: #0F172A;
+            color: #F1F5F9;
+            padding: 32px;
+            border-radius: 12px;
+            margin-top: 24px;
+        }
+        
+        .dark-card {
+            background: #1E293B;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 16px;
+        }
+        
+        .text-light {
+            color: #F1F5F9;
+        }
+        
+        .text-secondary-light {
+            color: #94A3B8;
+        }
+        
+        /* Typography specific styles */
+        .h1-demo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #1A2842;
+        }
+        
+        .h2-demo {
+            font-size: 2rem;
+            font-weight: 600;
+            line-height: 1.3;
+            color: #1A2842;
+        }
+        
+        .h3-demo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #1A2842;
+        }
+        
+        .h4-demo {
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #1A2842;
+        }
+        
+        .body1-demo {
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.6;
+            color: #1A2842;
+        }
+        
+        .body2-demo {
+            font-size: 0.875rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #64748B;
+        }
+        
+        .caption-demo {
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1.4;
+            color: #64748B;
+        }
+        
+        .code-demo {
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: #1A2842;
+            background: #F1F5F9;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .report-sample {
+            background: #F8FAFC;
+            padding: 24px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        
+        .report-title {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1A2842;
+            margin-bottom: 16px;
+        }
+        
+        .report-body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #1A2842;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>COMP Brand Identity</h1>
+        <p class="subtitle">Complete Visual Guide - Colors & Typography</p>
+        
+        <!-- Typography Section -->
+        <div class="section">
+            <h2>Typography System</h2>
+            
+            <!-- Inter Font -->
+            <div class="font-showcase">
+                <div class="font-header font-inter">Inter - Primary Font</div>
+                <div class="font-description">Modern, highly legible, excellent for interfaces. Used for all UI elements, headers, and body text.</div>
+                <div class="font-samples">
+                    <div class="type-sample">
+                        <div class="type-label">Heading 1 • 2.5rem • 700 weight</div>
+                        <div class="h1-demo font-inter">Compliance Management System</div>
+                    </div>
+                    <div class="type-sample">
+                        <div class="type-label">Heading 2 • 2rem • 600 weight</div>
+                        <div class="h2-demo font-inter">Incident Reports Dashboard</div>
+                    </div>
+                    <div class="type-sample">
+                        <div class="type-label">Heading 3 • 1.5rem • 600 weight</div>
+                        <div class="h3-demo font-inter">Recent Violations Overview</div>
+                    </div>
+                    <div class="type-sample">
+                        <div class="type-label">Body 1 • 1rem • 400 weight</div>
+                        <div class="body1-demo font-inter">COMP provides a comprehensive solution for managing employee incidents and compliance reporting. Our platform ensures consistent documentation and fair disciplinary processes across your organization.</div>
+                    </div>
+                    <div class="type-sample">
+                        <div class="type-label">Body 2 • 0.875rem • 400 weight</div>
+                        <div class="body2-demo font-inter">Last updated on January 15, 2024. This report contains confidential information and should be handled according to company policies.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- IBM Plex Sans -->
+            <div class="font-showcase">
+                <div class="font-header font-ibm-plex">IBM Plex Sans - Document Font</div>
+                <div class="font-description">Professional and readable for longer content. Used in generated reports and document exports.</div>
+                <div class="font-samples">
+                    <div class="report-sample">
+                        <div class="report-title">Incident Report #2024-001</div>
+                        <div class="report-body">
+                            This formal incident report documents the events of January 12, 2024, involving Employee ID #4532. The incident occurred at the Main Street facility during the second shift. All relevant policies and procedures were followed in accordance with the company compliance manual. The investigation revealed that proper safety protocols were not adhered to, resulting in a Level 2 infraction with 15 disciplinary points assigned.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- JetBrains Mono -->
+            <div class="font-showcase">
+                <div class="font-header font-jetbrains">JetBrains Mono - Technical Font</div>
+                <div class="font-description">Clear distinction for technical content. Used for IDs, codes, and system-generated values.</div>
+                <div class="font-samples">
+                    <div class="type-sample">
+                        <div class="type-label">Code/ID Display</div>
+                        <div class="code-demo font-jetbrains">INCIDENT_ID: INC-2024-001-MST</div>
+                        <div class="code-demo font-jetbrains">TENANT_ID: 550e8400-e29b-41d4-a716</div>
+                        <div class="code-demo font-jetbrains">TIMESTAMP: 2024-01-15T14:30:00Z</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Primary Colors -->
+        <div class="section">
+            <h2>Primary Colors</h2>
+            <div class="color-grid">
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #1A2842; color: white;">
+                        Deep Navy Blue
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Deep Navy Blue</div>
+                        <div class="color-hex">#1A2842</div>
+                        <div class="color-description">Trust, professionalism, security</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #0066FF; color: white;">
+                        Electric Blue
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Electric Blue</div>
+                        <div class="color-hex">#0066FF</div>
+                        <div class="color-description">Technology, innovation, primary actions</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #FFFFFF; color: #1A2842; border: 1px solid #E2E8F0;">
+                        Pure White
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Pure White</div>
+                        <div class="color-hex">#FFFFFF</div>
+                        <div class="color-description">Clarity, cleanliness, transparency</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Secondary Colors -->
+        <div class="section">
+            <h2>Secondary Colors</h2>
+            <div class="color-grid">
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #64748B; color: white;">
+                        Slate Gray
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Slate Gray</div>
+                        <div class="color-hex">#64748B</div>
+                        <div class="color-description">Neutral text, secondary information</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #10B981; color: white;">
+                        Success Green
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Success Green</div>
+                        <div class="color-hex">#10B981</div>
+                        <div class="color-description">Positive actions, compliance achieved</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #F59E0B; color: white;">
+                        Alert Orange
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Alert Orange</div>
+                        <div class="color-hex">#F59E0B</div>
+                        <div class="color-description">Warnings, attention needed</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #EF4444; color: white;">
+                        Error Red
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Error Red</div>
+                        <div class="color-hex">#EF4444</div>
+                        <div class="color-description">Critical incidents, violations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Background Colors -->
+        <div class="section">
+            <h2>Background Colors</h2>
+            <div class="color-grid">
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #F8FAFC; color: #1A2842; border: 1px solid #E2E8F0;">
+                        Light Gray
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Light Gray</div>
+                        <div class="color-hex">#F8FAFC</div>
+                        <div class="color-description">Main background</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #F1F5F9; color: #1A2842; border: 1px solid #E2E8F0;">
+                        Off White
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Off White</div>
+                        <div class="color-hex">#F1F5F9</div>
+                        <div class="color-description">Secondary backgrounds</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #E2E8F0; color: #1A2842;">
+                        Border Gray
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Border Gray</div>
+                        <div class="color-hex">#E2E8F0</div>
+                        <div class="color-description">Borders and dividers</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #0F172A; color: #F1F5F9;">
+                        Dark Mode Black
+                    </div>
+                    <div class="color-info">
+                        <div class="color-name">Dark Mode Black</div>
+                        <div class="color-hex">#0F172A</div>
+                        <div class="color-description">Dark theme background</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- UI Component Demo -->
+        <div class="section">
+            <h2>Component Examples</h2>
+            
+            <div class="demo-section">
+                <h3 style="color: #1A2842; margin-bottom: 16px;">Buttons</h3>
+                <div class="button-group">
+                    <button class="btn btn-primary">Primary Action</button>
+                    <button class="btn btn-secondary">Secondary Action</button>
+                    <button class="btn btn-success">Success</button>
+                    <button class="btn btn-warning">Warning</button>
+                    <button class="btn btn-error">Error</button>
+                </div>
+            </div>
+            
+            <div class="demo-section">
+                <h3 style="color: #1A2842; margin-bottom: 16px;">Status Badges</h3>
+                <div class="status-badges">
+                    <span class="badge badge-success">Compliant</span>
+                    <span class="badge badge-warning">Pending Review</span>
+                    <span class="badge badge-error">Violation</span>
+                    <span class="badge badge-info">In Progress</span>
+                </div>
+            </div>
+            
+            <div class="demo-section">
+                <h3 style="color: #1A2842; margin-bottom: 16px;">Card Component</h3>
+                <div class="card-demo">
+                    <div class="card-header">Incident Report #2024-001</div>
+                    <p class="card-text">
+                        This is an example of how text appears in a card component using the brand colors. 
+                        The primary text uses Deep Navy Blue while secondary text uses Slate Gray.
+                    </p>
+                    <div style="margin-top: 12px;">
+                        <span class="caption-demo font-jetbrains">ID: INC-2024-001-MST</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dark Theme Demo -->
+        <div class="section" style="padding: 0; overflow: hidden;">
+            <div class="dark-theme-demo">
+                <h2 class="text-light">Dark Theme Preview</h2>
+                <p class="text-secondary-light">How the color palette and typography adapt for dark mode</p>
+                
+                <div class="dark-card">
+                    <div class="card-header text-light">Dark Mode Card</div>
+                    <p class="text-secondary-light">
+                        This demonstrates how the color palette works in dark mode, maintaining contrast 
+                        and readability while preserving the brand identity.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chart Colors -->
+        <div class="section">
+            <h2>Data Visualization Colors</h2>
+            <div class="color-grid">
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #0066FF; color: white;">
+                        Primary
+                    </div>
+                    <div class="color-info">
+                        <div class="color-hex">#0066FF</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #10B981; color: white;">
+                        Secondary
+                    </div>
+                    <div class="color-info">
+                        <div class="color-hex">#10B981</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #F59E0B; color: white;">
+                        Tertiary
+                    </div>
+                    <div class="color-info">
+                        <div class="color-hex">#F59E0B</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #8B5CF6; color: white;">
+                        Quaternary
+                    </div>
+                    <div class="color-info">
+                        <div class="color-hex">#8B5CF6</div>
+                    </div>
+                </div>
+                
+                <div class="color-card">
+                    <div class="color-swatch" style="background-color: #EC4899; color: white;">
+                        Additional
+                    </div>
+                    <div class="color-info">
+                        <div class="color-hex">#EC4899</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

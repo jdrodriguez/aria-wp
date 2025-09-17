@@ -1,0 +1,129 @@
+/**
+ * ARIA Design System - Layout Components
+ * 
+ * @package Aria
+ * @version 2.0.0
+ */
+
+// ===================================
+// LAYOUT COMPONENTS
+// ===================================
+
+// Container
+.aria-container {
+  @include aria-container;
+}
+
+// Grid System
+.aria-grid {
+  @include aria-grid;
+  
+  &--2 {
+    @include aria-responsive-grid(1, 2, 2);
+  }
+  
+  &--3 {
+    @include aria-responsive-grid(1, 2, 3);
+  }
+  
+  &--4 {
+    @include aria-responsive-grid(1, 2, 4);
+  }
+}
+
+// Page Layout
+.aria-page {
+  @include aria-container;
+  padding-top: $aria-space-8;
+  padding-bottom: $aria-space-8;
+  background: $aria-gray-50;
+  min-height: 100vh;
+  
+  @media (max-width: $aria-screen-md) {
+    padding-top: $aria-space-6;
+    padding-bottom: $aria-space-6;
+  }
+}
+
+// Page Header
+.aria-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $aria-space-10;
+  padding: $aria-space-10 0 $aria-space-8 0;
+  background: $aria-white;
+  border-bottom: 1px solid $aria-gray-200;
+  margin: (-$aria-space-8) (-$aria-space-8) $aria-space-10 (-$aria-space-8);
+  padding-left: $aria-space-8;
+  padding-right: $aria-space-8;
+  
+  @media (max-width: $aria-screen-md) {
+    flex-direction: column;
+    gap: $aria-space-6;
+    margin: (-$aria-space-6) (-$aria-space-6) $aria-space-8 (-$aria-space-6);
+    padding: $aria-space-6 $aria-space-6 $aria-space-6 $aria-space-6;
+  }
+}
+
+.aria-page-header__content {
+  flex: 1;
+}
+
+.aria-page-header__title {
+  font-size: $aria-text-3xl;
+  font-weight: $aria-font-extrabold;
+  color: $aria-navy;
+  line-height: $aria-leading-tight;
+  margin: 0 0 $aria-space-2 0;
+  letter-spacing: -0.02em;
+}
+
+.aria-page-header__description {
+  font-size: $aria-text-lg;
+  color: $aria-gray-600;
+  line-height: $aria-leading-relaxed;
+  margin: 0;
+  max-width: 600px;
+}
+
+.aria-page-header__actions {
+  display: flex;
+  gap: $aria-space-3;
+  align-items: center;
+  
+  @media (max-width: $aria-screen-md) {
+    width: 100%;
+    
+    .aria-btn {
+      flex: 1;
+    }
+  }
+}
+
+// Section Headers
+.aria-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $aria-space-8;
+  padding-bottom: $aria-space-6;
+  border-bottom: 2px solid $aria-gray-200;
+}
+
+.aria-section-title {
+  display: flex;
+  align-items: center;
+  gap: $aria-space-4;
+  margin: 0;
+  font-size: $aria-text-2xl;
+  font-weight: $aria-font-extrabold;
+  color: $aria-navy;
+  
+  svg {
+    flex-shrink: 0;
+    color: $aria-primary;
+    width: 32px;
+    height: 32px;
+  }
+}

@@ -1,0 +1,84 @@
+/**
+ * ARIA Admin Styles - Modular Architecture
+ * 
+ * @package Aria
+ * @version 2.0.0
+ */
+
+// ===================================
+// 1. FOUNDATION
+// ===================================
+@import 'variables';
+@import 'mixins';
+@import 'base';
+
+// ===================================
+// 2. COMPONENTS
+// ===================================
+@import 'components/layout';
+@import 'components/buttons';
+@import 'components/cards';
+@import 'components/badges';
+@import 'components/modern-components';
+
+// ===================================
+// 3. PAGES
+// ===================================
+@import 'pages/dashboard';
+@import 'pages/react-dashboard';
+@import 'pages/admin-common';
+@import 'pages/ai-config';
+
+// ===================================
+// 4. UTILITIES
+// ===================================
+
+// Text Utilities
+.aria-text-xs { font-size: $aria-text-xs; }
+.aria-text-sm { font-size: $aria-text-sm; }
+.aria-text-base { font-size: $aria-text-base; }
+.aria-text-lg { font-size: $aria-text-lg; }
+.aria-text-xl { font-size: $aria-text-xl; }
+.aria-text-2xl { font-size: $aria-text-2xl; }
+.aria-text-3xl { font-size: $aria-text-3xl; }
+
+// Font Weight
+.aria-font-normal { font-weight: $aria-font-normal; }
+.aria-font-medium { font-weight: $aria-font-medium; }
+.aria-font-semibold { font-weight: $aria-font-semibold; }
+.aria-font-bold { font-weight: $aria-font-bold; }
+
+// Colors
+.aria-text-primary { color: $aria-primary; }
+.aria-text-navy { color: $aria-navy; }
+.aria-text-gray { color: $aria-gray-600; }
+.aria-text-success { color: $aria-success; }
+.aria-text-error { color: $aria-error; }
+.aria-text-warning { color: $aria-warning; }
+
+// Spacing
+.aria-mt-0 { margin-top: $aria-space-0; }
+.aria-mt-2 { margin-top: $aria-space-2; }
+.aria-mt-4 { margin-top: $aria-space-4; }
+.aria-mt-6 { margin-top: $aria-space-6; }
+.aria-mt-8 { margin-top: $aria-space-8; }
+
+.aria-mb-0 { margin-bottom: $aria-space-0; }
+.aria-mb-2 { margin-bottom: $aria-space-2; }
+.aria-mb-4 { margin-bottom: $aria-space-4; }
+.aria-mb-6 { margin-bottom: $aria-space-6; }
+.aria-mb-8 { margin-bottom: $aria-space-8; }
+
+// Display
+.aria-hidden { display: none; }
+.aria-block { display: block; }
+.aria-inline-block { display: inline-block; }
+.aria-flex { display: flex; }
+.aria-inline-flex { display: inline-flex; }
+
+// Flex Utilities
+.aria-items-center { align-items: center; }
+.aria-justify-between { justify-content: space-between; }
+.aria-gap-2 { gap: $aria-space-2; }
+.aria-gap-4 { gap: $aria-space-4; }
+.aria-gap-6 { gap: $aria-space-6; }

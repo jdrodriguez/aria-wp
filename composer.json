@@ -1,0 +1,52 @@
+{
+    "name": "aria/wordpress-plugin",
+    "description": "Aria - Your Website's Voice. AI-powered conversational assistant for WordPress.",
+    "type": "wordpress-plugin",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Aria Development Team",
+            "email": "support@ariaplugin.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.7",
+        "wp-coding-standards/wpcs": "^3.0",
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "phpunit/phpunit": "^9.5",
+        "brain/monkey": "^2.6",
+        "mockery/mockery": "^1.5",
+        "phpstan/phpstan": "^1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Aria\\": "includes/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Aria\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "phpcs": "phpcs --standard=WordPress .",
+        "phpcbf": "phpcbf --standard=WordPress .",
+        "phpstan": "phpstan analyse includes --level=5",
+        "post-install-cmd": [
+            "vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs"
+        ],
+        "post-update-cmd": [
+            "vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

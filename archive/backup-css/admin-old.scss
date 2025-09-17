@@ -1,0 +1,1658 @@
+/**
+ * ARIA Admin Styles - Professional Design System
+ * 
+ * @package Aria
+ * @version 2.0.0
+ */
+
+// Import Professional Fonts
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+// ===================================
+// 1. DESIGN TOKENS
+// ===================================
+
+// Typography System
+$aria-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$aria-font-mono: 'JetBrains Mono', 'Monaco', 'Consolas', monospace;
+
+// Color Palette - Modern Professional
+$aria-primary: #0066FF;
+$aria-primary-hover: #0052CC;
+$aria-primary-light: #E6F0FF;
+$aria-primary-dark: #0047B3;
+
+$aria-navy: #1A2842;
+$aria-slate: #64748B;
+
+// Neutrals
+$aria-white: #FFFFFF;
+$aria-gray-50: #F8FAFC;
+$aria-gray-100: #F1F5F9;
+$aria-gray-200: #E2E8F0;
+$aria-gray-300: #CBD5E1;
+$aria-gray-400: #94A3B8;
+$aria-gray-500: #64748B;
+$aria-gray-600: #475569;
+$aria-gray-700: #334155;
+$aria-gray-800: #1E293B;
+$aria-gray-900: #0F172A;
+
+// Semantic Colors
+$aria-success: #10B981;
+$aria-success-light: #D1FAE5;
+$aria-success-dark: #065F46;
+
+$aria-warning: #F59E0B;
+$aria-warning-light: #FEF3C7;
+$aria-warning-dark: #92400E;
+
+$aria-error: #EF4444;
+$aria-error-light: #FEE2E2;
+$aria-error-dark: #991B1B;
+
+$aria-info: #3B82F6;
+$aria-info-light: #DBEAFE;
+$aria-info-dark: #1E40AF;
+
+// Spacing Scale
+$aria-space-0: 0;
+$aria-space-1: 0.25rem;   // 4px
+$aria-space-2: 0.5rem;    // 8px
+$aria-space-3: 0.75rem;   // 12px
+$aria-space-4: 1rem;      // 16px
+$aria-space-5: 1.25rem;   // 20px
+$aria-space-6: 1.5rem;    // 24px
+$aria-space-8: 2rem;      // 32px
+$aria-space-10: 2.5rem;   // 40px
+$aria-space-12: 3rem;     // 48px
+$aria-space-16: 4rem;     // 64px
+$aria-space-20: 5rem;     // 80px
+
+// Typography Scale
+$aria-text-xs: 0.75rem;    // 12px
+$aria-text-sm: 0.875rem;   // 14px
+$aria-text-base: 1rem;     // 16px
+$aria-text-lg: 1.125rem;   // 18px
+$aria-text-xl: 1.25rem;    // 20px
+$aria-text-2xl: 1.5rem;    // 24px
+$aria-text-3xl: 1.875rem;  // 30px
+$aria-text-4xl: 2.25rem;   // 36px
+$aria-text-5xl: 3rem;      // 48px
+
+// Font Weights
+$aria-font-normal: 400;
+$aria-font-medium: 500;
+$aria-font-semibold: 600;
+$aria-font-bold: 700;
+$aria-font-extrabold: 800;
+
+// Line Heights
+$aria-leading-none: 1;
+$aria-leading-tight: 1.25;
+$aria-leading-snug: 1.375;
+$aria-leading-normal: 1.5;
+$aria-leading-relaxed: 1.625;
+$aria-leading-loose: 2;
+
+// Border Radius
+$aria-radius-none: 0;
+$aria-radius-sm: 0.375rem;   // 6px
+$aria-radius-base: 0.5rem;   // 8px
+$aria-radius-md: 0.75rem;    // 12px
+$aria-radius-lg: 1rem;       // 16px
+$aria-radius-xl: 1.5rem;     // 24px
+$aria-radius-full: 9999px;
+
+// Shadows
+$aria-shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+$aria-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+$aria-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+$aria-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+$aria-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+$aria-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+// Transitions
+$aria-transition-fast: 150ms;
+$aria-transition-base: 200ms;
+$aria-transition-slow: 300ms;
+
+// Breakpoints
+$aria-screen-sm: 640px;
+$aria-screen-md: 768px;
+$aria-screen-lg: 1024px;
+$aria-screen-xl: 1280px;
+$aria-screen-2xl: 1536px;
+
+// Z-index Scale
+$aria-z-0: 0;
+$aria-z-10: 10;
+$aria-z-20: 20;
+$aria-z-30: 30;
+$aria-z-40: 40;
+$aria-z-50: 50;
+
+// ===================================
+// 2. MIXINS
+// ===================================
+
+// Smooth transition mixin
+@mixin aria-transition($properties: all, $duration: $aria-transition-base, $easing: ease) {
+  transition: $properties $duration $easing;
+}
+
+// Hover lift effect
+@mixin aria-hover-lift {
+  @include aria-transition(transform);
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+// Focus ring
+@mixin aria-focus-ring($color: $aria-primary, $width: 3px, $opacity: 0.2) {
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 $width rgba($color, $opacity);
+  }
+}
+
+// Button Base
+@mixin aria-button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $aria-space-2;
+  padding: $aria-space-3 $aria-space-6;
+  font-family: $aria-font-primary;
+  font-size: $aria-text-base;
+  font-weight: $aria-font-semibold;
+  line-height: $aria-leading-tight;
+  text-decoration: none;
+  border-radius: $aria-radius-base;
+  border: none;
+  cursor: pointer;
+  transition: all $aria-transition-base ease;
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba($aria-primary, 0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Primary Button
+@mixin aria-button-primary {
+  @include aria-button-base;
+  background: $aria-primary;
+  color: $aria-white;
+  
+  &:hover:not(:disabled) {
+    background: $aria-primary-hover;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($aria-primary, 0.25);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+// Secondary Button
+@mixin aria-button-secondary {
+  @include aria-button-base;
+  background: transparent;
+  color: $aria-navy;
+  border: 2px solid $aria-gray-200;
+  padding: calc(#{$aria-space-3} - 2px) calc(#{$aria-space-6} - 2px);
+  
+  &:hover:not(:disabled) {
+    background: $aria-gray-50;
+    border-color: $aria-gray-300;
+  }
+}
+
+// Ghost Button
+@mixin aria-button-ghost {
+  @include aria-button-base;
+  background: transparent;
+  color: $aria-primary;
+  padding: $aria-space-2 $aria-space-4;
+  
+  &:hover:not(:disabled) {
+    background: $aria-primary-light;
+  }
+}
+
+// Card
+@mixin aria-card {
+  background: $aria-white;
+  border: 1px solid $aria-gray-200;
+  border-radius: $aria-radius-md;
+  padding: $aria-space-8;
+  transition: all $aria-transition-base ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $aria-shadow-md;
+    border-color: $aria-gray-300;
+  }
+}
+
+// Form Input
+@mixin aria-form-input {
+  width: 100%;
+  padding: $aria-space-3 $aria-space-4;
+  font-family: $aria-font-primary;
+  font-size: $aria-text-base;
+  line-height: $aria-leading-normal;
+  color: $aria-navy;
+  background: $aria-white;
+  border: 1px solid $aria-gray-300;
+  border-radius: $aria-radius-base;
+  transition: all $aria-transition-base ease;
+  
+  &:focus {
+    outline: none;
+    border-color: $aria-primary;
+    box-shadow: 0 0 0 3px rgba($aria-primary, 0.1);
+  }
+  
+  &::placeholder {
+    color: $aria-gray-500;
+  }
+}
+
+// ===================================
+// 3. CSS CUSTOM PROPERTIES
+// ===================================
+
+:root {
+  // Colors
+  --aria-primary: #{$aria-primary};
+  --aria-primary-hover: #{$aria-primary-hover};
+  --aria-primary-light: #{$aria-primary-light};
+  --aria-navy: #{$aria-navy};
+  --aria-slate: #{$aria-slate};
+  
+  // Neutrals
+  --aria-white: #{$aria-white};
+  --aria-gray-50: #{$aria-gray-50};
+  --aria-gray-100: #{$aria-gray-100};
+  --aria-gray-200: #{$aria-gray-200};
+  --aria-gray-300: #{$aria-gray-300};
+  --aria-gray-400: #{$aria-gray-400};
+  --aria-gray-500: #{$aria-gray-500};
+  --aria-gray-600: #{$aria-gray-600};
+  --aria-gray-700: #{$aria-gray-700};
+  --aria-gray-800: #{$aria-gray-800};
+  --aria-gray-900: #{$aria-gray-900};
+  
+  // Semantic
+  --aria-success: #{$aria-success};
+  --aria-success-light: #{$aria-success-light};
+  --aria-warning: #{$aria-warning};
+  --aria-warning-light: #{$aria-warning-light};
+  --aria-error: #{$aria-error};
+  --aria-error-light: #{$aria-error-light};
+  
+  // Spacing
+  --aria-space-1: #{$aria-space-1};
+  --aria-space-2: #{$aria-space-2};
+  --aria-space-3: #{$aria-space-3};
+  --aria-space-4: #{$aria-space-4};
+  --aria-space-6: #{$aria-space-6};
+  --aria-space-8: #{$aria-space-8};
+  
+  // Border radius
+  --aria-radius-sm: #{$aria-radius-sm};
+  --aria-radius-base: #{$aria-radius-base};
+  --aria-radius-md: #{$aria-radius-md};
+  --aria-radius-lg: #{$aria-radius-lg};
+  --aria-radius-full: #{$aria-radius-full};
+}
+
+// ===================================
+// 4. GLOBAL STYLES
+// ===================================
+
+// Reset WordPress Admin Styles for ARIA pages
+.wrap[class*="aria-"] {
+  margin: 0;
+  
+  // Override WordPress typography
+  h1, h2, h3, h4, h5, h6, p, a, span, div, td, th, label {
+    font-family: $aria-font-primary !important;
+  }
+  
+  // Remove WordPress default margins
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+  }
+}
+
+// Base Typography
+body.wp-admin {
+  .wrap[class*="aria-"] {
+    font-family: $aria-font-primary;
+    font-size: $aria-text-base;
+    line-height: $aria-leading-normal;
+    color: $aria-navy;
+  }
+}
+
+// ===================================
+// 5. LAYOUT COMPONENTS
+// ===================================
+
+// Page Container
+.aria-page-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: $aria-space-8;
+  background: $aria-gray-50;
+  min-height: 100vh;
+  
+  @media (max-width: $aria-screen-md) {
+    padding: $aria-space-4;
+  }
+}
+
+// Page Header
+.aria-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $aria-space-10;
+  padding: $aria-space-10 0 $aria-space-8 0;
+  background: $aria-white;
+  border-bottom: 1px solid $aria-gray-200;
+  margin: -$aria-space-8 -$aria-space-8 $aria-space-10 -$aria-space-8;
+  padding-left: $aria-space-8;
+  padding-right: $aria-space-8;
+  
+  @media (max-width: $aria-screen-md) {
+    flex-direction: column;
+    gap: $aria-space-6;
+    margin: -$aria-space-4 -$aria-space-4 $aria-space-8 -$aria-space-4;
+    padding: $aria-space-6 $aria-space-4 $aria-space-6 $aria-space-4;
+  }
+  
+  .aria-page-title-section {
+    flex: 1;
+    
+    .aria-page-title {
+      font-size: $aria-text-3xl;
+      font-weight: $aria-font-extrabold;
+      color: $aria-navy;
+      line-height: $aria-leading-tight;
+      margin: 0 0 $aria-space-2 0;
+      letter-spacing: -0.02em;
+    }
+    
+    .aria-page-description {
+      font-size: $aria-text-lg;
+      color: $aria-gray-600;
+      line-height: $aria-leading-relaxed;
+      margin: 0;
+      max-width: 600px;
+    }
+  }
+  
+  .aria-page-actions {
+    display: flex;
+    gap: $aria-space-3;
+    align-items: center;
+    
+    @media (max-width: $aria-screen-md) {
+      width: 100%;
+      
+      .button {
+        flex: 1;
+      }
+    }
+  }
+}
+
+// Grid System
+.aria-grid {
+  display: grid;
+  gap: $aria-space-6;
+  
+  &.aria-grid-1 {
+    grid-template-columns: 1fr;
+  }
+  
+  &.aria-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    
+    @media (max-width: $aria-screen-md) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  &.aria-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+    
+    @media (max-width: $aria-screen-lg) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @media (max-width: $aria-screen-md) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  &.aria-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+    
+    @media (max-width: $aria-screen-xl) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    @media (max-width: $aria-screen-lg) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @media (max-width: $aria-screen-md) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// ===================================
+// 6. COMPONENTS
+// ===================================
+
+// Metric Card
+.aria-metric-card {
+  @include aria-card;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $aria-primary 0%, $aria-primary-dark 100%);
+    opacity: 0;
+    transition: opacity $aria-transition-base ease;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+  
+  .metric-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto $aria-space-4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $aria-primary-light;
+    color: $aria-primary;
+    border-radius: $aria-radius-md;
+    font-size: $aria-text-2xl;
+    
+    .dashicons {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+  
+  .metric-value {
+    font-size: $aria-text-5xl;
+    font-weight: $aria-font-extrabold;
+    color: $aria-primary;
+    line-height: $aria-leading-none;
+    margin-bottom: $aria-space-2;
+    letter-spacing: -0.02em;
+    
+    &.secondary {
+      color: $aria-navy;
+    }
+  }
+  
+  .metric-label {
+    font-size: $aria-text-sm;
+    font-weight: $aria-font-medium;
+    color: $aria-gray-600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .metric-change {
+    display: inline-flex;
+    align-items: center;
+    gap: $aria-space-1;
+    margin-top: $aria-space-4;
+    padding: $aria-space-1 $aria-space-3;
+    border-radius: $aria-radius-full;
+    font-size: $aria-text-sm;
+    font-weight: $aria-font-medium;
+    
+    &.positive {
+      background: $aria-success-light;
+      color: $aria-success-dark;
+    }
+    
+    &.negative {
+      background: $aria-error-light;
+      color: $aria-error-dark;
+    }
+    
+    .dashicons {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+// Standard Card
+.aria-card {
+  @include aria-card;
+  
+  .aria-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $aria-space-6;
+    padding-bottom: $aria-space-6;
+    border-bottom: 1px solid $aria-gray-100;
+    
+    .aria-card-title {
+      display: flex;
+      align-items: center;
+      gap: $aria-space-3;
+      margin: 0;
+      
+      .dashicons {
+        color: $aria-primary;
+        font-size: 20px;
+      }
+      
+      h3 {
+        margin: 0;
+        font-size: $aria-text-xl;
+        font-weight: $aria-font-bold;
+        color: $aria-navy;
+      }
+    }
+    
+    .aria-card-actions {
+      display: flex;
+      gap: $aria-space-2;
+    }
+  }
+  
+  .aria-card-body {
+    // Content styles
+  }
+  
+  .aria-card-footer {
+    margin-top: $aria-space-6;
+    padding-top: $aria-space-6;
+    border-top: 1px solid $aria-gray-100;
+  }
+}
+
+// Buttons
+.button.aria-btn-primary {
+  @include aria-button-primary;
+}
+
+.button.aria-btn-secondary {
+  @include aria-button-secondary;
+}
+
+.button.aria-btn-ghost {
+  @include aria-button-ghost;
+}
+
+// Form Elements
+.aria-form-group {
+  margin-bottom: $aria-space-6;
+  
+  .aria-form-label {
+    display: block;
+    font-weight: $aria-font-medium;
+    color: $aria-navy;
+    margin-bottom: $aria-space-2;
+    font-size: $aria-text-sm;
+  }
+  
+  .aria-form-input,
+  .aria-form-select,
+  .aria-form-textarea {
+    @include aria-form-input;
+  }
+  
+  .aria-form-help {
+    font-size: $aria-text-sm;
+    color: $aria-gray-600;
+    margin-top: $aria-space-2;
+    line-height: $aria-leading-relaxed;
+  }
+}
+
+// Status Badges
+.aria-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: $aria-space-1 $aria-space-3;
+  font-size: $aria-text-xs;
+  font-weight: $aria-font-semibold;
+  border-radius: $aria-radius-full;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  
+  &.aria-badge-success {
+    background: $aria-success-light;
+    color: $aria-success-dark;
+  }
+  
+  &.aria-badge-warning {
+    background: $aria-warning-light;
+    color: $aria-warning-dark;
+  }
+  
+  &.aria-badge-error {
+    background: $aria-error-light;
+    color: $aria-error-dark;
+  }
+  
+  &.aria-badge-info {
+    background: $aria-info-light;
+    color: $aria-info-dark;
+  }
+  
+  &.aria-badge-default {
+    background: $aria-gray-100;
+    color: $aria-gray-700;
+  }
+}
+
+// Empty States
+.aria-empty-state {
+  text-align: center;
+  padding: $aria-space-16 $aria-space-8;
+  
+  .aria-empty-icon {
+    font-size: 4rem;
+    color: $aria-gray-300;
+    margin-bottom: $aria-space-4;
+    
+    .dashicons {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+    }
+  }
+  
+  .aria-empty-title {
+    font-size: $aria-text-2xl;
+    font-weight: $aria-font-bold;
+    color: $aria-navy;
+    margin: 0 0 $aria-space-3 0;
+  }
+  
+  .aria-empty-text {
+    font-size: $aria-text-lg;
+    color: $aria-gray-600;
+    margin: 0 0 $aria-space-6 0;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+// Quick Actions Grid
+.aria-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $aria-space-4;
+  
+  .aria-quick-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: $aria-space-6;
+    background: $aria-gray-50;
+    border: 2px solid $aria-gray-200;
+    border-radius: $aria-radius-md;
+    text-decoration: none;
+    color: $aria-navy;
+    transition: all $aria-transition-base ease;
+    text-align: center;
+    
+    &:hover {
+      background: $aria-white;
+      border-color: $aria-primary;
+      transform: translateY(-2px);
+      box-shadow: $aria-shadow-md;
+      
+      .aria-quick-action-icon {
+        background: $aria-primary;
+        color: $aria-white;
+      }
+    }
+    
+    .aria-quick-action-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: $aria-primary-light;
+      color: $aria-primary;
+      border-radius: $aria-radius-md;
+      margin-bottom: $aria-space-3;
+      transition: all $aria-transition-base ease;
+      
+      .dashicons {
+        font-size: 24px;
+      }
+    }
+    
+    .aria-quick-action-text {
+      font-weight: $aria-font-semibold;
+      font-size: $aria-text-base;
+    }
+  }
+}
+
+// Recent Items List
+.aria-recent-list {
+  .aria-recent-item {
+    padding: $aria-space-4;
+    border: 1px solid $aria-gray-200;
+    border-radius: $aria-radius-md;
+    margin-bottom: $aria-space-3;
+    transition: all $aria-transition-base ease;
+    
+    &:hover {
+      border-color: $aria-primary;
+      box-shadow: $aria-shadow-sm;
+      transform: translateX(2px);
+    }
+    
+    .aria-recent-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: $aria-space-2;
+      
+      .aria-recent-item-title {
+        font-weight: $aria-font-semibold;
+        color: $aria-navy;
+        font-size: $aria-text-base;
+        margin: 0;
+        text-decoration: none;
+        
+        &:hover {
+          color: $aria-primary;
+        }
+      }
+      
+      .aria-recent-item-badge {
+        flex-shrink: 0;
+      }
+    }
+    
+    .aria-recent-item-meta {
+      display: flex;
+      gap: $aria-space-4;
+      font-size: $aria-text-sm;
+      color: $aria-gray-600;
+      
+      .aria-meta-item {
+        display: flex;
+        align-items: center;
+        gap: $aria-space-1;
+        
+        .dashicons {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+    
+    .aria-recent-item-preview {
+      margin-top: $aria-space-2;
+      font-size: $aria-text-sm;
+      color: $aria-gray-700;
+      line-height: $aria-leading-relaxed;
+    }
+  }
+}
+
+// Progress Bar
+.aria-progress {
+  width: 100%;
+  height: 8px;
+  background: $aria-gray-200;
+  border-radius: $aria-radius-full;
+  overflow: hidden;
+  
+  .aria-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, $aria-primary 0%, $aria-primary-dark 100%);
+    border-radius: $aria-radius-full;
+    transition: width $aria-transition-slow ease;
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.2) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.2) 75%,
+        transparent 75%,
+        transparent
+      );
+      background-size: 1rem 1rem;
+      animation: aria-progress-stripes 1s linear infinite;
+    }
+  }
+}
+
+@keyframes aria-progress-stripes {
+  0% {
+    background-position: 1rem 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+// Loading Spinner
+.aria-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid $aria-gray-300;
+  border-top-color: $aria-primary;
+  border-radius: 50%;
+  animation: aria-spin 0.8s linear infinite;
+}
+
+@keyframes aria-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ===================================
+// 7. UTILITIES
+// ===================================
+
+// Text Utilities
+.aria-text-xs { font-size: $aria-text-xs; }
+.aria-text-sm { font-size: $aria-text-sm; }
+.aria-text-base { font-size: $aria-text-base; }
+.aria-text-lg { font-size: $aria-text-lg; }
+.aria-text-xl { font-size: $aria-text-xl; }
+.aria-text-2xl { font-size: $aria-text-2xl; }
+.aria-text-3xl { font-size: $aria-text-3xl; }
+
+// Font Weight
+.aria-font-normal { font-weight: $aria-font-normal; }
+.aria-font-medium { font-weight: $aria-font-medium; }
+.aria-font-semibold { font-weight: $aria-font-semibold; }
+.aria-font-bold { font-weight: $aria-font-bold; }
+
+// Colors
+.aria-text-primary { color: $aria-primary; }
+.aria-text-navy { color: $aria-navy; }
+.aria-text-gray { color: $aria-gray-600; }
+.aria-text-success { color: $aria-success; }
+.aria-text-error { color: $aria-error; }
+.aria-text-warning { color: $aria-warning; }
+
+// Spacing
+.aria-mt-0 { margin-top: $aria-space-0; }
+.aria-mt-2 { margin-top: $aria-space-2; }
+.aria-mt-4 { margin-top: $aria-space-4; }
+.aria-mt-6 { margin-top: $aria-space-6; }
+.aria-mt-8 { margin-top: $aria-space-8; }
+
+.aria-mb-0 { margin-bottom: $aria-space-0; }
+.aria-mb-2 { margin-bottom: $aria-space-2; }
+.aria-mb-4 { margin-bottom: $aria-space-4; }
+.aria-mb-6 { margin-bottom: $aria-space-6; }
+.aria-mb-8 { margin-bottom: $aria-space-8; }
+
+// Display
+.aria-hidden { display: none; }
+.aria-block { display: block; }
+.aria-inline-block { display: inline-block; }
+.aria-flex { display: flex; }
+.aria-inline-flex { display: inline-flex; }
+
+// Flex Utilities
+.aria-items-center { align-items: center; }
+.aria-justify-between { justify-content: space-between; }
+.aria-gap-2 { gap: $aria-space-2; }
+.aria-gap-4 { gap: $aria-space-4; }
+.aria-gap-6 { gap: $aria-space-6; }
+
+// ===================================
+// 7. WORDPRESS OVERRIDES
+// ===================================
+
+// Override WordPress notices in ARIA pages
+.wrap[class*="aria-"] {
+  .notice {
+    border-radius: $aria-radius-md;
+    border-left-width: 4px;
+    padding: $aria-space-4;
+    margin: $aria-space-4 0;
+    
+    &.notice-success {
+      background: $aria-success-light;
+      border-left-color: $aria-success;
+      color: $aria-success-dark;
+    }
+    
+    &.notice-warning {
+      background: $aria-warning-light;
+      border-left-color: $aria-warning;
+      color: $aria-warning-dark;
+    }
+    
+    &.notice-error {
+      background: $aria-error-light;
+      border-left-color: $aria-error;
+      color: $aria-error-dark;
+    }
+    
+    &.notice-info {
+      background: $aria-info-light;
+      border-left-color: $aria-info;
+      color: $aria-info-dark;
+    }
+  }
+}
+
+// ===================================
+// 8. DARK MODE (FUTURE)
+// ===================================
+
+// Dark mode variables ready for future implementation
+$aria-dark-bg: #0F172A;
+$aria-dark-surface: #1E293B;
+$aria-dark-border: #334155;
+$aria-dark-text: #F1F5F9;
+$aria-dark-text-secondary: #94A3B8;
+
+// ===================================
+// 9. ARIA DASHBOARD SPECIFIC
+// ===================================
+
+// Dashboard badge colors
+.aria-badge {
+  &.aria-badge-open {
+    background: $aria-warning-light;
+    color: $aria-warning-dark;
+  }
+  
+  &.aria-badge-closed {
+    background: $aria-success-light;
+    color: $aria-success-dark;
+  }
+}
+
+// ===================================
+// SETUP PROGRESS SECTION
+// ===================================
+.aria-setup-section {
+  margin-bottom: $aria-space-16;
+  padding: $aria-space-8;
+  background: linear-gradient(135deg, $aria-white 0%, $aria-gray-50 100%);
+  border: 1px solid $aria-gray-200;
+  border-radius: $aria-radius-xl;
+  box-shadow: $aria-shadow-sm;
+
+  .aria-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $aria-space-8;
+    padding-bottom: $aria-space-6;
+    border-bottom: 2px solid $aria-gray-200;
+
+    .aria-section-title {
+      display: flex;
+      align-items: center;
+      gap: $aria-space-4;
+      margin: 0;
+      font-size: $aria-text-2xl;
+      font-weight: $aria-font-extrabold;
+      color: $aria-navy;
+
+      svg {
+        flex-shrink: 0;
+        color: $aria-primary;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .aria-progress-info {
+      display: flex;
+      align-items: center;
+      gap: $aria-space-6;
+      padding: $aria-space-4 $aria-space-6;
+      background: $aria-white;
+      border: 2px solid $aria-primary-light;
+      border-radius: $aria-radius-full;
+      box-shadow: $aria-shadow-sm;
+
+      .aria-progress-text {
+        font-size: $aria-text-base;
+        font-weight: $aria-font-semibold;
+        color: $aria-navy;
+      }
+
+      .aria-progress-percentage {
+        padding: $aria-space-2 $aria-space-4;
+        background: linear-gradient(135deg, $aria-primary 0%, $aria-primary-dark 100%);
+        color: $aria-white;
+        border-radius: $aria-radius-full;
+        font-weight: $aria-font-bold;
+        font-size: $aria-text-lg;
+        min-width: 60px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba($aria-primary, 0.3);
+      }
+    }
+  }
+
+  .aria-setup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: $aria-space-8;
+
+    @media (max-width: $aria-screen-md) {
+      grid-template-columns: 1fr;
+      gap: $aria-space-6;
+    }
+  }
+
+  .aria-setup-card {
+    background: linear-gradient(135deg, $aria-white 0%, $aria-gray-50 100%);
+    border: 2px solid $aria-gray-200;
+    border-radius: $aria-radius-xl;
+    padding: $aria-space-8;
+    transition: all $aria-transition-base ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: $aria-shadow-sm;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba($aria-primary, 0.15);
+      border-color: $aria-primary;
+    }
+
+    &.completed {
+      background: linear-gradient(135deg, $aria-success-light 0%, lighten($aria-success-light, 5%) 100%);
+      border-color: $aria-success;
+      box-shadow: 0 4px 15px rgba($aria-success, 0.2);
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, $aria-success 0%, darken($aria-success, 15%) 100%);
+      }
+
+      .aria-setup-icon {
+        background: linear-gradient(135deg, $aria-success 0%, darken($aria-success, 10%) 100%);
+        color: $aria-white;
+        box-shadow: 0 4px 12px rgba($aria-success, 0.3);
+      }
+
+      .aria-setup-title {
+        color: $aria-success-dark;
+      }
+    }
+
+    .aria-setup-header {
+      display: flex;
+      align-items: flex-start;
+      gap: $aria-space-6;
+      margin-bottom: $aria-space-6;
+
+      .aria-setup-icon {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, $aria-primary-light 0%, lighten($aria-primary-light, 3%) 100%);
+        color: $aria-primary;
+        border-radius: $aria-radius-xl;
+        flex-shrink: 0;
+        transition: all $aria-transition-base ease;
+        border: 2px solid $aria-primary;
+        box-shadow: 0 4px 12px rgba($aria-primary, 0.2);
+
+        svg {
+          width: 32px;
+          height: 32px;
+        }
+      }
+
+      .aria-setup-content {
+        flex: 1;
+
+        .aria-setup-title {
+          font-size: $aria-text-xl;
+          font-weight: $aria-font-bold;
+          color: $aria-navy;
+          margin: 0 0 $aria-space-3 0;
+          line-height: $aria-leading-tight;
+        }
+
+        .aria-setup-description {
+          font-size: $aria-text-base;
+          color: $aria-gray-600;
+          margin: 0;
+          line-height: $aria-leading-relaxed;
+        }
+      }
+    }
+
+    .aria-setup-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: $aria-space-6;
+      border-top: 1px solid $aria-gray-200;
+      
+      .aria-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: $aria-space-2;
+        padding: $aria-space-3 $aria-space-5;
+        border-radius: $aria-radius-full;
+        font-size: $aria-text-sm;
+        font-weight: $aria-font-bold;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: 2px solid transparent;
+
+        &.completed {
+          background: linear-gradient(135deg, $aria-success-light 0%, lighten($aria-success-light, 3%) 100%);
+          color: $aria-success-dark;
+          border-color: $aria-success;
+        }
+
+        &.pending {
+          background: linear-gradient(135deg, $aria-warning-light 0%, lighten($aria-warning-light, 3%) 100%);
+          color: $aria-warning-dark;
+          border-color: $aria-warning;
+        }
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .aria-setup-action {
+        padding: $aria-space-3 $aria-space-6;
+        background: $aria-white;
+        border: 2px solid $aria-primary;
+        border-radius: $aria-radius-lg;
+        color: $aria-primary;
+        font-size: $aria-text-sm;
+        font-weight: $aria-font-bold;
+        text-decoration: none;
+        transition: all $aria-transition-base ease;
+        box-shadow: $aria-shadow-sm;
+
+        &:hover {
+          background: $aria-primary;
+          color: $aria-white;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba($aria-primary, 0.25);
+        }
+      }
+    }
+  }
+}
+
+// ===================================
+// RECENT CONVERSATIONS SECTION
+// ===================================
+.aria-conversations-section {
+  margin-bottom: $aria-space-16;
+
+  .aria-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $aria-space-8;
+    padding-bottom: $aria-space-6;
+    border-bottom: 1px solid $aria-gray-200;
+
+    .aria-section-title {
+      display: flex;
+      align-items: center;
+      gap: $aria-space-3;
+      margin: 0;
+      font-size: $aria-text-2xl;
+      font-weight: $aria-font-bold;
+      color: $aria-navy;
+
+      svg {
+        flex-shrink: 0;
+        color: $aria-primary;
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    .aria-view-all-link {
+      display: inline-flex;
+      align-items: center;
+      gap: $aria-space-2;
+      color: $aria-primary;
+      font-weight: $aria-font-semibold;
+      text-decoration: none;
+      font-size: $aria-text-base;
+      padding: $aria-space-3 $aria-space-6;
+      border: 2px solid $aria-primary;
+      border-radius: $aria-radius-lg;
+      transition: all $aria-transition-base ease;
+      background: $aria-white;
+
+      &:hover {
+        background: $aria-primary;
+        color: $aria-white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba($aria-primary, 0.25);
+      }
+
+      svg {
+        width: 16px;
+        height: 16px;
+        transition: transform $aria-transition-base ease;
+      }
+
+      &:hover svg {
+        transform: translateX(2px);
+      }
+    }
+  }
+
+  .aria-conversations-grid {
+    display: grid;
+    gap: $aria-space-6;
+  }
+
+  .aria-conversation-item {
+    background: linear-gradient(135deg, $aria-white 0%, lighten($aria-gray-50, 1%) 100%);
+    border: 1px solid $aria-gray-200;
+    border-radius: $aria-radius-xl;
+    padding: $aria-space-8;
+    transition: all $aria-transition-base ease;
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, $aria-primary 0%, $aria-primary-dark 100%);
+      opacity: 0;
+      transition: opacity $aria-transition-base ease;
+    }
+    
+    &:hover {
+      border-color: $aria-primary;
+      box-shadow: 0 8px 25px rgba($aria-primary, 0.15);
+      transform: translateY(-3px);
+      
+      &::before {
+        opacity: 1;
+      }
+    }
+
+    .aria-conversation-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: $aria-space-5;
+
+      .aria-conversation-visitor {
+        display: flex;
+        align-items: center;
+        gap: $aria-space-3;
+        font-weight: $aria-font-bold;
+        color: $aria-navy;
+        font-size: $aria-text-lg;
+
+        &::before {
+          content: '';
+          width: 40px;
+          height: 40px;
+          background: linear-gradient(135deg, $aria-primary-light 0%, lighten($aria-primary-light, 5%) 100%);
+          border-radius: $aria-radius-full;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: $aria-text-lg;
+          font-weight: $aria-font-bold;
+          color: $aria-primary;
+          flex-shrink: 0;
+        }
+      }
+
+      .aria-conversation-badge {
+        padding: $aria-space-2 $aria-space-4;
+        border-radius: $aria-radius-full;
+        font-size: $aria-text-xs;
+        font-weight: $aria-font-bold;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: 2px solid transparent;
+        transition: all $aria-transition-base ease;
+
+        &.active {
+          background: linear-gradient(135deg, $aria-success-light 0%, lighten($aria-success-light, 3%) 100%);
+          color: $aria-success-dark;
+          border-color: $aria-success;
+        }
+
+        &.closed {
+          background: linear-gradient(135deg, $aria-gray-100 0%, lighten($aria-gray-100, 2%) 100%);
+          color: $aria-gray-700;
+          border-color: $aria-gray-300;
+        }
+      }
+    }
+
+    .aria-conversation-preview {
+      font-size: $aria-text-base;
+      color: $aria-gray-700;
+      line-height: $aria-leading-relaxed;
+      margin-bottom: $aria-space-5;
+      padding: $aria-space-4;
+      background: $aria-gray-50;
+      border-radius: $aria-radius-lg;
+      border-left: 4px solid $aria-primary-light;
+      font-style: italic;
+      position: relative;
+
+      &::before {
+        content: '"';
+        position: absolute;
+        top: -2px;
+        left: $aria-space-2;
+        font-size: $aria-text-2xl;
+        color: $aria-primary;
+        font-weight: $aria-font-bold;
+        line-height: 1;
+      }
+
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .aria-conversation-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: $aria-space-4;
+      border-top: 1px solid $aria-gray-200;
+
+      .aria-meta-left {
+        display: flex;
+        align-items: center;
+        gap: $aria-space-4;
+        font-size: $aria-text-sm;
+        color: $aria-gray-600;
+
+        .aria-meta-item {
+          display: flex;
+          align-items: center;
+          gap: $aria-space-2;
+          font-weight: $aria-font-medium;
+
+          svg {
+            width: 16px;
+            height: 16px;
+            color: $aria-primary;
+          }
+        }
+      }
+
+      .aria-meta-actions {
+        display: flex;
+        gap: $aria-space-2;
+
+        .aria-action-btn {
+          padding: $aria-space-2 $aria-space-3;
+          background: transparent;
+          border: 1px solid $aria-gray-300;
+          border-radius: $aria-radius-base;
+          color: $aria-gray-600;
+          font-size: $aria-text-sm;
+          font-weight: $aria-font-medium;
+          cursor: pointer;
+          transition: all $aria-transition-base ease;
+
+          &:hover {
+            background: $aria-primary;
+            border-color: $aria-primary;
+            color: $aria-white;
+            transform: translateY(-1px);
+          }
+        }
+      }
+    }
+  }
+}
+
+// ===================================
+// QUICK ACTIONS SECTION
+// ===================================
+.aria-actions-section {
+  margin-bottom: $aria-space-16;
+  padding: $aria-space-8;
+  background: linear-gradient(135deg, $aria-white 0%, $aria-gray-50 100%);
+  border: 1px solid $aria-gray-200;
+  border-radius: $aria-radius-xl;
+  box-shadow: $aria-shadow-sm;
+
+  .aria-section-header {
+    display: flex;
+    align-items: center;
+    gap: $aria-space-4;
+    margin-bottom: $aria-space-8;
+    padding-bottom: $aria-space-6;
+    border-bottom: 2px solid $aria-gray-200;
+
+    .aria-section-title {
+      display: flex;
+      align-items: center;
+      gap: $aria-space-4;
+      margin: 0;
+      font-size: $aria-text-2xl;
+      font-weight: $aria-font-extrabold;
+      color: $aria-navy;
+
+      svg {
+        flex-shrink: 0;
+        color: $aria-primary;
+        width: 32px;
+        height: 32px;
+      }
+    }
+  }
+
+  .aria-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: $aria-space-6;
+
+    @media (max-width: $aria-screen-lg) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: $aria-screen-md) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .aria-action-card {
+    background: linear-gradient(135deg, $aria-white 0%, $aria-gray-50 100%);
+    border: 2px solid $aria-gray-200;
+    border-radius: $aria-radius-xl;
+    padding: $aria-space-8;
+    text-align: center;
+    transition: all $aria-transition-base ease;
+    text-decoration: none;
+    color: $aria-navy;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $aria-space-4;
+    position: relative;
+    overflow: hidden;
+    box-shadow: $aria-shadow-sm;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, $aria-primary 0%, $aria-primary-dark 100%);
+      opacity: 0;
+      transition: opacity $aria-transition-base ease;
+    }
+
+    &:hover {
+      border-color: $aria-primary;
+      background: linear-gradient(135deg, $aria-primary-light 0%, lighten($aria-primary-light, 5%) 100%);
+      transform: translateY(-6px);
+      box-shadow: 0 15px 35px rgba($aria-primary, 0.2);
+      
+      &::before {
+        opacity: 1;
+      }
+      
+      .aria-action-icon {
+        background: linear-gradient(135deg, $aria-primary 0%, $aria-primary-dark 100%);
+        color: $aria-white;
+        transform: scale(1.15);
+        box-shadow: 0 8px 20px rgba($aria-primary, 0.3);
+      }
+
+      .aria-action-title {
+        color: $aria-primary-dark;
+      }
+    }
+
+    .aria-action-icon {
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, $aria-gray-100 0%, lighten($aria-gray-100, 2%) 100%);
+      color: $aria-gray-600;
+      border-radius: $aria-radius-xl;
+      transition: all $aria-transition-base ease;
+      border: 2px solid $aria-gray-300;
+      box-shadow: $aria-shadow-sm;
+
+      svg {
+        width: 40px;
+        height: 40px;
+      }
+    }
+
+    .aria-action-title {
+      font-size: $aria-text-lg;
+      font-weight: $aria-font-bold;
+      margin: 0;
+      transition: color $aria-transition-base ease;
+      line-height: $aria-leading-tight;
+    }
+
+    .aria-action-description {
+      font-size: $aria-text-base;
+      color: $aria-gray-600;
+      margin: 0;
+      line-height: $aria-leading-relaxed;
+      text-align: center;
+      max-width: 200px;
+    }
+  }
+}
+
+// ===================================
+// OVERALL DASHBOARD LAYOUT IMPROVEMENTS
+// ===================================
+.aria-dashboard-container {
+  padding: $aria-space-10;
+  background: $aria-gray-50;
+  min-height: 100vh;
+
+  @media (max-width: $aria-screen-md) {
+    padding: $aria-space-6;
+  }
+
+  .aria-dashboard-header {
+    margin-bottom: $aria-space-12;
+  }
+
+  .aria-metrics-grid {
+    margin-bottom: $aria-space-16;
+  }
+
+  // Add better spacing between major sections
+  .aria-setup-section,
+  .aria-conversations-section,
+  .aria-actions-section {
+    &:not(:last-child) {
+      margin-bottom: $aria-space-20;
+    }
+  }
+}

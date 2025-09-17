@@ -1,0 +1,88 @@
+/**
+ * Modern Components CSS
+ * Styles for modern React components with proper hover effects
+ */
+
+/* Modern Knowledge Card Hover Effects */
+.modern-knowledge-card {
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    border-color: #cbd5e1 !important;
+  }
+  
+  /* Ensure buttons are always clickable */
+  .components-button {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 10;
+    
+    &:hover {
+      transform: none; /* Prevent card hover from affecting buttons */
+    }
+  }
+}
+
+/* Button interaction fixes */
+.components-button {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  
+  &:focus {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+/* Delete button specific styles */
+.components-button.is-secondary {
+  &[style*="color: rgb(220, 38, 38)"] {
+    &:hover {
+      background-color: #fee2e2 !important;
+      border-color: #f87171 !important;
+    }
+  }
+}
+
+/* Ensure proper stacking context */
+.aria-knowledge-react {
+  .components-card__header {
+    position: relative;
+    z-index: 5;
+  }
+  
+  .components-flex {
+    position: relative;
+    z-index: 5;
+  }
+}
+
+/* Modal styling to ensure proper visibility */
+.aria-modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 999999 !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.aria-modal-content {
+  position: relative !important;
+  z-index: 1000000 !important;
+  background: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+  max-width: 600px !important;
+  width: 90% !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}

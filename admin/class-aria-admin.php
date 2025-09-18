@@ -89,16 +89,16 @@ class Aria_Admin {
 				true
 			);
 
-			// Main admin script
+			// Unified React-based admin script (keep both names for compatibility)
 			wp_enqueue_script(
 				$this->plugin_name . '-admin',
 				ARIA_PLUGIN_URL . 'dist/admin.js',
-				array( 'jquery', 'wp-color-picker' ),
+				array( 'wp-element', 'wp-components', 'wp-i18n', 'jquery', 'wp-color-picker' ),
 				$this->version,
 				true
 			);
 
-			// React-based admin script for modern pages
+			// Also register as admin-react for backward compatibility with templates
 			wp_enqueue_script(
 				$this->plugin_name . '-admin-react',
 				ARIA_PLUGIN_URL . 'dist/admin-react.js',
@@ -124,14 +124,12 @@ class Aria_Admin {
 				),
 			);
 
-			// Localize main admin script
+			// Localize both admin scripts
 			wp_localize_script(
 				$this->plugin_name . '-admin',
 				'ariaAdmin',
 				$localized_data
 			);
-
-			// Localize React admin script with the same data
 			wp_localize_script(
 				$this->plugin_name . '-admin-react',
 				'ariaAdmin',
@@ -265,21 +263,21 @@ class Aria_Admin {
 	 * Display the knowledge base page.
 	 */
 	public function display_knowledge_page() {
-		require_once ARIA_PLUGIN_PATH . 'admin/partials/aria-knowledge.php';
+		require_once ARIA_PLUGIN_PATH . 'admin/partials/aria-knowledge-react.php';
 	}
 
 	/**
 	 * Display the knowledge entry page (add/edit).
 	 */
 	public function display_knowledge_entry_page() {
-		require_once ARIA_PLUGIN_PATH . 'admin/partials/aria-knowledge-entry.php';
+		require_once ARIA_PLUGIN_PATH . 'admin/partials/aria-knowledge-entry-react.php';
 	}
 
 	/**
 	 * Display the content indexing page.
 	 */
 	public function display_content_indexing_page() {
-		require_once ARIA_PLUGIN_PATH . 'admin/partials/aria-content-indexing.php';
+		require_once ARIA_PLUGIN_PATH . 'admin/partials/aria-content-indexing-react.php';
 	}
 
 	/**
@@ -300,7 +298,7 @@ class Aria_Admin {
 	 * Display the conversations page.
 	 */
 	public function display_conversations_page() {
-		require_once ARIA_PLUGIN_PATH . 'admin/partials/aria-conversations.php';
+		require_once ARIA_PLUGIN_PATH . 'admin/partials/aria-conversations-react.php';
 	}
 
 	/**

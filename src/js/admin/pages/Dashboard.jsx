@@ -13,6 +13,7 @@ import { fetchDashboardData } from '../utils/api';
 import { formatTimeAgo, getAdminUrl } from '../utils/helpers';
 
 const Dashboard = () => {
+	console.log('Dashboard component is rendering!');
 	const [dashboardData, setDashboardData] = useState({
 		conversationsToday: 0,
 		totalConversations: 0,

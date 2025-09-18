@@ -15,11 +15,21 @@ const ContentIndexing = lazyLoad(() => import('./pages/ContentIndexing.jsx').the
  * Mount React components to their respective DOM containers
  */
 const mountComponents = () => {
+	console.log('Aria Admin: Mounting components...');
+	console.log('WordPress dependencies available:', {
+		element: typeof wp !== 'undefined' && wp.element,
+		components: typeof wp !== 'undefined' && wp.components,
+		i18n: typeof wp !== 'undefined' && wp.i18n
+	});
+
 	// Mount Dashboard Page
 	const dashboardRoot = document.getElementById('aria-dashboard-root');
+	console.log('Dashboard root element:', dashboardRoot);
 	if (dashboardRoot) {
+		console.log('Mounting Dashboard component...');
 		const root = createRoot(dashboardRoot);
 		root.render(<Dashboard />);
+		console.log('Dashboard mounted successfully');
 	}
 
 	// Mount Settings Page
@@ -80,4 +90,16 @@ const mountComponents = () => {
 };
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', mountComponents);
+console.log('Aria Admin: Script loaded, waiting for DOMContentLoaded...');
+document.addEventListener('DOMContentLoaded', () => {
+	console.log('Aria Admin: DOMContentLoaded fired');
+	mountComponents();
+});
+
+// Also try mounting immediately if DOM is already loaded
+if (document.readyState === 'loading') {
+	console.log('Aria Admin: Document still loading...');
+} else {
+	console.log('Aria Admin: Document already loaded, mounting now...');
+	mountComponents();
+}

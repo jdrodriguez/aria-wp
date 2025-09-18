@@ -9,8 +9,8 @@ module.exports = (env, argv) => {
 
   return {
     entry: {
-      'admin': './src/js/admin.js',
-      'admin-react': './src/js/admin/index.js',
+      'admin': './src/js/admin/index.js',
+      'admin-react': './src/js/admin/index.js',  // Same source, different output name for backwards compatibility
       'chat': './src/js/chat.js',
       'admin-style': './src/scss/admin.scss',
       'chat-style': './src/scss/chat.scss'
@@ -89,6 +89,19 @@ module.exports = (env, argv) => {
         }),
         new CssMinimizerPlugin()
       ]
+    },
+    externals: {
+      '@wordpress/element': 'wp.element',
+      '@wordpress/components': 'wp.components',
+      '@wordpress/i18n': 'wp.i18n',
+      '@wordpress/api-fetch': 'wp.apiFetch',
+      '@wordpress/data': 'wp.data',
+      '@wordpress/hooks': 'wp.hooks',
+      '@wordpress/compose': 'wp.compose',
+      '@wordpress/icons': 'wp.components.icons',
+      'react': 'React',
+      'react-dom': 'ReactDOM',
+      'jquery': 'jQuery'
     },
     resolve: {
       extensions: ['.js', '.jsx']

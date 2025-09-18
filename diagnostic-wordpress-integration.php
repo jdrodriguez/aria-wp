@@ -153,7 +153,6 @@ echo "<div class='diagnostic-section'>\n";
 echo "<h2>4. Required Files Existence Test</h2>\n";
 
 $required_files = [
-    ARIA_PLUGIN_PATH . 'dist/admin-react.js',
     ARIA_PLUGIN_PATH . 'dist/admin.js',
     ARIA_PLUGIN_PATH . 'dist/admin-style.css',
     ARIA_PLUGIN_PATH . 'includes/class-aria-ajax-handler.php',

@@ -23,13 +23,13 @@ I've investigated the critical WordPress plugin integration issues causing the A
 ### 3. ✅ WordPress Script Dependencies (VERIFIED CORRECT)
 - **Status**: All required WordPress dependencies are properly declared
 - **Dependencies**: `wp-element`, `wp-components`, `wp-i18n` (lines 94-97 in class-aria-admin.php)
-- **React Script**: Registered as `aria-admin-react` with correct dependencies
+- **Admin Bundle**: Unified `dist/admin.js` registered as `aria-admin`; the legacy `aria-admin-react` handle now aliases this same bundle for backward compatibility
 
 ### 4. ✅ React Component Implementation (VERIFIED IMPLEMENTED)
 - **Status**: Dashboard component exists and has proper AJAX calls
-- **Location**: `src/js/admin-react.jsx` → `AriaDashboard` component (line 514)
-- **AJAX Call**: Properly structured with nonce verification (lines 553-557)
-- **Mounting**: Component mounts to `#aria-dashboard-root` (lines 1107-1111)
+- **Location**: `src/js/admin/index.js` mounts the `Dashboard` view from `src/js/admin/pages`
+- **AJAX Call**: Properly structured with nonce verification inside the page module
+- **Mounting**: Component mounts to `#aria-dashboard-root` via the shared `mountComponents()` routine
 
 ### 5. ✅ AJAX Handler Implementation (VERIFIED IMPLEMENTED)
 - **Status**: Handler method exists with proper security checks
@@ -135,7 +135,7 @@ Dashboard data loaded successfully: {...}
 
 ### Issue: "React component not mounting"
 - **Solution**: Check if `#aria-dashboard-root` element exists in DOM
-- **Check**: Verify admin-react.js is loaded without errors
+- **Check**: Verify `admin.js` (or the `aria-admin` handle) loads without errors
 
 ### Issue: "AJAX returns zeros despite database having data"
 - **Solution**: Check database query date filters and table structure

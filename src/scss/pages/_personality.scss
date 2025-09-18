@@ -1,0 +1,87 @@
+@import '../variables';
+
+.aria-personality {
+	&__notice {
+		margin-bottom: $aria-space-6;
+	}
+
+	&__trait-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: $aria-space-4;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	}
+
+	&__trait {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: $aria-space-4;
+		width: 100%;
+		padding: $aria-space-4;
+		border-radius: $aria-radius-lg;
+		border: 2px solid $aria-gray-200;
+		background: linear-gradient(135deg, $aria-white 0%, $aria-gray-50 100%);
+		box-shadow: $aria-shadow-xs;
+		cursor: pointer;
+		transition: all $aria-transition-base ease;
+
+		&:hover {
+			border-color: $aria-primary;
+			box-shadow: 0 6px 18px rgba($aria-primary, 0.15);
+		}
+
+		&.is-selected {
+			border-color: $aria-success;
+			background: linear-gradient(135deg, rgba($aria-success-light, 0.65) 0%, rgba($aria-success-light, 0.3) 100%);
+			box-shadow: 0 6px 18px rgba($aria-success, 0.15);
+		}
+	}
+
+	&__trait-label {
+		font-size: $aria-text-base;
+		font-weight: $aria-font-semibold;
+		color: $aria-gray-900;
+	}
+
+	&__trait-status {
+		width: 32px;
+		height: 32px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: $aria-radius-full;
+		font-weight: $aria-font-semibold;
+		font-size: $aria-text-base;
+		background: $aria-gray-100;
+		color: $aria-gray-600;
+
+		.is-selected & {
+			background: $aria-success;
+			color: $aria-white;
+		}
+	}
+
+	&__actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: $aria-space-3;
+	}
+
+	&__save-hint {
+		margin: 0;
+		color: $aria-gray-600;
+		font-size: $aria-text-sm;
+		line-height: $aria-leading-relaxed;
+	}
+}
+
+@media (max-width: $aria-screen-md) {
+	.aria-personality {
+		&__actions {
+			justify-content: stretch;
+		}
+	}
+}

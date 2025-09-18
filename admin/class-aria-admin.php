@@ -89,7 +89,7 @@ class Aria_Admin {
 				true
 			);
 
-			// Unified React-based admin script (keep both names for compatibility)
+			// Unified React-based admin script
 			wp_enqueue_script(
 				$this->plugin_name . '-admin',
 				ARIA_PLUGIN_URL . 'dist/admin.js',
@@ -98,16 +98,20 @@ class Aria_Admin {
 				true
 			);
 
-			// Also register as admin-react for backward compatibility with templates
-			wp_enqueue_script(
-				$this->plugin_name . '-admin-react',
-				ARIA_PLUGIN_URL . 'dist/admin-react.js',
-				array( 'wp-element', 'wp-components', 'wp-i18n' ),
-				$this->version,
-				true
-			);
+			// Register legacy handle for backward compatibility (depends on unified bundle)
+			$legacy_handle = $this->plugin_name . '-admin-react';
+			if ( ! wp_script_is( $legacy_handle, 'registered' ) ) {
+				wp_register_script(
+					$legacy_handle,
+					false,
+					array( $this->plugin_name . '-admin' ),
+					$this->version,
+					true
+				);
+			}
+			wp_enqueue_script( $legacy_handle );
 
-			// Localize script data for both admin scripts
+			// Localize script data for the admin bundle
 			$localized_data = array(
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'adminUrl'    => admin_url(),
@@ -124,14 +128,8 @@ class Aria_Admin {
 				),
 			);
 
-			// Localize both admin scripts
 			wp_localize_script(
 				$this->plugin_name . '-admin',
-				'ariaAdmin',
-				$localized_data
-			);
-			wp_localize_script(
-				$this->plugin_name . '-admin-react',
 				'ariaAdmin',
 				$localized_data
 			);

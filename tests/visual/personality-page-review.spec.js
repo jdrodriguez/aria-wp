@@ -53,7 +53,7 @@ test.describe('Personality Page Review', () => {
         </div>
     </div>
     
-    <script src="http://localhost:8080/wp-content/plugins/aria/dist/admin-react.js"></script>
+    <script src="http://localhost:8080/wp-content/plugins/aria/dist/admin.js"></script>
 </body>
 </html>`;
 
@@ -266,7 +266,7 @@ test.describe('Personality Page Review', () => {
         
         // Test if we can load the React bundle
         try {
-            const response = await page.goto('http://localhost:8080/wp-content/plugins/aria/dist/admin-react.js');
+            const response = await page.goto('http://localhost:8080/wp-content/plugins/aria/dist/admin.js');
             const status = response?.status();
             console.log(`React Bundle: ${status === 200 ? '✅' : '❌'} (HTTP ${status})`);
         } catch (error) {

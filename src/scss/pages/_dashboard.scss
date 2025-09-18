@@ -1,571 +1,164 @@
-/**
- * ARIA Dashboard - Page Specific Styles
- * 
- * @package Aria
- * @version 2.0.0
- */
-
-// ===================================
-// DASHBOARD LAYOUT
-// ===================================
+@import '../variables';
 
 .aria-dashboard {
-  .aria-dashboard-container {
-    @include aria-container;
-    padding: $aria-space-10;
-    background: $aria-gray-50;
-    min-height: 100vh;
-
-    @media (max-width: $aria-screen-md) {
-      padding: $aria-space-6;
-    }
-  }
-
-  .aria-dashboard-header {
-    margin-bottom: $aria-space-12;
-  }
-
-  .aria-metrics-grid {
-    @include aria-responsive-grid(1, 2, 4);
-    margin-bottom: $aria-space-16;
-  }
-}
-
-// ===================================
-// DASHBOARD HEADER
-// ===================================
-
-.aria-dashboard-header {
-  background: linear-gradient(135deg, $aria-white 0%, $aria-gray-50 100%);
-  border: 1px solid $aria-gray-200;
-  border-radius: $aria-radius-xl;
-  padding: $aria-space-8;
-  box-shadow: $aria-shadow-sm;
-  margin-bottom: $aria-space-12;
-
-  .aria-header-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    
-    @media (max-width: $aria-screen-md) {
-      flex-direction: column;
-      gap: $aria-space-6;
-      text-align: center;
-    }
-  }
-
-  .aria-header-main {
-    display: flex;
-    align-items: center;
-    gap: $aria-space-6;
-    
-    @media (max-width: $aria-screen-md) {
-      flex-direction: column;
-      gap: $aria-space-4;
-    }
-  }
-
-  .aria-logo-section {
-    flex-shrink: 0;
-  }
-
-  .aria-title-section {
-    flex: 1;
-  }
-
-  .aria-main-title {
-    font-size: $aria-text-4xl;
-    font-weight: $aria-font-extrabold;
-    color: $aria-navy;
-    margin: 0 0 $aria-space-2 0;
-    line-height: $aria-leading-tight;
-    letter-spacing: -0.02em;
-  }
-
-  .aria-main-subtitle {
-    font-size: $aria-text-lg;
-    color: $aria-gray-600;
-    margin: 0;
-    line-height: $aria-leading-relaxed;
-  }
-
-  .aria-header-actions {
-    display: flex;
-    gap: $aria-space-3;
-    
-    @media (max-width: $aria-screen-md) {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-}
-
-// ===================================
-// SECTION HEADER SHARED STYLES
-// ===================================
-
-.aria-section-header {
-  margin-bottom: $aria-space-8;
-
-  .aria-section-header__content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $aria-space-6;
-
-    @media (max-width: $aria-screen-md) {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: $aria-space-4;
-    }
-  }
-
-  .aria-section-header__main {
-    display: flex;
-    align-items: center;
-    gap: $aria-space-4;
-  }
-
-  .aria-section-header__icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, $aria-primary-light 0%, rgba($aria-primary-light, 0.8) 100%);
-    color: $aria-primary;
-    border-radius: $aria-radius-lg;
-    flex-shrink: 0;
-    border: 2px solid $aria-primary;
-    box-shadow: 0 2px 8px rgba($aria-primary, 0.15);
-
-    svg {
-      width: 24px;
-      height: 24px;
-    }
-  }
-
-  .aria-section-header__text {
-    flex: 1;
-  }
-
-  .aria-section-title {
-    font-size: $aria-text-2xl;
-    font-weight: $aria-font-bold;
-    color: $aria-navy;
-    margin: 0 0 $aria-space-1 0;
-    line-height: $aria-leading-tight;
-  }
-
-  .aria-section-description {
-    font-size: $aria-text-base;
-    color: $aria-gray-600;
-    margin: 0;
-    line-height: $aria-leading-relaxed;
-  }
-
-  .aria-view-all-link {
-    display: flex;
-    align-items: center;
-    gap: $aria-space-2;
-    color: $aria-primary;
-    text-decoration: none;
-    font-weight: $aria-font-medium;
-    font-size: $aria-text-sm;
-    padding: $aria-space-2 $aria-space-4;
-    border-radius: $aria-radius-base;
-    border: 1px solid transparent;
-    transition: all $aria-transition-base ease;
-
-    &:hover {
-      background: $aria-primary-light;
-      border-color: $aria-primary;
-      transform: translateX(2px);
-    }
-
-    svg {
-      width: 16px;
-      height: 16px;
-      transition: transform $aria-transition-base ease;
-    }
-
-    &:hover svg {
-      transform: translateX(2px);
-    }
-  }
-}
-
-.aria-section-content {
-  background: $aria-white;
-  border-radius: $aria-radius-lg;
-  padding: $aria-space-8;
-  border: 1px solid $aria-gray-200;
-  box-shadow: $aria-shadow-sm;
-}
-
-// ===================================
-// SETUP PROGRESS SECTION
-// ===================================
-
-.aria-setup-section {
-  @include aria-card-professional;
-  margin-bottom: $aria-space-16;
-
-  .aria-progress-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: $aria-space-2;
-    min-width: 200px;
-
-    @media (max-width: $aria-screen-md) {
-      align-items: flex-start;
-      width: 100%;
-    }
-  }
-
-  .aria-progress-text {
-    font-size: $aria-text-sm;
-    font-weight: $aria-font-medium;
-    color: $aria-gray-600;
-  }
-
-  .aria-progress-bar {
-    width: 200px;
-    height: 8px;
-    background: $aria-gray-200;
-    border-radius: $aria-radius-full;
-    overflow: hidden;
-    border: 1px solid $aria-gray-300;
-
-    @media (max-width: $aria-screen-md) {
-      width: 100%;
-    }
-  }
-
-  .aria-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, $aria-primary 0%, $aria-primary-dark 100%);
-    border-radius: $aria-radius-full;
-    transition: width 0.6s ease;
-    position: relative;
-
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
-      animation: progress-shimmer 2s infinite;
-    }
-  }
-
-  @keyframes progress-shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-
-  .aria-setup-grid {
-    @include aria-responsive-grid(1, 2, 2, $aria-space-8);
-  }
-
-  .aria-setup-card {
-    @include aria-card-professional;
-    padding: $aria-space-6;
-
-    &.completed {
-      background: linear-gradient(135deg, $aria-success-light 0%, rgba($aria-success-light, 0.8) 100%);
-      border-color: $aria-success;
-      box-shadow: 0 4px 15px rgba($aria-success, 0.2);
-
-      &::before {
-        height: 6px;
-        background: linear-gradient(90deg, $aria-success 0%, rgba($aria-success, 0.8) 100%);
-      }
-
-      .aria-setup-card__icon {
-        background: linear-gradient(135deg, $aria-success 0%, rgba($aria-success, 0.9) 100%);
-        color: $aria-white;
-        box-shadow: 0 4px 12px rgba($aria-success, 0.3);
-      }
-
-      .aria-setup-card__title {
-        color: $aria-success-dark;
-      }
-    }
-  }
-
-  .aria-setup-card__header {
-    display: flex;
-    align-items: flex-start;
-    gap: $aria-space-4;
-    margin-bottom: $aria-space-6;
-  }
-
-  .aria-setup-card__icon {
-    width: 56px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, $aria-primary-light 0%, rgba($aria-primary-light, 0.8) 100%);
-    color: $aria-primary;
-    border-radius: $aria-radius-lg;
-    flex-shrink: 0;
-    transition: all $aria-transition-base ease;
-    border: 2px solid $aria-primary;
-    box-shadow: 0 2px 8px rgba($aria-primary, 0.15);
-
-    svg {
-      width: 28px;
-      height: 28px;
-    }
-  }
-
-  .aria-setup-card__content {
-    flex: 1;
-  }
-
-  .aria-setup-card__title {
-    font-size: $aria-text-lg;
-    font-weight: $aria-font-bold;
-    color: $aria-navy;
-    margin: 0 0 $aria-space-2 0;
-    line-height: $aria-leading-tight;
-  }
-
-  .aria-setup-card__description {
-    font-size: $aria-text-base;
-    color: $aria-gray-600;
-    margin: 0;
-    line-height: $aria-leading-relaxed;
-  }
-
-  .aria-setup-card__footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: $aria-space-4;
-    border-top: 1px solid $aria-gray-200;
-  }
-
-  .aria-setup-card__badge {
-    @include aria-badge-base;
-    border: 2px solid transparent;
-
-    &--completed {
-      @include aria-badge-success;
-    }
-
-    &--pending {
-      @include aria-badge-warning;
-    }
-  }
-
-  .aria-setup-card__action {
-    @include aria-button-secondary;
-    padding: $aria-space-2 $aria-space-4;
-    font-size: $aria-text-sm;
-  }
-}
-
-// ===================================
-// CONVERSATIONS SECTION
-// ===================================
-
-.aria-conversations-section {
-  @include aria-card-professional;
-  margin-bottom: $aria-space-16;
-
-  .aria-conversations-grid {
-    display: grid;
-    gap: $aria-space-4;
-  }
-
-  .aria-conversation-item {
-    @include aria-card-interactive;
-    padding: $aria-space-6;
-    
-    &:hover {
-      transform: translateY(-2px);
-      border-color: $aria-primary;
-      box-shadow: 0 8px 25px rgba($aria-primary, 0.15);
-    }
-  }
-
-  .aria-conversation-item__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: $aria-space-4;
-  }
-
-  .aria-conversation-item__visitor {
-    display: flex;
-    align-items: center;
-    gap: $aria-space-3;
-    font-weight: $aria-font-bold;
-    color: $aria-navy;
-    font-size: $aria-text-base;
-
-    &::before {
-      content: attr(data-initial);
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, $aria-primary-light 0%, rgba($aria-primary-light, 0.8) 100%);
-      border-radius: $aria-radius-full;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: $aria-text-sm;
-      font-weight: $aria-font-bold;
-      color: $aria-primary;
-      flex-shrink: 0;
-      border: 2px solid $aria-primary;
-    }
-  }
-
-  .aria-conversation-item__badge {
-    @include aria-badge-base;
-
-    &--active {
-      @include aria-badge-success;
-    }
-
-    &--closed {
-      @include aria-badge-base;
-      background: $aria-gray-100;
-      color: $aria-gray-700;
-      border: 1px solid $aria-gray-300;
-    }
-  }
-
-  .aria-conversation-item__preview {
-    font-size: $aria-text-sm;
-    color: $aria-gray-700;
-    line-height: $aria-leading-relaxed;
-    margin-bottom: $aria-space-4;
-    padding: $aria-space-3;
-    background: $aria-gray-50;
-    border-radius: $aria-radius-base;
-    border-left: 3px solid $aria-primary-light;
-    font-style: italic;
-    position: relative;
-
-    &::before {
-      content: '"';
-      position: absolute;
-      top: 0;
-      left: $aria-space-2;
-      font-size: $aria-text-lg;
-      color: $aria-primary;
-      font-weight: $aria-font-bold;
-      line-height: 1;
-    }
-
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .aria-conversation-item__meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: $aria-text-xs;
-    color: $aria-gray-500;
-    padding-top: $aria-space-3;
-    border-top: 1px solid $aria-gray-200;
-
-    .aria-meta-item {
-      display: flex;
-      align-items: center;
-      gap: $aria-space-1;
-
-      svg {
-        width: 14px;
-        height: 14px;
-        color: $aria-primary;
-      }
-    }
-  }
-}
-
-// ===================================
-// QUICK ACTIONS SECTION
-// ===================================
-
-.aria-actions-section {
-  @include aria-card-professional;
-
-  .aria-actions-grid {
-    @include aria-responsive-grid(1, 2, 3, $aria-space-6);
-  }
-
-  .aria-action-card {
-    @include aria-card-professional;
-    padding: $aria-space-6;
-    text-align: center;
-    text-decoration: none;
-    color: $aria-navy;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: $aria-space-4;
-
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 15px 35px rgba($aria-primary, 0.2);
-      
-      .aria-action-card__icon {
-        background: linear-gradient(135deg, $aria-primary 0%, $aria-primary-dark 100%);
-        color: $aria-white;
-        transform: scale(1.1);
-        box-shadow: 0 8px 20px rgba($aria-primary, 0.3);
-      }
-
-      .aria-action-card__title {
-        color: $aria-primary-dark;
-      }
-    }
-  }
-
-  .aria-action-card__icon {
-    width: 64px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, $aria-gray-100 0%, rgba($aria-gray-100, 0.8) 100%);
-    color: $aria-gray-600;
-    border-radius: $aria-radius-lg;
-    transition: all $aria-transition-base ease;
-    border: 2px solid $aria-gray-300;
-    box-shadow: $aria-shadow-sm;
-
-    svg {
-      width: 32px;
-      height: 32px;
-    }
-  }
-
-  .aria-action-card__title {
-    font-size: $aria-text-base;
-    font-weight: $aria-font-bold;
-    margin: 0;
-    transition: color $aria-transition-base ease;
-    line-height: $aria-leading-tight;
-  }
-
-  .aria-action-card__description {
-    font-size: $aria-text-sm;
-    color: $aria-gray-600;
-    margin: 0;
-    line-height: $aria-leading-relaxed;
-    text-align: center;
-  }
+	&__metrics {
+		@extend .aria-grid-metrics;
+	}
+
+	&__setup-list {
+		display: flex;
+		flex-direction: column;
+		gap: $aria-space-4;
+	}
+
+	&__setup-item {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: $aria-space-4;
+		padding: $aria-space-4;
+		border-radius: $aria-radius-lg;
+		border: 1px solid $aria-gray-200;
+		background: $aria-white;
+		box-shadow: $aria-shadow-xs;
+		transition: background-color $aria-transition-base ease, border-color $aria-transition-base ease;
+
+		&.is-complete {
+			border-color: $aria-success;
+			background: rgba($aria-success-light, 0.7);
+		}
+	}
+
+	&__setup-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	&__setup-title {
+		font-size: $aria-text-base;
+		font-weight: $aria-font-semibold;
+		color: $aria-gray-900;
+		margin: 0 0 $aria-space-2 0;
+	}
+
+	&__setup-description {
+		margin: 0;
+		color: $aria-gray-600;
+		font-size: $aria-text-sm;
+		line-height: $aria-leading-relaxed;
+	}
+
+	&__setup-status {
+		display: flex;
+		align-items: center;
+		gap: $aria-space-3;
+		color: $aria-gray-600;
+		font-size: $aria-text-sm;
+		font-weight: $aria-font-medium;
+
+		.is-complete & {
+			color: $aria-success-dark;
+		}
+	}
+
+	&__conversation-main {
+		display: flex;
+		flex-direction: column;
+		gap: $aria-space-2;
+		width: 100%;
+	}
+
+	&__conversation-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		border: 1px solid $aria-gray-200;
+		border-radius: $aria-radius-lg;
+		overflow: hidden;
+		background: $aria-white;
+	}
+
+	&__conversation-item {
+		display: flex;
+		align-items: flex-start;
+		gap: $aria-space-4;
+		width: 100%;
+		border: none;
+		background: transparent;
+		padding: $aria-space-4;
+		border-bottom: 1px solid $aria-gray-200;
+		cursor: pointer;
+		text-align: left;
+		transition: background-color $aria-transition-base ease;
+
+		&:hover {
+			background: $aria-gray-100;
+		}
+
+		&:last-child {
+			border-bottom: none;
+		}
+	}
+
+	&__conversation-header {
+		display: flex;
+		align-items: flex-start;
+		gap: $aria-space-3;
+	}
+
+	&__conversation-avatar {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: $aria-primary;
+		color: $aria-white;
+		font-weight: $aria-font-semibold;
+		flex-shrink: 0;
+	}
+
+	&__conversation-text {
+		flex: 1;
+		min-width: 0;
+	}
+
+	&__conversation-title {
+		margin: 0 0 $aria-space-1 0;
+		font-size: $aria-text-sm;
+		font-weight: $aria-font-semibold;
+		color: $aria-gray-900;
+	}
+
+	&__conversation-snippet {
+		margin: 0 0 $aria-space-1 0;
+		font-size: $aria-text-sm;
+		color: $aria-gray-600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&__conversation-meta {
+		margin: 0;
+		font-size: $aria-text-xs;
+		color: $aria-gray-500;
+	}
+
+	&__empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: $aria-space-4;
+		padding: $aria-space-8 $aria-space-4;
+		color: $aria-gray-600;
+	}
+
+	&__quick-actions {
+		display: grid;
+		gap: $aria-space-4;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	}
 }

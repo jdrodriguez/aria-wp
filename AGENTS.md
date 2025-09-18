@@ -7,6 +7,9 @@
 - `src/` contains modern JS/React modules (`src/admin`, `src/public`) plus SCSS that webpack compiles into `dist/`.
 - `assets/` stores media and icons, `languages/` holds translation files, and `tests/` includes PHPUnit specs plus `visual/` Playwright scenarios.
 - We are completing the migration from legacy PHP admin views to the React interface. Treat React (`src/js/admin`) as the single source of truth for new work and consult `docs/FINAL_EXECUTION_PLAN.md` for sequencing.
+- Shared admin layout primitives live under `src/js/admin/components` (`PageShell`, `SectionCard`, `MetricCard`, etc.). All admin pages should compose page-specific sections from these primitives; new section modules belong in `src/js/admin/pages/<page>-sections/` with matching SCSS in `src/scss/pages/`.
+  - Completed: `settings-panels/`, `knowledge-sections/`, `conversations-sections/`, `content-indexing-sections/` provide the pattern to follow.
+- Legacy inline styles remain in `KnowledgeEntry.jsx`; capture refactor follow-ups before tackling new features on that screen.
 
 ## Build, Test, and Development Commands
 - `npm install` and `composer install` fetch front-end and PHP dependencies.
@@ -32,7 +35,7 @@
 
 ## Current Execution Plan
 - Follow `docs/FINAL_EXECUTION_PLAN.md` for week-by-week priorities (runtime hardening, admin bundle consolidation, conversation integrity, UI standardization, component refactors, release prep).
-- When touching admin assets, remove dependencies on `admin-react.js` and update diagnostics/tests accordingly; React should be the only shipped admin interface going forward.
+- When touching admin assets, depend on the unified `dist/admin.js` bundle (`aria-admin` handle); the legacy `aria-admin-react` handle is now just an alias for backward compatibility.
 - Keep UI changes aligned with the shared design primitives introduced during Phase 4 so all admin pages stay visually consistent.
 
 ## Versioning Guidelines

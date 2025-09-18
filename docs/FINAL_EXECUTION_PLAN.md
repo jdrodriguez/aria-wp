@@ -16,7 +16,7 @@
 
 ## Phase 2 – Admin Bundle Consolidation (Week 1–2)
 - Update `webpack.config.js` to drop the duplicate `admin-react` entry; ensure emitted artifacts include `admin.js`, associated CSS, and any dynamic chunks (e.g., `src_js_admin_pages_KnowledgeEntry_jsx.js`).
-- Adjust `admin/class-aria-admin.php` to enqueue/localize only the unified `aria-admin` handle; remove redundant registration once consumers are migrated.
+- Adjust `admin/class-aria-admin.php` to enqueue/localize only the unified `aria-admin` handle and register a lightweight `aria-admin-react` alias for backward compatibility.
 - Migrate internal tooling/tests: refresh `diagnostic-wordpress-integration.php`, Playwright fixtures in `tests/visual/`, and any scripts that fetch `dist/admin-react.js` so they target the consolidated asset.
 - Rebuild and verify `dist/` outputs, then update `npm run dev/build` expectations and clean scripts to account for the new bundle set.
 - Document rollback instructions and interim compatibility flags before removing legacy assets from version control.
@@ -33,6 +33,7 @@
 
 ## Phase 5 – Component Refactors (Week 3)
 - Break down oversized pages (e.g., `Settings.jsx`, `Knowledge.jsx`, `ContentIndexing.jsx`, `Conversations.jsx`) into domain-driven subcomponents and hooks to reduce file length and improve testability.
+  - ✅ Settings, Knowledge, Conversations, and Content Indexing now render via modular section directories that reuse shared primitives.
 - Centralize AJAX/data-fetch patterns with `makeAjaxRequest()` helpers and shared loading/error components; eliminate `setTimeout` mocks once real endpoints are wired.
 - Introduce lightweight Storybook-style preview or snapshot tests where beneficial for complex components.
 

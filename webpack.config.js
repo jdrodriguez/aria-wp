@@ -10,7 +10,6 @@ module.exports = (env, argv) => {
   return {
     entry: {
       'admin': './src/js/admin/index.js',
-      'admin-react': './src/js/admin/index.js',  // Same source, different output name for backwards compatibility
       'chat': './src/js/chat.js',
       'admin-style': './src/scss/admin.scss',
       'chat-style': './src/scss/chat.scss'

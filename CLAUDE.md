@@ -25,7 +25,7 @@
 ├── includes/                          # PHP classes (well-organized, keep as-is)
 ├── src/
 │   ├── js/
-│   │   ├── admin-react.jsx            # React admin components
+│   │   ├── admin/index.js            # React admin entry point
 │   │   ├── admin.js                   # Legacy admin JS (REMOVE after migration)
 │   │   └── admin/                     # React component library
 │   └── scss/                          # Source styles
@@ -134,7 +134,7 @@ For each remaining PHP page:
 - **React Components**: PascalCase (`MetricCard.jsx`)
 - **PHP Templates**: `aria-[page]-react.php`  
 - **SCSS Files**: `_[component].scss`
-- **Compiled Files**: `admin-react.js`, `admin-style.css`
+- **Compiled Files**: `admin.js`, `admin-style.css`
 
 ## WordPress Integration
 
@@ -142,12 +142,16 @@ For each remaining PHP page:
 ```php
 // class-aria-admin.php enqueue_scripts()
 wp_enqueue_script(
-    'aria-admin-react',
-    ARIA_PLUGIN_URL . 'dist/admin-react.js',  // ONLY from dist/
-    array( 'wp-element', 'wp-components', 'wp-i18n' ),
+    'aria-admin',
+    ARIA_PLUGIN_URL . 'dist/admin.js',
+    array( 'wp-element', 'wp-components', 'wp-i18n', 'jquery', 'wp-color-picker' ),
     $this->version,
     true
 );
+
+// Back-compat alias used by older templates
+wp_register_script( 'aria-admin-react', false, array( 'aria-admin' ), $this->version, true );
+wp_enqueue_script( 'aria-admin-react' );
 ```
 
 ### AJAX Integration
@@ -192,7 +196,7 @@ admin/class-aria-admin.php              # Admin orchestrator
 admin/partials/*-react.php              # React templates
 admin/partials/components/              # Layout components
 includes/class-aria-*.php               # All PHP classes
-src/js/admin-react.jsx                  # React entry point
+src/js/admin/index.js                   # React entry point
 src/js/admin/                           # React components
 src/js/chat.js                          # Chat widget (separate system)
 src/scss/                               # Source styles
@@ -217,7 +221,7 @@ dist/                                   # Compiled output
 ```bash
 npm run build
 # Verify files exist with recent timestamps:
-ls -la dist/admin-react.js
+ls -la dist/admin.js
 ls -la dist/admin-style.css
 ```
 

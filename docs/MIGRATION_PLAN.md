@@ -1,10 +1,10 @@
 # Complete Migration Plan: Single Script System for Aria WordPress Plugin
 
 ## Current Situation
-- **Duplicate Files**: Both `admin.js` and `admin-react.js` (453KB each) = 906KB total
-- **Duplicate Webpack Entries**: Same source file compiled twice
-- **Duplicate WordPress Enqueues**: Both scripts loaded on every admin page
-- **Why It Works Now**: PHP templates just need React mounted to div IDs, script name doesn't matter
+- **Legacy State**: Historically shipped both `admin.js` and `admin-react.js`, doubling bundle size
+- **Webpack Cleanup**: Goal is a single `admin.js` entry; `admin-react` becomes a lightweight alias handle only
+- **WordPress Enqueues**: React admin should load from one bundle while maintaining compatibility with any code expecting `aria-admin-react`
+- **Why It Works**: PHP templates just need React mounted to div IDs, script name doesn't matter
 
 ## Migration Plan
 
@@ -42,8 +42,17 @@ wp_enqueue_script(
     true
 );
 
-// DELETE the duplicate registration (lines 102-108):
-// wp_enqueue_script( $this->plugin_name . '-admin-react', ... );
+// Back-compat alias (no additional network request)
+wp_register_script(
+    $this->plugin_name . '-admin-react',
+    false,
+    array( $this->plugin_name . '-admin' ),
+    $this->version,
+    true
+);
+
+// Optional: enqueue alias so older hooks see it as loaded
+wp_enqueue_script( $this->plugin_name . '-admin-react' );
 
 // Single localization (keep lines 128-132)
 wp_localize_script(
@@ -52,8 +61,7 @@ wp_localize_script(
     $localized_data
 );
 
-// DELETE duplicate localization (lines 133-137):
-// wp_localize_script( $this->plugin_name . '-admin-react', ... );
+// No second localization required
 ```
 
 ### Phase 4: Verify PHP Templates

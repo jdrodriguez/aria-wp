@@ -1,32 +1,31 @@
 <?php
 /**
- * Class Test_Aria_Core
- *
- * @package Aria
+ * Core plugin integration smoke tests.
  */
 
-/**
- * Test core plugin functionality.
- */
 class Tests_Aria_Core extends WP_UnitTestCase {
 
 	/**
-	 * Plugin instance.
+	 * Core plugin instance used for assertions.
 	 *
-	 * @var Aria
+	 * @var Aria_Core
 	 */
-	private $plugin;
+	private $core;
 
 	/**
-	 * Setup test.
+	 * Prepare a fresh core instance for each test.
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		$this->plugin = new Aria();
+
+		$this->core = new Aria_Core();
+		$this->core->run();
+
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-deactivator.php';
 	}
 
 	/**
-	 * Test plugin constants are defined.
+	 * Plugin constants should always be defined by the bootstrap file.
 	 */
 	public function test_constants_defined() {
 		$this->assertTrue( defined( 'ARIA_VERSION' ) );
@@ -36,101 +35,89 @@ class Tests_Aria_Core extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test plugin version.
+	 * Ensure the core class reports the packaged version string.
 	 */
-	public function test_plugin_version() {
-		$this->assertEquals( '1.6.0', ARIA_VERSION );
+	public function test_plugin_version_matches_core_version() {
+		$this->assertSame( ARIA_VERSION, $this->core->get_version() );
 	}
 
 	/**
-	 * Test core class exists.
+	 * The primary service classes should all be available.
 	 */
-	public function test_core_class_exists() {
+	public function test_service_classes_exist() {
 		$this->assertTrue( class_exists( 'Aria_Core' ) );
-	}
-
-	/**
-	 * Test admin class exists.
-	 */
-	public function test_admin_class_exists() {
 		$this->assertTrue( class_exists( 'Aria_Admin' ) );
-	}
-
-	/**
-	 * Test public class exists.
-	 */
-	public function test_public_class_exists() {
 		$this->assertTrue( class_exists( 'Aria_Public' ) );
-	}
-
-	/**
-	 * Test database class exists.
-	 */
-	public function test_database_class_exists() {
 		$this->assertTrue( class_exists( 'Aria_Database' ) );
 	}
 
 	/**
-	 * Test plugin activation creates tables.
+	 * Activation should provision all database tables, including new vector stores.
 	 */
-	public function test_activation_creates_tables() {
+	public function test_activation_creates_all_tables() {
 		global $wpdb;
 
-		// Run activation.
 		Aria_Activator::activate();
 
-		// Check tables exist.
 		$tables = array(
+			$wpdb->prefix . 'aria_knowledge_entries',
 			$wpdb->prefix . 'aria_knowledge_base',
+			$wpdb->prefix . 'aria_knowledge_chunks',
+			$wpdb->prefix . 'aria_search_cache',
+			$wpdb->prefix . 'aria_search_analytics',
 			$wpdb->prefix . 'aria_conversations',
 			$wpdb->prefix . 'aria_personality_settings',
 			$wpdb->prefix . 'aria_learning_data',
+			$wpdb->prefix . 'aria_content_vectors',
 			$wpdb->prefix . 'aria_license',
 		);
 
 		foreach ( $tables as $table ) {
-			$this->assertEquals( $table, $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) );
+			$this->assertSame( $table, $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) );
 		}
 	}
 
 	/**
-	 * Test plugin hooks are registered.
+	 * Core should register the deferred admin/public hooks via the loader.
 	 */
-	public function test_hooks_registered() {
-		$this->assertTrue( has_action( 'wp_enqueue_scripts' ) );
-		$this->assertTrue( has_action( 'admin_enqueue_scripts' ) );
-		$this->assertTrue( has_action( 'wp_footer' ) );
+	public function test_hooks_registered_via_loader() {
+		$this->assertNotFalse( has_action( 'admin_enqueue_scripts', array( $this->core, 'init_admin_class' ) ) );
+		$this->assertNotFalse( has_action( 'admin_menu', array( $this->core, 'init_admin_class' ) ) );
+		$this->assertNotFalse( has_action( 'admin_notices', array( $this->core, 'init_admin_class' ) ) );
+		$this->assertNotFalse( has_action( 'wp_enqueue_scripts', array( $this->core, 'init_public_class' ) ) );
+		$this->assertNotFalse( has_action( 'wp_footer', array( $this->core, 'init_public_class' ) ) );
+		$this->assertNotFalse( has_action( 'aria_cleanup_cache', array( $this->core, 'cleanup_vector_caches' ) ) );
 	}
 
 	/**
-	 * Test AJAX actions are registered.
+	 * AJAX routes should be wired to the deferred handler for both auth contexts.
 	 */
 	public function test_ajax_actions_registered() {
 		$ajax_actions = array(
 			'aria_send_message',
 			'aria_get_conversation',
 			'aria_save_knowledge',
-			'aria_test_api',
-			'aria_save_personality',
+			'aria_get_advanced_settings',
+			'aria_save_advanced_settings',
 		);
 
 		foreach ( $ajax_actions as $action ) {
-			$this->assertTrue( has_action( 'wp_ajax_' . $action ) );
-			$this->assertTrue( has_action( 'wp_ajax_nopriv_' . $action ) );
+			$this->assertNotFalse( has_action( 'wp_ajax_' . $action, array( $this->core, 'handle_ajax_request' ) ) );
+			$this->assertNotFalse( has_action( 'wp_ajax_nopriv_' . $action, array( $this->core, 'handle_ajax_request' ) ) );
 		}
 	}
 
 	/**
-	 * Test shortcode is registered.
+	 * The public shortcode should still be available for the legacy widget.
 	 */
 	public function test_shortcode_registered() {
 		$this->assertTrue( shortcode_exists( 'aria_chat' ) );
 	}
 
 	/**
-	 * Test plugin deactivation.
+	 * Deactivation should remove all scheduled events for a clean shutdown.
 	 */
-	public function test_deactivation() {
+	public function test_deactivation_clears_cron_events() {
 		$timestamp = time() + 60;
 
 		wp_schedule_event( $timestamp, 'daily', 'aria_daily_license_check' );
@@ -146,10 +133,8 @@ class Tests_Aria_Core extends WP_UnitTestCase {
 		wp_schedule_single_event( $timestamp, 'aria_cleanup_processing' );
 		wp_schedule_single_event( $timestamp, 'aria_index_single_content', array( 99, 'post' ) );
 
-		// Run deactivation.
 		Aria_Deactivator::deactivate();
 
-		// Check scheduled events are cleared.
 		$this->assertFalse( wp_next_scheduled( 'aria_daily_license_check' ) );
 		$this->assertFalse( wp_next_scheduled( 'aria_process_analytics' ) );
 		$this->assertFalse( wp_next_scheduled( 'aria_daily_summary_email' ) );

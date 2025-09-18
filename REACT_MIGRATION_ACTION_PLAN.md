@@ -86,7 +86,7 @@ rm public/css/chat-style.backup.css
 
 # Verify build system
 npm run build
-ls -la dist/admin-style.css dist/admin-react.js dist/chat-style.css
+ls -la dist/admin-style.css dist/admin.js dist/chat-style.css
 ```
 
 ---
@@ -176,7 +176,7 @@ rm admin/partials/aria-content-indexing-new.php  # If exists
 rm src/js/admin.js                      # 26.7KB legacy admin JS
 
 # Keep only:
-# - src/js/admin-react.jsx (React entry point)
+# - src/js/admin/index.js (React entry point)
 # - src/js/admin/ (React components)
 # - src/js/chat.js (separate chat widget system)
 ```
@@ -302,7 +302,7 @@ import { __ } from '@wordpress/i18n';
 ```
 
 ### Compilation Targets
-- `src/js/admin-react.jsx` → `dist/admin-react.js`
+- `src/js/admin/index.js` → `dist/admin.js`
 - `src/scss/admin.scss` → `dist/admin-style.css`
 - `src/scss/chat.scss` → `dist/chat-style.css`
 
@@ -310,12 +310,16 @@ import { __ } from '@wordpress/i18n';
 ```php
 // In class-aria-admin.php
 wp_enqueue_script(
-    'aria-admin-react',
-    ARIA_PLUGIN_URL . 'dist/admin-react.js',    // ✅ Load from dist/
-    array( 'wp-element', 'wp-components', 'wp-i18n' ),
+    'aria-admin',
+    ARIA_PLUGIN_URL . 'dist/admin.js',    // ✅ Load from dist/
+    array( 'wp-element', 'wp-components', 'wp-i18n', 'jquery', 'wp-color-picker' ),
     $this->version,
     true
 );
+
+// Backward compatibility alias for older hooks/templates
+wp_register_script( 'aria-admin-react', false, array( 'aria-admin' ), $this->version, true );
+wp_enqueue_script( 'aria-admin-react' );
 ```
 
 ---

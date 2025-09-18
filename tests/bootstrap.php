@@ -33,6 +33,43 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 require_once $_tests_dir . '/includes/functions.php';
 
 /**
+ * Force InnoDB with dynamic rows for FULLTEXT tables during tests.
+ *
+ * Some CI MySQL images forbid FULLTEXT indexes on implicit MyISAM/temp tables.
+ * Ensuring an explicit InnoDB engine with ROW_FORMAT=DYNAMIC keeps creation
+ * compatible with JSON columns and large indexes the plugin relies on.
+ *
+ * @param string $query SQL statement dispatched by $wpdb.
+ * @return string Potentially rewritten SQL query.
+ */
+function aria_tests_force_innodb_fulltext( $query ) {
+	if (
+		false === stripos( $query, 'CREATE TABLE' ) ||
+		false === stripos( $query, 'aria_' ) ||
+		false === stripos( $query, 'FULLTEXT' )
+	) {
+		return $query;
+	}
+
+	// Normalise the storage engine for predictable FULLTEXT behaviour.
+	if ( false !== stripos( $query, 'ENGINE=' ) ) {
+		$query = preg_replace( '/ENGINE\s*=\s*\w+/i', 'ENGINE=InnoDB', $query, 1 );
+	} else {
+		$query = preg_replace( '/;\s*$/', '', $query ) . ' ENGINE=InnoDB';
+	}
+
+	// Guarantee dynamic row format so JSON + FULLTEXT combinations work.
+	if ( false === stripos( $query, 'ROW_FORMAT=' ) ) {
+		$query = preg_replace( '/ENGINE=InnoDB/i', 'ENGINE=InnoDB ROW_FORMAT=DYNAMIC', $query, 1 );
+	}
+
+	$query = rtrim( $query, "; \t\n\r" ) . ';';
+
+	return $query;
+}
+tests_add_filter( 'query', 'aria_tests_force_innodb_fulltext' );
+
+/**
  * Manually load the plugin being tested.
  */
 function _manually_load_plugin() {

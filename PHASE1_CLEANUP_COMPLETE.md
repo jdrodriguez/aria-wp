@@ -42,7 +42,7 @@
 **Status**: ✅ Working perfectly
 - All files compile successfully to `/dist/` directory
 - CSS compilation: 66.7KB admin-style.css, 35.6KB chat-style.css
-- JavaScript compilation: 563KB admin-react.js, 43.9KB chat.js, 12.6KB admin.js
+- JavaScript compilation: 569KB admin.js (React admin bundle), 43.9KB chat.js
 - **Note**: Some SCSS deprecation warnings (non-critical, future modernization task)
 
 ## File Count Reduction Achieved
@@ -65,8 +65,7 @@
 
 ### WordPress File Loading Status
 **✅ FIXED**: WordPress now loads only from `/dist/` directory:
-- `dist/admin-react.js` (React pages)
-- `dist/admin.js` (legacy compatibility)
+- `dist/admin.js` (React admin bundle + legacy `aria-admin-react` alias)
 - `dist/chat.js` (chat widget)
 - `dist/admin-style.css` (admin styling)
 - `dist/chat-style.css` (chat styling)
@@ -108,7 +107,7 @@ aria/
 
 ### JavaScript Loading
 - **Before**: 3 versions of admin.js (confusion, outdated features)
-- **After**: Single source of truth from `/dist/admin-react.js`
+- **After**: Single source of truth from `/dist/admin.js`
 
 ### Development Experience  
 - **Before**: Mixed debug files, unclear structure

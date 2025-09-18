@@ -1,6 +1,8 @@
 export { default as MetricCard } from './MetricCard.jsx';
 export { default as QuickActionButton } from './QuickActionButton.jsx';
 export { default as PageHeader } from './PageHeader.jsx';
+export { default as PageShell } from './PageShell.jsx';
+export { default as SectionCard } from './SectionCard.jsx';
 export { default as CustomRadioGroup } from './CustomRadioGroup.jsx';
 export { default as FormCard } from './FormCard.jsx';
 export { default as StatusIndicator } from './StatusIndicator.jsx';

@@ -24,7 +24,7 @@ test('Verify Page Width Increase', async ({ page }) => {
             <div id="aria-personality-root"></div>
         </div>
     </div>
-    <script src="http://localhost:8080/wp-content/plugins/aria/dist/admin-react.js"></script>
+    <script src="http://localhost:8080/wp-content/plugins/aria/dist/admin.js"></script>
 </body>
 </html>`;
 

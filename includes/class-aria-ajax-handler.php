@@ -18,7 +18,7 @@ class Aria_Ajax_Handler {
 		// Verify nonce
 		if ( ! check_ajax_referer( 'aria_public_nonce', 'nonce', false ) ) {
 			// Log for debugging
-			error_log( 'Aria AJAX - Nonce check failed. Expected: aria_public_nonce, Received: ' . ( isset( $_POST['nonce'] ) ? $_POST['nonce'] : 'none' ) );
+			Aria_Logger::error( 'Aria AJAX - Nonce check failed. Expected: aria_public_nonce, Received: ' . ( isset( $_POST['nonce'] ) ? $_POST['nonce'] : 'none' ) );
 			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
 		}
 
@@ -47,16 +47,16 @@ class Aria_Ajax_Handler {
 
 		// Get relevant knowledge
 		$knowledge = $this->get_relevant_knowledge( $message );
-		error_log( 'Aria - Knowledge retrieved: ' . ( empty( $knowledge ) ? 'EMPTY' : 'Found ' . strlen( $knowledge ) . ' characters' ) );
+		Aria_Logger::debug( 'Aria - Knowledge retrieved: ' . ( empty( $knowledge ) ? 'EMPTY' : 'Found ' . strlen( $knowledge ) . ' characters' ) );
 
 		// Get personality settings
 		$personality = $this->get_personality_settings();
-		error_log( 'Aria - Business type: ' . $personality['business_type'] );
+		Aria_Logger::debug( 'Aria - Business type: ' . $personality['business_type'] );
 
 		// Build prompt
 		$prompt = $this->build_prompt( $message, $knowledge, $personality );
-		error_log( 'Aria - Prompt length: ' . strlen( $prompt ) );
-		error_log( 'Aria - First 500 chars of prompt: ' . substr( $prompt, 0, 500 ) );
+		Aria_Logger::debug( 'Aria - Prompt length: ' . strlen( $prompt ) );
+		Aria_Logger::debug( 'Aria - First 500 chars of prompt: ' . substr( $prompt, 0, 500 ) );
 
 		try {
 			// Get AI response
@@ -217,14 +217,14 @@ class Aria_Ajax_Handler {
 		try {
 			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
 			
-			$processor = new Aria_Background_Processor();
+			$processor = Aria_Background_Processor::instance();
 			$scheduled = $processor->schedule_embedding_generation( $id );
 			
 			if ( $scheduled ) {
-				error_log( "Aria: Scheduled processing for knowledge entry {$id}" );
+				Aria_Logger::debug( "Aria: Scheduled processing for knowledge entry {$id}" );
 			}
 		} catch ( Exception $e ) {
-			error_log( "Aria: Failed to schedule processing for entry {$id}: " . $e->getMessage() );
+			Aria_Logger::error( "Aria: Failed to schedule processing for entry {$id}: " . $e->getMessage() );
 		}
 
 		wp_send_json_success( array(
@@ -395,10 +395,10 @@ class Aria_Ajax_Handler {
 		$api_key = Aria_Security::decrypt( $encrypted_key );
 		
 		// Debug logging
-		error_log( 'Aria Test Saved API - Provider: ' . $provider );
-		error_log( 'Aria Test Saved API - Encrypted key exists: ' . ( $encrypted_key ? 'yes' : 'no' ) );
-		error_log( 'Aria Test Saved API - Decrypted key exists: ' . ( $api_key ? 'yes' : 'no' ) );
-		error_log( 'Aria Test Saved API - Decrypted key length: ' . strlen( $api_key ) );
+		Aria_Logger::debug( 'Aria Test Saved API - Provider: ' . $provider );
+		Aria_Logger::debug( 'Aria Test Saved API - Encrypted key exists: ' . ( $encrypted_key ? 'yes' : 'no' ) );
+		Aria_Logger::debug( 'Aria Test Saved API - Decrypted key exists: ' . ( $api_key ? 'yes' : 'no' ) );
+		Aria_Logger::debug( 'Aria Test Saved API - Decrypted key length: ' . strlen( $api_key ) );
 		
 		if ( empty( $api_key ) ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to decrypt API key. Please re-enter your API key.', 'aria' ) ) );
@@ -406,21 +406,21 @@ class Aria_Ajax_Handler {
 
 		// Test the API connection
 		try {
-			error_log( 'Aria Test Saved API - About to create provider' );
+			Aria_Logger::debug( 'Aria Test Saved API - About to create provider' );
 			$ai_provider = $this->create_ai_provider( $provider, $api_key );
-			error_log( 'Aria Test Saved API - Provider created, testing connection' );
+			Aria_Logger::debug( 'Aria Test Saved API - Provider created, testing connection' );
 			$result      = $ai_provider->test_connection();
-			error_log( 'Aria Test Saved API - Test result: ' . ( $result ? 'success' : 'failed' ) );
+			Aria_Logger::debug( 'Aria Test Saved API - Test result: ' . ( $result ? 'success' : 'failed' ) );
 
 			if ( $result ) {
 				wp_send_json_success( array( 'message' => __( 'API connection successful!', 'aria' ) ) );
 			} else {
-				error_log( 'Aria Test Saved API - Connection test returned false' );
+				Aria_Logger::error( 'Aria Test Saved API - Connection test returned false' );
 				wp_send_json_error( array( 'message' => __( 'API connection failed. Please check your credentials.', 'aria' ) ) );
 			}
 		} catch ( Exception $e ) {
-			error_log( 'Aria Test Saved API - Exception: ' . $e->getMessage() );
-			error_log( 'Aria Test Saved API - Exception trace: ' . $e->getTraceAsString() );
+			Aria_Logger::error( 'Aria Test Saved API - Exception: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Test Saved API - Exception trace: ' . $e->getTraceAsString() );
 			wp_send_json_error( array( 'message' => 'Error: ' . $e->getMessage() ) );
 		}
 	}
@@ -635,7 +635,7 @@ class Aria_Ajax_Handler {
 					);
 				}
 				$all_knowledge[] = "WordPress Content:\n" . implode( "\n---\n", $content_knowledge );
-				error_log( 'Aria: Found ' . count( $content_results ) . ' WordPress content matches' );
+				Aria_Logger::debug( 'Aria: Found ' . count( $content_results ) . ' WordPress content matches' );
 			}
 
 			// 2. Search knowledge base vectors (existing system)
@@ -654,7 +654,7 @@ class Aria_Ajax_Handler {
 					if ( strpos( $line, ':' ) !== false ) {
 						list( $role, $content ) = explode( ':', $line, 2 );
 						$context_array[] = array(
-							'sender' => trim( strtolower( $role ) ),
+							'role'    => trim( strtolower( $role ) ),
 							'content' => trim( $content )
 						);
 					}
@@ -666,18 +666,18 @@ class Aria_Ajax_Handler {
 			
 			if ( ! empty( $kb_knowledge ) ) {
 				$all_knowledge[] = "Knowledge Base:\n" . $kb_knowledge;
-				error_log( 'Aria: Found knowledge base matches' );
+				Aria_Logger::debug( 'Aria: Found knowledge base matches' );
 			}
 			
 			// Combine all knowledge sources
 			if ( ! empty( $all_knowledge ) ) {
 				$combined_knowledge = implode( "\n\n=================\n\n", $all_knowledge );
-				error_log( 'Aria: Using combined vector search results for question: ' . substr( $question, 0, 50 ) );
+				Aria_Logger::debug( 'Aria: Using combined vector search results for question: ' . substr( $question, 0, 50 ) );
 				return $combined_knowledge;
 			}
 			
 		} catch ( Exception $e ) {
-			error_log( 'Aria Vector Search Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Vector Search Error: ' . $e->getMessage() );
 		}
 		
 		return '';
@@ -694,8 +694,8 @@ class Aria_Ajax_Handler {
 		$table = $wpdb->prefix . 'aria_knowledge_base';
 
 		// Debug logging
-		error_log( 'Aria Knowledge Search - Question: ' . $question );
-		error_log( 'Aria Knowledge Search - Current blog ID: ' . get_current_blog_id() );
+		Aria_Logger::debug( 'Aria Knowledge Search - Question: ' . $question );
+		Aria_Logger::debug( 'Aria Knowledge Search - Current blog ID: ' . get_current_blog_id() );
 
 		// First, let's check both with and without site_id filter
 		$test_query = "SELECT COUNT(*) FROM $table WHERE site_id = %d";
@@ -704,11 +704,11 @@ class Aria_Ajax_Handler {
 		$test_query_all = "SELECT COUNT(*) FROM $table";
 		$count_all = $wpdb->get_var( $test_query_all );
 		
-		error_log( 'Aria Knowledge Search - Entries with site_id ' . get_current_blog_id() . ': ' . $count_with_site );
-		error_log( 'Aria Knowledge Search - Total entries in table: ' . $count_all );
+		Aria_Logger::debug( 'Aria Knowledge Search - Entries with site_id ' . get_current_blog_id() . ': ' . $count_with_site );
+		Aria_Logger::debug( 'Aria Knowledge Search - Total entries in table: ' . $count_all );
 
 		if ( $count_all == 0 ) {
-			error_log( 'Aria Knowledge Search - WARNING: No knowledge base entries found in table!' );
+			Aria_Logger::debug( 'Aria Knowledge Search - WARNING: No knowledge base entries found in table!' );
 			return '';
 		}
 		
@@ -756,7 +756,7 @@ class Aria_Ajax_Handler {
 		}
 
 		if ( empty( $where ) ) {
-			error_log( 'Aria Knowledge Search - No valid search terms' );
+			Aria_Logger::debug( 'Aria Knowledge Search - No valid search terms' );
 			// If no valid search terms, at least search for the full question
 			$where[] = $wpdb->prepare( 
 				'(content LIKE %s)', 
@@ -780,12 +780,12 @@ class Aria_Ajax_Handler {
 		} else {
 			$final_query = $sql;
 		}
-		error_log( 'Aria Knowledge Search - SQL Query: ' . $final_query );
+		Aria_Logger::debug( 'Aria Knowledge Search - SQL Query: ' . $final_query );
 
 		$results = $wpdb->get_results( $final_query, ARRAY_A );
 
 		if ( empty( $results ) ) {
-			error_log( 'Aria Knowledge Search - No results found with search criteria, fetching all entries' );
+			Aria_Logger::debug( 'Aria Knowledge Search - No results found with search criteria, fetching all entries' );
 			// If no specific matches, get ALL knowledge base entries
 			if ( $use_site_filter ) {
 				$fallback_sql = "SELECT title, content, context, response_instructions FROM $table WHERE site_id = %d LIMIT 10";
@@ -799,12 +799,12 @@ class Aria_Ajax_Handler {
 			}
 			
 			if ( empty( $results ) ) {
-				error_log( 'Aria Knowledge Search - No knowledge base entries at all!' );
+				Aria_Logger::debug( 'Aria Knowledge Search - No knowledge base entries at all!' );
 				return '';
 			}
 		}
 
-		error_log( 'Aria Knowledge Search - Found ' . count( $results ) . ' results' );
+		Aria_Logger::debug( 'Aria Knowledge Search - Found ' . count( $results ) . ' results' );
 		$knowledge = "=== RELEVANT KNOWLEDGE FROM DATABASE ===\n\n";
 		
 		// If searching for employment/careers, prioritize that content
@@ -964,7 +964,12 @@ class Aria_Ajax_Handler {
 		$context         = '';
 
 		foreach ( $recent_messages as $msg ) {
-			$context .= $msg['role'] . ': ' . $msg['content'] . "\n";
+			$role    = isset( $msg['role'] ) ? $msg['role'] : ( isset( $msg['sender'] ) ? $msg['sender'] : '' );
+			$content = isset( $msg['content'] ) ? $msg['content'] : '';
+			if ( empty( $role ) || '' === trim( $content ) ) {
+				continue;
+			}
+			$context .= $role . ': ' . $content . "\n";
 		}
 
 		return $context;
@@ -995,9 +1000,12 @@ class Aria_Ajax_Handler {
 			$messages = array();
 		}
 
+		$normalized_role = trim( strtolower( $role ) );
+
 		// Add new message
 		$messages[] = array(
-			'sender'    => $role,
+			'role'      => $normalized_role,
+			'sender'    => $normalized_role, // Maintain legacy key until UI fully migrates.
 			'content'   => $message,
 			'timestamp' => current_time( 'mysql' ),
 		);
@@ -1122,7 +1130,7 @@ class Aria_Ajax_Handler {
 		try {
 			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
 			
-			$processor = new Aria_Background_Processor();
+			$processor = Aria_Background_Processor::instance();
 			$scheduled = $processor->schedule_embedding_generation( $entry_id );
 
 			if ( $scheduled ) {
@@ -1154,7 +1162,7 @@ class Aria_Ajax_Handler {
 			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
 			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-cache-manager.php';
 			
-			$processor = new Aria_Background_Processor();
+			$processor = Aria_Background_Processor::instance();
 			$cache_manager = new Aria_Cache_Manager();
 			
 			$stats = array(
@@ -1229,7 +1237,7 @@ class Aria_Ajax_Handler {
 		try {
 			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
 			
-			$processor = new Aria_Background_Processor();
+			$processor = Aria_Background_Processor::instance();
 			$entry_ids = isset( $_POST['entry_ids'] ) ? array_map( 'intval', $_POST['entry_ids'] ) : array();
 			
 			$scheduled_count = $processor->retry_failed_entries( $entry_ids );
@@ -1289,7 +1297,7 @@ class Aria_Ajax_Handler {
 			wp_send_json_success( $generated_data );
 
 		} catch ( Exception $e ) {
-			error_log( 'Aria Knowledge Generation Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Knowledge Generation Error: ' . $e->getMessage() );
 			wp_send_json_error( array( 'message' => __( 'Failed to generate knowledge entry. Please try again.', 'aria' ) ) );
 		}
 	}
@@ -1430,7 +1438,7 @@ class Aria_Ajax_Handler {
 
 			if ( ! empty( $pending_entries ) ) {
 				require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
-				$processor = new Aria_Background_Processor();
+				$processor = Aria_Background_Processor::instance();
 				
 				foreach ( $pending_entries as $entry_id ) {
 					$processor->schedule_embedding_generation( $entry_id );
@@ -1448,7 +1456,7 @@ class Aria_Ajax_Handler {
 			) );
 
 		} catch ( Exception $e ) {
-			error_log( 'Aria Vector Migration Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Vector Migration Error: ' . $e->getMessage() );
 			wp_send_json_error( array( 'message' => __( 'Migration failed. Please try again or check the error logs.', 'aria' ) ) );
 		}
 	}
@@ -1503,7 +1511,7 @@ class Aria_Ajax_Handler {
 		// Test background processor
 		try {
 			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
-			$processor = new Aria_Background_Processor();
+			$processor = Aria_Background_Processor::instance();
 			$debug_info['background_processor'] = array(
 				'loaded' => true,
 				'stats' => $processor->get_processing_stats()
@@ -1544,7 +1552,7 @@ class Aria_Ajax_Handler {
 
 		try {
 			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
-			$processor = new Aria_Background_Processor();
+			$processor = Aria_Background_Processor::instance();
 			
 			// Reset status to pending_processing before attempting to process
 			$wpdb->update(
@@ -1597,7 +1605,7 @@ class Aria_Ajax_Handler {
 
 		try {
 			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
-			$processor = new Aria_Background_Processor();
+			$processor = Aria_Background_Processor::instance();
 			
 			$processed_count = 0;
 			$failed_count = 0;
@@ -1733,8 +1741,9 @@ class Aria_Ajax_Handler {
 			$conversation_text = '';
 			if ( is_array( $messages ) ) {
 				foreach ( $messages as $message ) {
-					$sender = $message['sender'] === 'user' ? ( $conversation['guest_name'] ?: 'Visitor' ) : 'Aria';
-					$conversation_text .= $sender . ': ' . strip_tags( $message['content'] ) . "\n";
+					$role   = isset( $message['role'] ) ? $message['role'] : ( isset( $message['sender'] ) ? $message['sender'] : 'aria' );
+					$sender = ( 'user' === $role ) ? ( $conversation['guest_name'] ?: 'Visitor' ) : 'Aria';
+					$conversation_text .= $sender . ': ' . strip_tags( $message['content'] ?? '' ) . "\n";
 				}
 			}
 			
@@ -1822,9 +1831,10 @@ class Aria_Ajax_Handler {
 		$transcript .= "---------\n\n";
 
 		foreach ( $messages as $message ) {
-			$sender = ( $message['sender'] === 'user' ) ? ( $conversation['guest_name'] ?: 'Visitor' ) : 'Aria';
+			$role = isset( $message['role'] ) ? $message['role'] : ( isset( $message['sender'] ) ? $message['sender'] : 'aria' );
+			$sender = ( 'user' === $role ) ? ( $conversation['guest_name'] ?: 'Visitor' ) : 'Aria';
 			$timestamp = wp_date( get_option( 'time_format' ), strtotime( $message['timestamp'] ) );
-			$transcript .= sprintf( "[%s] %s: %s\n\n", $timestamp, $sender, wp_strip_all_tags( $message['content'] ) );
+			$transcript .= sprintf( "[%s] %s: %s\n\n", $timestamp, $sender, wp_strip_all_tags( $message['content'] ?? '' ) );
 		}
 
 		// Send email
@@ -1936,7 +1946,7 @@ class Aria_Ajax_Handler {
 					) );
 				}
 			} catch ( Exception $e ) {
-				error_log( 'Aria Content Indexing - Decryption error: ' . $e->getMessage() );
+				Aria_Logger::error( 'Aria Content Indexing - Decryption error: ' . $e->getMessage() );
 				wp_send_json_error( array( 
 					'message' => __( 'API key decryption failed. Please reconfigure your API key.', 'aria' ),
 					'action_needed' => 'configure_api'
@@ -1976,7 +1986,7 @@ class Aria_Ajax_Handler {
 				'immediate_results' => true
 			) );
 		} catch ( Exception $e ) {
-			error_log( 'Aria: Reindex error - ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria: Reindex error - ' . $e->getMessage() );
 			wp_send_json_error( array( 'message' => __( 'Failed to start reindexing: ', 'aria' ) . $e->getMessage() ) );
 		}
 	}
@@ -2031,7 +2041,7 @@ class Aria_Ajax_Handler {
 				$success = $vectorizer->index_content( $post->ID, $post->post_type );
 				if ( $success ) {
 					$success_count++;
-					error_log( "Aria: Immediately indexed {$post->post_type} {$post->ID}" );
+					Aria_Logger::debug( "Aria: Immediately indexed {$post->post_type} {$post->ID}" );
 				}
 			}
 		}
@@ -2041,7 +2051,7 @@ class Aria_Ajax_Handler {
 			update_option( 'aria_indexing_offset', count( $posts ) );
 		}
 
-		error_log( "Aria: Immediate indexing completed {$success_count} items" );
+		Aria_Logger::debug( "Aria: Immediate indexing completed {$success_count} items" );
 	}
 
 	/**
@@ -2361,7 +2371,7 @@ class Aria_Ajax_Handler {
 				wp_send_json_error( array( 'message' => __( 'Failed to index content. Please check your API configuration.', 'aria' ) ) );
 			}
 		} catch ( Exception $e ) {
-			error_log( "Aria: Failed to index {$content_type} {$content_id}: " . $e->getMessage() );
+			Aria_Logger::error( "Aria: Failed to index {$content_type} {$content_id}: " . $e->getMessage() );
 			wp_send_json_error( array( 'message' => __( 'Failed to index content. Please try again.', 'aria' ) ) );
 		}
 	}
@@ -2473,14 +2483,67 @@ class Aria_Ajax_Handler {
 			$dashboard_data = $this->get_real_dashboard_data();
 			
 			// Debug logging for dashboard data
-			error_log( 'Aria Dashboard Data Retrieved: ' . wp_json_encode( $dashboard_data ) );
+			Aria_Logger::debug( 'Aria Dashboard Data Retrieved: ' . wp_json_encode( $dashboard_data ) );
 			
 			wp_send_json_success( $dashboard_data );
 		} catch ( Exception $e ) {
-			error_log( 'Aria Dashboard Data Error: ' . $e->getMessage() );
-			error_log( 'Aria Dashboard Data Error Stack: ' . $e->getTraceAsString() );
+			Aria_Logger::error( 'Aria Dashboard Data Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Dashboard Data Error Stack: ' . $e->getTraceAsString() );
 			wp_send_json_error( array( 'message' => __( 'Failed to load dashboard data.', 'aria' ) ) );
 		}
+	}
+
+	/**
+	 * Get advanced settings for admin UI.
+	 */
+	public function handle_get_advanced_settings() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$defaults = array(
+			'cache_responses' => true,
+			'cache_duration'  => 3600,
+			'rate_limit'      => 60,
+		);
+
+		$settings = get_option( 'aria_advanced_settings', array() );
+		$settings = wp_parse_args( $settings, $defaults );
+
+		wp_send_json_success(
+			array(
+				'cacheResponses' => (bool) $settings['cache_responses'],
+				'cacheDuration'  => (string) absint( $settings['cache_duration'] ),
+				'rateLimit'      => (string) absint( $settings['rate_limit'] ),
+				'debugLogging'   => (bool) get_option( Aria_Logger::OPTION_DEBUG_LOGGING, false ),
+			)
+		);
+	}
+
+	/**
+	 * Save advanced settings from admin UI.
+	 */
+	public function handle_save_advanced_settings() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$debug_logging   = isset( $_POST['debug_logging'] ) ? filter_var( wp_unslash( $_POST['debug_logging'] ), FILTER_VALIDATE_BOOLEAN ) : false;
+		$cache_responses = isset( $_POST['cache_responses'] ) ? filter_var( wp_unslash( $_POST['cache_responses'] ), FILTER_VALIDATE_BOOLEAN ) : true;
+		$cache_duration  = isset( $_POST['cache_duration'] ) ? max( 0, absint( $_POST['cache_duration'] ) ) : 3600;
+		$rate_limit      = isset( $_POST['rate_limit'] ) ? max( 0, absint( $_POST['rate_limit'] ) ) : 60;
+
+		update_option( Aria_Logger::OPTION_DEBUG_LOGGING, $debug_logging );
+		update_option(
+			'aria_advanced_settings',
+			array(
+				'cache_responses' => $cache_responses,
+				'cache_duration'  => $cache_duration,
+				'rate_limit'      => $rate_limit,
+			)
+		);
+
+		wp_send_json_success( array( 'message' => __( 'Advanced settings updated.', 'aria' ) ) );
 	}
 
 	/**
@@ -2506,8 +2569,8 @@ class Aria_Ajax_Handler {
 		) );
 		
 		// Debug logging for conversation counts
-		error_log( "Aria Conversation Counts - Total: $total_conversations, Today: $conversations_today, Yesterday: $conversations_yesterday" );
-		error_log( "Aria Date Filters - Today Start: $today_start, Yesterday Start: $yesterday_start" );
+		Aria_Logger::debug( "Aria Conversation Counts - Total: $total_conversations, Today: $conversations_today, Yesterday: $conversations_yesterday" );
+		Aria_Logger::debug( "Aria Date Filters - Today Start: $today_start, Yesterday Start: $yesterday_start" );
 		
 		// Check for any actual conversation data to debug fake data issues
 		global $wpdb;
@@ -2515,7 +2578,7 @@ class Aria_Ajax_Handler {
 			"SELECT id, guest_name, guest_email, initial_question, created_at, status FROM {$wpdb->prefix}aria_conversations WHERE site_id = %d ORDER BY created_at DESC LIMIT 5",
 			get_current_blog_id()
 		), ARRAY_A );
-		error_log( "Aria Sample Conversations in DB: " . wp_json_encode( $sample_conversations ) );
+		Aria_Logger::debug( "Aria Sample Conversations in DB: " . wp_json_encode( $sample_conversations ) );
 
 		// Calculate conversation growth
 		$conversation_growth = 0;
@@ -2549,24 +2612,24 @@ class Aria_Ajax_Handler {
 		$total_knowledge_count = $manual_knowledge_count + $vectorized_content_count;
 		
 		// Enhanced debug logging for all knowledge sources
-		error_log( "Aria Knowledge Sources Debug:" );
-		error_log( "  - Manual entries (new table): $knowledge_count" );
-		error_log( "  - Manual entries (legacy table): $legacy_count" );
-		error_log( "  - WordPress vectorized content (total vectors): $vectorized_content_count" );
-		error_log( "  - Indexing stats: " . wp_json_encode( $indexing_stats ) );
-		error_log( "  - Total manual knowledge: $manual_knowledge_count" );
-		error_log( "  - TOTAL KNOWLEDGE COUNT: $total_knowledge_count" );
+		Aria_Logger::debug( "Aria Knowledge Sources Debug:" );
+		Aria_Logger::debug( "  - Manual entries (new table): $knowledge_count" );
+		Aria_Logger::debug( "  - Manual entries (legacy table): $legacy_count" );
+		Aria_Logger::debug( "  - WordPress vectorized content (total vectors): $vectorized_content_count" );
+		Aria_Logger::debug( "  - Indexing stats: " . wp_json_encode( $indexing_stats ) );
+		Aria_Logger::debug( "  - Total manual knowledge: $manual_knowledge_count" );
+		Aria_Logger::debug( "  - TOTAL KNOWLEDGE COUNT: $total_knowledge_count" );
 		
 		// Sample data logging
 		if ( !empty( $knowledge_entries ) ) {
-			error_log( "Aria Knowledge Sample (new): " . wp_json_encode( array_slice( $knowledge_entries, 0, 2 ) ) );
+			Aria_Logger::debug( "Aria Knowledge Sample (new): " . wp_json_encode( array_slice( $knowledge_entries, 0, 2 ) ) );
 		}
 		if ( $legacy_count > 0 ) {
 			$legacy_sample = $wpdb->get_results( $wpdb->prepare(
 				"SELECT id, title, LEFT(content, 100) as content_preview FROM $legacy_table WHERE site_id = %d LIMIT 2",
 				get_current_blog_id()
 			), ARRAY_A );
-			error_log( "Aria Knowledge Sample (legacy): " . wp_json_encode( $legacy_sample ) );
+			Aria_Logger::debug( "Aria Knowledge Sample (legacy): " . wp_json_encode( $legacy_sample ) );
 		}
 		if ( $vectorized_content_count > 0 ) {
 			$content_vectors_table = $wpdb->prefix . 'aria_content_vectors';
@@ -2576,7 +2639,7 @@ class Aria_Ajax_Handler {
 				 ORDER BY id DESC LIMIT 3",
 				ARRAY_A 
 			);
-			error_log( "Aria Vectorized Content Sample: " . wp_json_encode( $vectorized_sample ) );
+			Aria_Logger::debug( "Aria Vectorized Content Sample: " . wp_json_encode( $vectorized_sample ) );
 		}
 
 		// Get recent knowledge entries (last 7 days)
@@ -2647,7 +2710,7 @@ class Aria_Ajax_Handler {
 		$recent_conversations = Aria_Database::get_conversations( array( 'limit' => 5 ) );
 		
 		// Debug logging for conversations
-		error_log( 'Aria Recent Conversations Raw: ' . wp_json_encode( $recent_conversations ) );
+		Aria_Logger::debug( 'Aria Recent Conversations Raw: ' . wp_json_encode( $recent_conversations ) );
 
 		// Format conversations for React component
 		$formatted_conversations = array();
@@ -2665,7 +2728,7 @@ class Aria_Ajax_Handler {
 		}
 		
 		// Debug logging for formatted conversations
-		error_log( 'Aria Formatted Conversations: ' . wp_json_encode( $formatted_conversations ) );
+		Aria_Logger::debug( 'Aria Formatted Conversations: ' . wp_json_encode( $formatted_conversations ) );
 
 		// Build setup steps
 		$setup_steps = array(
@@ -2721,13 +2784,13 @@ class Aria_Ajax_Handler {
 		$this->validate_dashboard_data_consistency( $final_data );
 
 		// Final debug log - what's actually being sent to React
-		error_log( "=== ARIA DASHBOARD FINAL DATA BEING SENT TO REACT ===" );
-		error_log( "Conversations Today: {$final_data['conversationsToday']}" );
-		error_log( "Total Conversations: {$final_data['totalConversations']}" );
-		error_log( "Knowledge Count: {$final_data['knowledgeCount']}" );
-		error_log( "Recent Conversations Count: " . count( $final_data['recentConversations'] ) );
-		error_log( "API Configured: " . ( $final_data['apiConfigured'] ? 'YES' : 'NO' ) );
-		error_log( "=== END DASHBOARD DATA ===" );
+		Aria_Logger::debug( "=== ARIA DASHBOARD FINAL DATA BEING SENT TO REACT ===" );
+		Aria_Logger::debug( "Conversations Today: {$final_data['conversationsToday']}" );
+		Aria_Logger::debug( "Total Conversations: {$final_data['totalConversations']}" );
+		Aria_Logger::debug( "Knowledge Count: {$final_data['knowledgeCount']}" );
+		Aria_Logger::debug( "Recent Conversations Count: " . count( $final_data['recentConversations'] ) );
+		Aria_Logger::debug( "API Configured: " . ( $final_data['apiConfigured'] ? 'YES' : 'NO' ) );
+		Aria_Logger::debug( "=== END DASHBOARD DATA ===" );
 
 		return $final_data;
 	}
@@ -2740,7 +2803,7 @@ class Aria_Ajax_Handler {
 	private function validate_dashboard_data_consistency( $dashboard_data ) {
 		global $wpdb;
 		
-		error_log( "=== ARIA DATA CONSISTENCY VALIDATION ===" );
+		Aria_Logger::debug( "=== ARIA DATA CONSISTENCY VALIDATION ===" );
 		
 		// Check table existence
 		$tables_to_check = array(
@@ -2756,7 +2819,7 @@ class Aria_Ajax_Handler {
 			
 			if ( $table_exists ) {
 				$row_count = $wpdb->get_var( "SELECT COUNT(*) FROM $full_table_name" );
-				error_log( "  ✓ Table $table_name exists with $row_count total rows" );
+				Aria_Logger::debug( "  ✓ Table $table_name exists with $row_count total rows" );
 				
 				// Check site-specific data for tables that have site_id
 				if ( in_array( $table_name, array( 'aria_conversations', 'aria_knowledge_entries', 'aria_knowledge_base' ) ) ) {
@@ -2764,39 +2827,39 @@ class Aria_Ajax_Handler {
 						"SELECT COUNT(*) FROM $full_table_name WHERE site_id = %d",
 						get_current_blog_id()
 					) );
-					error_log( "    → $site_count rows for current site (ID: " . get_current_blog_id() . ")" );
+					Aria_Logger::debug( "    → $site_count rows for current site (ID: " . get_current_blog_id() . ")" );
 				}
 			} else {
-				error_log( "  ✗ Table $table_name DOES NOT EXIST" );
+				Aria_Logger::debug( "  ✗ Table $table_name DOES NOT EXIST" );
 			}
 		}
 		
 		// Validate knowledge count calculation
-		error_log( "Knowledge Count Breakdown:" );
-		error_log( "  - Dashboard reports: {$dashboard_data['knowledgeCount']} total" );
+		Aria_Logger::debug( "Knowledge Count Breakdown:" );
+		Aria_Logger::debug( "  - Dashboard reports: {$dashboard_data['knowledgeCount']} total" );
 		
 		// Compare with content indexing page method
 		if ( class_exists( 'Aria_Content_Vectorizer' ) ) {
 			$content_vectorizer = new Aria_Content_Vectorizer();
 			$content_indexing_stats = $content_vectorizer->get_indexing_stats();
-			error_log( "  - Content indexing page shows: " . ( $content_indexing_stats['total_vectors'] ?? 0 ) . " vectors" );
+			Aria_Logger::debug( "  - Content indexing page shows: " . ( $content_indexing_stats['total_vectors'] ?? 0 ) . " vectors" );
 		}
 		
 		// Check WordPress content availability
 		$wp_posts_count = $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->posts WHERE post_status = 'publish' AND post_type IN ('post', 'page')" );
-		error_log( "  - WordPress has $wp_posts_count published posts/pages available for indexing" );
+		Aria_Logger::debug( "  - WordPress has $wp_posts_count published posts/pages available for indexing" );
 		
 		// Validate conversation counts
-		error_log( "Conversation Count Validation:" );
-		error_log( "  - Dashboard reports: {$dashboard_data['totalConversations']} total, {$dashboard_data['conversationsToday']} today" );
+		Aria_Logger::debug( "Conversation Count Validation:" );
+		Aria_Logger::debug( "  - Dashboard reports: {$dashboard_data['totalConversations']} total, {$dashboard_data['conversationsToday']} today" );
 		
 		$direct_total = $wpdb->get_var( $wpdb->prepare( 
 			"SELECT COUNT(*) FROM {$wpdb->prefix}aria_conversations WHERE site_id = %d",
 			get_current_blog_id()
 		) );
-		error_log( "  - Direct query shows: $direct_total total conversations for current site" );
+		Aria_Logger::debug( "  - Direct query shows: $direct_total total conversations for current site" );
 		
-		error_log( "=== END VALIDATION ===" );
+		Aria_Logger::debug( "=== END VALIDATION ===" );
 	}
 
 	/**

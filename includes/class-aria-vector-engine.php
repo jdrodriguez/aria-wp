@@ -77,7 +77,7 @@ class Aria_Vector_Engine {
 				$this->update_processing_progress( $batch_index + 1, count( $batches ) );
 				
 			} catch ( Exception $e ) {
-				error_log( 'Aria Vector Engine: Batch embedding failed: ' . $e->getMessage() );
+				Aria_Logger::error( 'Vector Engine: Batch embedding failed: ' . $e->getMessage() );
 				
 				// Fallback to individual processing
 				$individual_embeddings = $this->process_batch_individually( $batch );
@@ -127,8 +127,8 @@ class Aria_Vector_Engine {
 			try {
 				$embedding = $this->create_embedding_batch( array( $text ) );
 				$embeddings[] = $embedding[0];
-			} catch ( Exception $e ) {
-				error_log( "Aria Vector Engine: Individual embedding failed for text: " . substr( $text, 0, 100 ) );
+		} catch ( Exception $e ) {
+			Aria_Logger::error( 'Vector Engine: Individual embedding failed for text: ' . substr( $text, 0, 100 ) );
 				// Use zero vector as fallback
 				$embeddings[] = array_fill( 0, $this->embedding_dimension, 0.0 );
 			}
@@ -168,7 +168,7 @@ class Aria_Vector_Engine {
 			return array_slice( $filtered_results, 0, $limit );
 			
 		} catch ( Exception $e ) {
-			error_log( 'Aria Vector Engine: Search failed: ' . $e->getMessage() );
+			Aria_Logger::error( 'Vector Engine: Search failed: ' . $e->getMessage() );
 			return array();
 		}
 	}
@@ -354,7 +354,7 @@ class Aria_Vector_Engine {
 		
 		// Log progress for debugging
 		if ( $current % 10 === 0 || $current === $total ) {
-			error_log( "Aria Vector Engine: Processing batch {$current}/{$total} ({$progress}%)" );
+			Aria_Logger::debug( "Vector Engine: Processing batch {$current}/{$total} ({$progress}%)" );
 		}
 	}
 
@@ -474,7 +474,7 @@ class Aria_Vector_Engine {
 			}
 
 		} catch ( Exception $e ) {
-			error_log( 'Aria Vector Engine Test Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Vector Engine Test Error: ' . $e->getMessage() );
 		}
 
 		return $test_results;

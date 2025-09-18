@@ -14,7 +14,7 @@ class Aria_DB_Updater {
 	/**
 	 * Current database version
 	 */
-	const DB_VERSION = '1.3.0';
+	const DB_VERSION = '1.6.0';
 
 	/**
 	 * Run database updates if needed
@@ -28,13 +28,14 @@ class Aria_DB_Updater {
 			'1.1.1' => array( 'update_to_1_1_1' ),
 			'1.2.0' => array( 'update_to_1_2_0' ),
 			'1.3.0' => array( 'update_to_1_3_0' ),
+			'1.4.0' => array( 'update_to_1_4_0' ),
 		);
 		
 		foreach ( $updates as $version => $callbacks ) {
 			if ( version_compare( $current_version, $version, '<' ) ) {
 				foreach ( $callbacks as $callback ) {
 					if ( method_exists( __CLASS__, $callback ) ) {
-						self::$callback();
+						self::{$callback}();
 					}
 				}
 			}
@@ -109,7 +110,7 @@ class Aria_DB_Updater {
 		// Schedule background processing
 		self::schedule_migration_processing();
 
-		error_log( 'Aria: Updated database to version 1.2.0 (Vector Search System)' );
+		Aria_Logger::debug( 'Updated database to version 1.2.0 (Vector Search System)' );
 	}
 
 	/**
@@ -240,7 +241,7 @@ class Aria_DB_Updater {
 			return; // No data to migrate
 		}
 
-		error_log( 'Aria: Migrating ' . count( $existing_entries ) . ' knowledge base entries to vector system' );
+		Aria_Logger::debug( 'Migrating ' . count( $existing_entries ) . ' knowledge base entries to vector system' );
 
 		// Migrate each entry
 		foreach ( $existing_entries as $entry ) {
@@ -313,7 +314,7 @@ class Aria_DB_Updater {
 			);
 		}
 
-		error_log( 'Aria: Scheduled processing for ' . count( $pending_entries ) . ' migrated entries' );
+		Aria_Logger::debug( 'Scheduled processing for ' . count( $pending_entries ) . ' migrated entries' );
 	}
 
 	/**
@@ -327,13 +328,13 @@ class Aria_DB_Updater {
 			$success = $processor->reprocess_knowledge_entry( $entry_id );
 
 			if ( $success ) {
-				error_log( "Aria: Successfully processed migrated entry {$entry_id}" );
+				Aria_Logger::debug( "Successfully processed migrated entry {$entry_id}" );
 			} else {
-				error_log( "Aria: Failed to process migrated entry {$entry_id}" );
+				Aria_Logger::error( "Failed to process migrated entry {$entry_id}" );
 			}
 
 		} catch ( Exception $e ) {
-			error_log( "Aria: Error processing migrated entry {$entry_id}: " . $e->getMessage() );
+			Aria_Logger::error( "Error processing migrated entry {$entry_id}: " . $e->getMessage() );
 		}
 	}
 
@@ -385,6 +386,67 @@ class Aria_DB_Updater {
 		// Schedule initial content indexing
 		wp_schedule_single_event( time() + 60, 'aria_initial_content_indexing' );
 
-		error_log( 'Aria: Updated database to version 1.3.0 (WordPress Content Vectorization)' );
+		Aria_Logger::debug( 'Updated database to version 1.3.0 (WordPress Content Vectorization)' );
+	}
+
+	/**
+	 * Update to version 1.4.0
+	 * Normalize conversation logs to use "role" keys.
+	 */
+	private static function update_to_1_4_0() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'aria_conversations';
+		$ids   = $wpdb->get_col( "SELECT id FROM {$table} WHERE conversation_log IS NOT NULL AND conversation_log <> ''" );
+
+		if ( empty( $ids ) ) {
+			return;
+		}
+
+		foreach ( $ids as $conversation_id ) {
+			$conversation_log = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT conversation_log FROM {$table} WHERE id = %d",
+					$conversation_id
+				)
+			);
+
+			$messages = json_decode( $conversation_log, true );
+			if ( ! is_array( $messages ) ) {
+				continue;
+			}
+
+			$updated = false;
+
+			foreach ( $messages as &$message ) {
+				if ( isset( $message['role'] ) || isset( $message['sender'] ) ) {
+					$role = isset( $message['role'] ) ? $message['role'] : $message['sender'];
+					$role = trim( strtolower( $role ) );
+					$mapped_role = ( 'assistant' === $role ) ? 'assistant' : $role;
+
+					if ( ! isset( $message['role'] ) || $message['role'] !== $mapped_role ) {
+						$message['role'] = $mapped_role;
+						$updated = true;
+					}
+					if ( ! isset( $message['sender'] ) || $message['sender'] !== $mapped_role ) {
+						$message['sender'] = $mapped_role;
+						$updated = true;
+					}
+				}
+			}
+			unset( $message );
+
+			if ( $updated ) {
+				$wpdb->update(
+					$table,
+					array( 'conversation_log' => wp_json_encode( $messages ) ),
+					array( 'id' => $conversation_id ),
+					array( '%s' ),
+					array( '%d' )
+				);
+			}
+		}
+
+		Aria_Logger::debug( 'Normalized conversation logs to role-based format' );
 	}
 }

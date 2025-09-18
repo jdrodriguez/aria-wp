@@ -23,7 +23,7 @@ Aria is a premium WordPress plugin that replaces traditional contact forms with 
 
 - WordPress 6.0 or higher
 - PHP 7.4 or higher (PHP 8.0+ recommended)
-- MySQL 5.6 or higher
+- MySQL 5.7 or higher (MariaDB 10.4+)
 - SSL certificate (for secure API communications)
 
 ### Installation Steps

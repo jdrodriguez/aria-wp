@@ -166,7 +166,7 @@ if (php_sapi_name() !== 'cli' && !current_user_can('manage_options')) {
         <?php
         try {
             require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
-            $processor = new Aria_Background_Processor();
+            $processor = Aria_Background_Processor::instance();
             
             // Test background processor
             $test_results = $processor->test_background_processor();

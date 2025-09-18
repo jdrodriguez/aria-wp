@@ -365,7 +365,7 @@ class Aria_Content_Vectorizer {
 		// Get API key
 		$encrypted_api_key = get_option( 'aria_ai_api_key', '' );
 		if ( empty( $encrypted_api_key ) ) {
-			error_log( 'Aria embedding generation failed: No API key configured' );
+			Aria_Logger::error( 'Aria embedding generation failed: No API key configured' );
 			return false;
 		}
 
@@ -375,7 +375,7 @@ class Aria_Content_Vectorizer {
 			$api_key = Aria_Security::decrypt( $encrypted_api_key );
 			
 			if ( empty( $api_key ) ) {
-				error_log( 'Aria embedding generation failed: API key decryption failed' );
+				Aria_Logger::error( 'Aria embedding generation failed: API key decryption failed' );
 				return false;
 			}
 			
@@ -388,20 +388,20 @@ class Aria_Content_Vectorizer {
 			} elseif ( $ai_provider === 'gemini' ) {
 				require_once ARIA_PLUGIN_PATH . 'includes/providers/class-aria-gemini-provider.php';
 				$provider = new Aria_Gemini_Provider( $api_key );
-			} else {
-				error_log( 'Aria embedding generation failed: Unknown AI provider: ' . $ai_provider );
-				return false;
-			}
+		} else {
+			Aria_Logger::error( 'Aria embedding generation failed: Unknown AI provider: ' . $ai_provider );
+			return false;
+		}
 
 			// Check if provider supports embeddings
-			if ( ! method_exists( $provider, 'generate_embedding' ) ) {
-				error_log( 'Aria embedding generation failed: Provider does not support embeddings' );
-				return false;
-			}
+		if ( ! method_exists( $provider, 'generate_embedding' ) ) {
+			Aria_Logger::error( 'Aria embedding generation failed: Provider does not support embeddings' );
+			return false;
+		}
 
 			return $provider->generate_embedding( $text );
 		} catch ( Exception $e ) {
-			error_log( 'Aria embedding generation failed: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria embedding generation failed: ' . $e->getMessage() );
 			return false;
 		}
 	}
@@ -554,14 +554,14 @@ class Aria_Content_Vectorizer {
 		);
 
 		// Add debug logging for troubleshooting
-		error_log( "Aria Content Vectorizer Stats Debug:" );
-		error_log( "  - Total vectors (site-filtered): " . $stats['total_vectors'] );
-		error_log( "  - Vectors by type: " . wp_json_encode( $stats['by_type'] ) );
-		error_log( "  - Using site filter JOIN: $site_filter_join" );
+		Aria_Logger::debug( 'Aria Content Vectorizer Stats Debug:' );
+		Aria_Logger::debug( '  - Total vectors (site-filtered): ' . $stats['total_vectors'] );
+		Aria_Logger::debug( '  - Vectors by type: ' . wp_json_encode( $stats['by_type'] ) );
+		Aria_Logger::debug( '  - Using site filter JOIN: ' . $site_filter_join );
 		
 		// Also log unfiltered count for comparison
 		$unfiltered_total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table" );
-		error_log( "  - Total vectors (unfiltered): $unfiltered_total" );
+		Aria_Logger::debug( '  - Total vectors (unfiltered): ' . $unfiltered_total );
 
 		return $stats;
 	}

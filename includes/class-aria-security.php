@@ -263,7 +263,7 @@ class Aria_Security {
 		// Also log to error log for critical events
 		$critical_events = array( 'api_key_invalid', 'rate_limit_exceeded', 'suspicious_activity' );
 		if ( in_array( $event, $critical_events, true ) ) {
-			error_log( 'Aria Security Event: ' . wp_json_encode( $log_entry ) );
+			Aria_Logger::debug( 'Security Event', $log_entry );
 		}
 	}
 

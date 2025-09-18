@@ -90,7 +90,7 @@ class Aria_Knowledge_Processor {
 			return $processed_chunks;
 			
 		} catch ( Exception $e ) {
-			error_log( 'Aria Knowledge Processor: Processing failed: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Knowledge Processor: Processing failed: ' . $e->getMessage() );
 			throw $e;
 		}
 	}
@@ -333,7 +333,7 @@ class Aria_Knowledge_Processor {
 			$embedding = isset( $embeddings[$i] ) ? $embeddings[$i] : null;
 			
 			if ( $embedding === null ) {
-				error_log( "Aria Knowledge Processor: Missing embedding for chunk {$i}" );
+				Aria_Logger::error( "Aria Knowledge Processor: Missing embedding for chunk {$i}" );
 				continue;
 			}
 			
@@ -440,7 +440,7 @@ class Aria_Knowledge_Processor {
 			return $this->store_processed_chunks( $entry_id, $chunks_data );
 			
 		} catch ( Exception $e ) {
-			error_log( "Aria Knowledge Processor: Reprocessing failed for entry {$entry_id}: " . $e->getMessage() );
+			Aria_Logger::error( "Aria Knowledge Processor: Reprocessing failed for entry {$entry_id}: " . $e->getMessage() );
 			
 			// Update entry status to failed
 			$wpdb->update(
@@ -538,7 +538,7 @@ class Aria_Knowledge_Processor {
 			}
 
 		} catch ( Exception $e ) {
-			error_log( 'Aria Knowledge Processor Test Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Knowledge Processor Test Error: ' . $e->getMessage() );
 		}
 
 		return $test_results;

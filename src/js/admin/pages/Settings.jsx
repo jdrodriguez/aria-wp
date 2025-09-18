@@ -1,4 +1,4 @@
-import { useState } from '@wordpress/element';
+import { useState, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import {
 	Card,
@@ -10,10 +10,12 @@ import {
 	ToggleControl,
 	TabPanel,
 	Notice,
+	Spinner,
 } from '@wordpress/components';
 import PropTypes from 'prop-types';
 import { PageHeader } from '../components';
 import { DISPLAY_OPTIONS } from '../utils/constants';
+import { fetchAdvancedSettings, saveAdvancedSettings } from '../utils/api';
 
 const SettingsTabContent = ({ tabName }) => {
 	switch (tabName) {
@@ -354,18 +356,62 @@ const AdvancedSettings = () => {
 		cacheResponses: true,
 		cacheDuration: '3600',
 		rateLimit: '60',
+		debugLogging: false,
 	});
 	const [saving, setSaving] = useState(false);
 	const [notice, setNotice] = useState(null);
+	const [loading, setLoading] = useState(true);
 
 	const updateSetting = (key, value) => {
 		setSettings((prev) => ({ ...prev, [key]: value }));
 	};
 
+	useEffect(() => {
+		let mounted = true;
+
+		const loadSettings = async () => {
+			try {
+				const data = await fetchAdvancedSettings();
+				if (!mounted) {
+					return;
+				}
+
+				setSettings({
+					cacheResponses: Boolean(data.cacheResponses),
+					cacheDuration: data.cacheDuration || '3600',
+					rateLimit: data.rateLimit || '60',
+					debugLogging: Boolean(data.debugLogging),
+				});
+			} catch (error) {
+				if (mounted) {
+					setNotice({
+						type: 'error',
+						message: __('Failed to load advanced settings.', 'aria'),
+					});
+				}
+			} finally {
+				if (mounted) {
+					setLoading(false);
+				}
+			}
+		};
+
+		loadSettings();
+
+		return () => {
+			mounted = false;
+		};
+	}, []);
+
 	const handleSave = async () => {
 		setSaving(true);
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			await saveAdvancedSettings({
+				cache_responses: settings.cacheResponses ? '1' : '0',
+				cache_duration: settings.cacheDuration,
+				rate_limit: settings.rateLimit,
+				debug_logging: settings.debugLogging ? '1' : '0',
+			});
 			setNotice({
 				type: 'success',
 				message: __('Advanced settings saved successfully!', 'aria'),
@@ -380,6 +426,19 @@ const AdvancedSettings = () => {
 			setSaving(false);
 		}
 	};
+
+	if (loading) {
+		return (
+			<div style={{ paddingRight: '32px' }}>
+				<Card>
+					<CardBody style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+						<Spinner />
+						<span>{__('Loading advanced settings…', 'aria')}</span>
+					</CardBody>
+				</Card>
+			</div>
+		);
+	}
 
 	return (
 		<div style={{ paddingRight: '32px' }}>
@@ -455,6 +514,16 @@ const AdvancedSettings = () => {
 								'aria'
 							)}
 							onChange={(value) => updateSetting('rateLimit', value)}
+						/>
+
+						<ToggleControl
+							label={__('Enable Debug Logging', 'aria')}
+							help={__(
+								'Log detailed debug output (requires WP_DEBUG or this toggle). Disable in production environments.',
+								'aria'
+							)}
+							checked={settings.debugLogging}
+							onChange={(value) => updateSetting('debugLogging', value)}
 						/>
 					</div>
 				</CardBody>

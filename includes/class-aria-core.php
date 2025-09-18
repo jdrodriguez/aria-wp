@@ -88,6 +88,11 @@ class Aria_Core {
 		require_once ARIA_PLUGIN_PATH . 'public/class-aria-public.php';
 
 		/**
+		 * Shared utilities.
+		 */
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-logger.php';
+
+		/**
 		 * The class responsible for handling AJAX requests.
 		 */
 		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-ajax-handler.php';
@@ -278,6 +283,8 @@ class Aria_Core {
 			'aria_test_process_entry',
 			'aria_process_all_stuck_entries',
 			'aria_toggle_immediate_processing',
+			'aria_get_advanced_settings',
+			'aria_save_advanced_settings',
 			'aria_export_conversations_csv',
 			// Conversation management
 			'aria_update_conversation_status',
@@ -416,7 +423,7 @@ class Aria_Core {
 			}
 			
 		} catch ( Exception $e ) {
-			error_log( 'Aria cache cleanup error: ' . $e->getMessage() );
+			Aria_Logger::error( 'cache cleanup error: ' . $e->getMessage() );
 		}
 	}
 	
@@ -441,9 +448,9 @@ class Aria_Core {
 			try {
 				// Load the background processor class only when needed
 				require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
-				$this->background_processor = new Aria_Background_Processor();
+				$this->background_processor = Aria_Background_Processor::instance();
 			} catch ( Exception $e ) {
-				error_log( 'Aria: Failed to initialize background processor: ' . $e->getMessage() );
+				Aria_Logger::error( 'Failed to initialize background processor: ' . $e->getMessage() );
 			}
 		}
 	}

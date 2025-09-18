@@ -200,7 +200,7 @@ class Aria_Cache_Manager {
 			return $best_match;
 			
 		} catch ( Exception $e ) {
-			error_log( 'Aria Cache Manager: Vector similarity search failed: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Cache Manager: Vector similarity search failed: ' . $e->getMessage() );
 			return null;
 		}
 	}
@@ -406,7 +406,7 @@ class Aria_Cache_Manager {
 		do_action( 'aria_cache_hit', $cache_level, $query );
 		
 		// Log for debugging
-		error_log( "Aria Cache Hit: {$cache_level} - Query: " . substr( $query, 0, 50 ) );
+		Aria_Logger::debug( "Aria Cache Hit: {$cache_level} - Query: " . substr( $query, 0, 50 ) );
 	}
 
 	/**
@@ -460,7 +460,7 @@ class Aria_Cache_Manager {
 		);
 		
 		if ( $deleted_count > 0 ) {
-			error_log( "Aria Cache Cleanup: Removed {$deleted_count} expired cache entries" );
+			Aria_Logger::debug( "Aria Cache Cleanup: Removed {$deleted_count} expired cache entries" );
 		}
 	}
 
@@ -482,9 +482,9 @@ class Aria_Cache_Manager {
 		);
 		
 		// Clear memory caches
-		wp_cache_flush_group( 'aria_responses' );
-		wp_cache_flush_group( 'aria_similar' );
-		wp_cache_flush_group( 'aria_topics' );
+		self::flush_cache_group( 'aria_responses' );
+		self::flush_cache_group( 'aria_similar' );
+		self::flush_cache_group( 'aria_topics' );
 	}
 
 	/**
@@ -523,6 +523,26 @@ class Aria_Cache_Manager {
 		$stats['hit_rate'] = $recent_queries > 0 ? ( $stats['total_hits'] / $recent_queries ) * 100 : 0;
 		
 		return $stats;
+	}
+
+	/**
+	 * Flush a specific cache group with fallbacks when granular flushing is unavailable.
+	 *
+	 * @param string $group Cache group identifier.
+	 */
+	public static function flush_cache_group( $group ) {
+		if ( empty( $group ) ) {
+			return;
+		}
+
+		if ( function_exists( 'wp_cache_flush_group' ) ) {
+			wp_cache_flush_group( $group );
+			return;
+		}
+
+		if ( function_exists( 'wp_cache_flush' ) ) {
+			wp_cache_flush();
+		}
 	}
 
 	/**
@@ -566,7 +586,7 @@ class Aria_Cache_Manager {
 			$test_results['cleanup_function'] = true;
 
 		} catch ( Exception $e ) {
-			error_log( 'Aria Cache Manager Test Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Cache Manager Test Error: ' . $e->getMessage() );
 		}
 
 		return $test_results;

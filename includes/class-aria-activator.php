@@ -19,6 +19,8 @@ class Aria_Activator {
 	 * Create database tables, set default options, and schedule events.
 	 */
 	public static function activate() {
+		self::check_database_version();
+
 		// Create database tables
 		self::create_tables();
 
@@ -39,6 +41,55 @@ class Aria_Activator {
 
 		// Clear permalinks
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Ensure the database server meets minimum requirements.
+	 */
+	private static function check_database_version() {
+		global $wpdb;
+
+		$db_version_raw = $wpdb->get_var( 'SELECT VERSION()' );
+		$db_version     = self::extract_version_number( $db_version_raw );
+		$is_mariadb     = ( false !== stripos( (string) $db_version_raw, 'mariadb' ) );
+
+		$minimum = $is_mariadb ? '10.4.0' : '5.7.0';
+
+		if ( empty( $db_version ) || version_compare( $db_version, $minimum, '<' ) ) {
+			if ( ! function_exists( 'deactivate_plugins' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
+			deactivate_plugins( ARIA_PLUGIN_BASENAME );
+
+			$message = $is_mariadb
+				? __( 'Aria requires MariaDB 10.4 or higher. Please upgrade your database server and try again.', 'aria' )
+				: __( 'Aria requires MySQL 5.7 or higher. Please upgrade your database server and try again.', 'aria' );
+
+			wp_die( esc_html( $message ), esc_html__( 'Aria Activation Error', 'aria' ) );
+		}
+	}
+
+	/**
+	 * Extract numeric portion of version string.
+	 *
+	 * @param string $version_raw Raw version string from database.
+	 * @return string Parsed version or empty string.
+	 */
+	private static function extract_version_number( $version_raw ) {
+		if ( empty( $version_raw ) ) {
+			return '';
+		}
+
+		if ( preg_match( '/(\d+\.\d+\.\d+)/', $version_raw, $matches ) ) {
+			return $matches[1];
+		}
+
+		if ( preg_match( '/(\d+\.\d+)/', $version_raw, $matches ) ) {
+			return $matches[1];
+		}
+
+		return '';
 	}
 
 	/**
@@ -271,6 +322,7 @@ class Aria_Activator {
 			'aria_placeholder_text'  => __( 'Type your message...', 'aria' ),
 			'aria_gdpr_enabled'      => true,
 			'aria_analytics_enabled' => true,
+			'aria_debug_logging'     => false,
 			'aria_trial_started'     => current_time( 'mysql' ),
 		);
 

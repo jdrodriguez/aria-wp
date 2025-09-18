@@ -30,7 +30,7 @@ echo "Found " . count( $pending_entries ) . " entries to process:\n";
 if ( ! empty( $pending_entries ) ) {
 	// Load background processor
 	require_once( plugin_dir_path( __FILE__ ) . 'includes/class-aria-background-processor.php' );
-	$processor = new Aria_Background_Processor();
+	$processor = Aria_Background_Processor::instance();
 	
 	foreach ( $pending_entries as $entry ) {
 		echo "Processing entry {$entry->id}: {$entry->title}\n";

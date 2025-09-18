@@ -35,6 +35,14 @@
 - When touching admin assets, remove dependencies on `admin-react.js` and update diagnostics/tests accordingly; React should be the only shipped admin interface going forward.
 - Keep UI changes aligned with the shared design primitives introduced during Phase 4 so all admin pages stay visually consistent.
 
+## Versioning Guidelines
+- Current development version: `1.6.0`. Keep `aria.php` header, `ARIA_VERSION`, and `ARIA_DB_VERSION` aligned to this value unless a new release is cut.
+- When bumping the version, update PHPUnit assertions (e.g., `tests/test-aria-core.php`) and any release documentation in lockstep.
+- Document version bumps and release readiness in `docs/FINAL_EXECUTION_PLAN.md` or progress logs so the team has a clear audit trail.
+
+## Environment Requirements
+- Database servers must run MySQL 5.7 or higher (or MariaDB 10.4+). The activator enforces this; do not introduce features that require falling back to 5.6 schemas.
+
 ## Commit & Pull Request Guidelines
 - Keep commit subjects short, present-tense, and imperative (e.g., `Add personality caching layer`); include context in the body when behaviour changes.
 - Reference related issues with `Fixes #123` and split unrelated changes into separate commits.

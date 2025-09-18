@@ -11,7 +11,7 @@
  * Plugin Name:       Aria - Your Website's Voice
  * Plugin URI:        https://ariaplugin.com
  * Description:       Transform your contact forms into intelligent AI-powered conversations. Aria learns your business and speaks with your brand's voice.
- * Version:           1.0.1
+ * Version:           1.6.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Aria Development Team
@@ -35,7 +35,7 @@ define( 'ARIA_VERSION', '1.6.0' );
 /**
  * Database version.
  */
-define( 'ARIA_DB_VERSION', '1.3.0' );
+define( 'ARIA_DB_VERSION', '1.6.0' );
 
 /**
  * Plugin paths and URLs.

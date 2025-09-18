@@ -142,3 +142,20 @@ export const saveKnowledgeEntry = (entryData, entryId = null) => {
 export const deleteKnowledgeEntry = (entryId) => {
 	return makeAjaxRequest('aria_delete_knowledge_entry', { entry_id: entryId });
 };
+
+/**
+ * Fetch advanced admin settings.
+ * @return {Promise}
+ */
+export const fetchAdvancedSettings = () => {
+	return makeAjaxRequest('aria_get_advanced_settings');
+};
+
+/**
+ * Save advanced admin settings.
+ * @param {Object} settings Settings payload.
+ * @return {Promise}
+ */
+export const saveAdvancedSettings = (settings) => {
+	return makeAjaxRequest('aria_save_advanced_settings', settings);
+};

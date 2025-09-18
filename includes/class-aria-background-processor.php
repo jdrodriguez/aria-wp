@@ -12,6 +12,13 @@
 class Aria_Background_Processor {
 
 	/**
+	 * Singleton instance.
+	 *
+	 * @var Aria_Background_Processor|null
+	 */
+	private static $instance = null;
+
+	/**
 	 * Maximum processing time per batch (seconds).
 	 *
 	 * @var int
@@ -35,7 +42,7 @@ class Aria_Background_Processor {
 	/**
 	 * Constructor.
 	 */
-	public function __construct() {
+	private function __construct() {
 		// Defer initialization if we're in an admin context and the page is still loading
 		// This prevents authentication issues when wp_salt() is called too early
 		if ( is_admin() && ! did_action( 'admin_init' ) ) {
@@ -46,6 +53,19 @@ class Aria_Background_Processor {
 		$this->init();
 	}
 	
+	/**
+	 * Retrieve singleton instance.
+	 *
+	 * @return Aria_Background_Processor
+	 */
+	public static function instance() {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
 	/**
 	 * Initialize the processor.
 	 */
@@ -95,7 +115,7 @@ class Aria_Background_Processor {
 		if ( $scheduled ) {
 			// Update entry status to indicate processing is scheduled
 			$this->update_entry_status( $entry_id, 'processing_scheduled' );
-			error_log( "Aria: Scheduled embedding generation for entry {$entry_id} with {$delay}s delay" );
+			Aria_Logger::debug( "Scheduled embedding generation for entry {$entry_id} with {$delay}s delay" );
 		}
 
 		return $scheduled;
@@ -122,7 +142,7 @@ class Aria_Background_Processor {
 			$entry = $this->get_knowledge_entry( $entry_id );
 			
 			if ( ! $entry ) {
-				error_log( "Aria: Entry {$entry_id} not found for processing" );
+				Aria_Logger::debug( "Entry {$entry_id} not found for processing" );
 				return false;
 			}
 
@@ -140,7 +160,7 @@ class Aria_Background_Processor {
 				$this->update_entry_status( $entry_id, 'active' );
 				
 				$processing_time = microtime( true ) - $start_time;
-				error_log( "Aria: Successfully processed entry {$entry_id} in " . round( $processing_time, 2 ) . "s" );
+				Aria_Logger::debug( 'Successfully processed entry ' . $entry_id . ' in ' . round( $processing_time, 2 ) . 's' );
 				
 				// Clear related caches
 				$this->clear_related_caches( $entry_id );
@@ -154,7 +174,7 @@ class Aria_Background_Processor {
 			
 		} catch ( Exception $e ) {
 			$this->update_entry_status( $entry_id, 'processing_failed', $e->getMessage() );
-			error_log( "Aria: Processing failed for entry {$entry_id}: " . $e->getMessage() );
+			Aria_Logger::error( "Processing failed for entry {$entry_id}: " . $e->getMessage() );
 			
 			// Schedule retry for transient errors
 			if ( $this->is_transient_error( $e ) ) {
@@ -169,7 +189,7 @@ class Aria_Background_Processor {
 	 * @param int $entry_id Entry ID to process.
 	 */
 	public function process_migrated_entry( $entry_id ) {
-		error_log( "Aria: Processing migrated entry {$entry_id}" );
+		Aria_Logger::debug( "Processing migrated entry {$entry_id}" );
 		$this->process_embeddings_async( $entry_id );
 	}
 
@@ -185,7 +205,7 @@ class Aria_Background_Processor {
 		foreach ( $entry_ids as $entry_id ) {
 			// Check execution time limit
 			if ( ( microtime( true ) - $start_time ) > ( $this->max_execution_time - 30 ) ) {
-				error_log( "Aria: Batch processing time limit reached, stopping at entry {$entry_id}" );
+				Aria_Logger::debug( "Batch processing time limit reached, stopping at entry {$entry_id}" );
 				break;
 			}
 			
@@ -196,7 +216,7 @@ class Aria_Background_Processor {
 			sleep( 1 );
 		}
 		
-		error_log( "Aria: Batch processing completed. Processed {$processed_count} entries" );
+		Aria_Logger::debug( "Batch processing completed. Processed {$processed_count} entries" );
 	}
 
 	/**
@@ -219,7 +239,7 @@ class Aria_Background_Processor {
 			);
 		}
 		
-		error_log( "Aria: Scheduled " . count( $batches ) . " batches for processing" );
+		Aria_Logger::debug( 'Scheduled ' . count( $batches ) . ' batches for processing' );
 	}
 
 	/**
@@ -312,11 +332,18 @@ class Aria_Background_Processor {
 		if ( class_exists( 'Aria_Cache_Manager' ) ) {
 			$cache_manager = new Aria_Cache_Manager();
 			$cache_manager->cleanup_expired_cache();
+			Aria_Cache_Manager::flush_cache_group( 'aria_responses' );
+		} else {
+			// Fallback if cache manager is unavailable.
+			if ( function_exists( 'wp_cache_flush_group' ) ) {
+				wp_cache_flush_group( 'aria_responses' );
+			} elseif ( function_exists( 'wp_cache_flush' ) ) {
+				wp_cache_flush();
+			}
 		}
 		
-		// Clear WordPress object cache
+		// Clear WordPress object cache entry for the processed record.
 		wp_cache_delete( "aria_entry_{$entry_id}", 'aria_entries' );
-		wp_cache_flush_group( 'aria_responses' );
 		
 		// Trigger hook for additional cache clearing
 		do_action( 'aria_clear_entry_cache', $entry_id );
@@ -364,7 +391,7 @@ class Aria_Background_Processor {
 		
 		// Maximum 3 retries
 		if ( $retry_count > 3 ) {
-			error_log( "Aria: Maximum retries exceeded for entry {$entry_id}" );
+			Aria_Logger::error( "Maximum retries exceeded for entry {$entry_id}" );
 			return;
 		}
 		
@@ -380,7 +407,7 @@ class Aria_Background_Processor {
 		// Store retry count
 		set_transient( "aria_retry_count_{$entry_id}", $retry_count, DAY_IN_SECONDS );
 		
-		error_log( "Aria: Scheduled retry #{$retry_count} for entry {$entry_id} in {$delay}s" );
+		Aria_Logger::debug( "Scheduled retry #{$retry_count} for entry {$entry_id} in {$delay}s" );
 	}
 
 	/**
@@ -400,7 +427,7 @@ class Aria_Background_Processor {
 		);
 		
 		if ( $stuck_entries > 0 ) {
-			error_log( "Aria: Reset {$stuck_entries} stuck processing entries" );
+			Aria_Logger::debug( "Reset {$stuck_entries} stuck processing entries" );
 		}
 		
 		// Clean up old retry counters
@@ -570,7 +597,7 @@ class Aria_Background_Processor {
 			$test_results['status_updates'] = true;
 
 		} catch ( Exception $e ) {
-			error_log( 'Aria Background Processor Test Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Background Processor Test Error: ' . $e->getMessage() );
 		}
 
 		return $test_results;

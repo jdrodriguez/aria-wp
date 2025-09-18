@@ -8,7 +8,7 @@
 
 ## Phase 1 – Critical Runtime Fixes (Week 1)
 - **Fix database updater fatal** (`includes/class-aria-db-updater.php`): replace `self::$callback()` with `self::{$callback}()`; add unit coverage that exercises the upgrade map.
-- **Clarify minimum database version**: decide between MySQL 5.7+ requirement vs. 5.6 compatibility. If sticking with 5.6, refactor `JSON` columns to `LONGTEXT` and drop foreign keys in activator/updater; otherwise update `README.md`/`AGENTS.md`/plugin headers to state MySQL ≥5.7.
+- **Clarify minimum database version**: ✅ Require MySQL ≥5.7 (or MariaDB ≥10.4); update docs/activation guards accordingly.
 - **Normalize plugin versions**: set the plugin header, `ARIA_VERSION`, `ARIA_DB_VERSION`, and PHPUnit assertions to the same release number; document release versioning in `AGENTS.md`.
 - **Cron hygiene on deactivate**: unschedule `aria_daily_summary_email`, `aria_cleanup_cache`, `aria_initial_content_indexing`, and any processor hooks spawned by `Aria_Background_Processor`; confirm with automated tests.
 

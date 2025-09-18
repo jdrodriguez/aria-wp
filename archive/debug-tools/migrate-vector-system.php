@@ -60,7 +60,7 @@ if ( $new_count > 0 ) {
 		
 		// Schedule processing
 		require_once( plugin_dir_path( __FILE__ ) . 'includes/class-aria-background-processor.php' );
-		$processor = new Aria_Background_Processor();
+		$processor = Aria_Background_Processor::instance();
 		
 		foreach ( $pending_entries as $entry_id ) {
 			$processor->schedule_embedding_generation( $entry_id );

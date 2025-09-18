@@ -33,16 +33,58 @@ class Aria_Deactivator {
 	 * Clear all scheduled cron events.
 	 */
 	private static function clear_scheduled_events() {
-		// Clear daily license check
-		$timestamp = wp_next_scheduled( 'aria_daily_license_check' );
-		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, 'aria_daily_license_check' );
+		$hooks = array(
+			'aria_daily_license_check',
+			'aria_process_analytics',
+			'aria_daily_summary_email',
+			'aria_cleanup_cache',
+			'aria_initial_content_indexing',
+			'aria_process_learning',
+			'aria_process_embeddings',
+			'aria_process_migrated_entry',
+			'aria_process_entry_batch',
+			'aria_cleanup_processing',
+			'aria_index_single_content',
+		);
+
+		foreach ( $hooks as $hook ) {
+			self::unschedule_hook_events( $hook );
+		}
+	}
+
+	/**
+	 * Remove all scheduled events for a hook, regardless of arguments.
+	 *
+	 * @param string $hook Hook name.
+	 */
+	private static function unschedule_hook_events( $hook ) {
+		if ( empty( $hook ) ) {
+			return;
 		}
 
-		// Clear analytics processing
-		$timestamp = wp_next_scheduled( 'aria_process_analytics' );
-		if ( $timestamp ) {
-			wp_unschedule_event( $timestamp, 'aria_process_analytics' );
+		if ( ! function_exists( '_get_cron_array' ) ) {
+			require_once ABSPATH . 'wp-includes/cron.php';
+		}
+
+		$crons = _get_cron_array();
+		if ( empty( $crons ) || ! is_array( $crons ) ) {
+			return;
+		}
+
+		foreach ( $crons as $timestamp => $events ) {
+			if ( empty( $events[ $hook ] ) ) {
+				continue;
+			}
+
+			foreach ( $events[ $hook ] as $event ) {
+				$args = isset( $event['args'] ) ? $event['args'] : array();
+				wp_unschedule_event( $timestamp, $hook, $args );
+			}
+		}
+
+		// Best effort fallback for environments with wp_clear_scheduled_hook support.
+		if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
+			wp_clear_scheduled_hook( $hook );
 		}
 	}
 

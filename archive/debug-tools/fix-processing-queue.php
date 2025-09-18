@@ -41,7 +41,7 @@ if ( empty( $stuck_entries ) ) {
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-aria-background-processor.php' );
 
 try {
-	$processor = new Aria_Background_Processor();
+	$processor = Aria_Background_Processor::instance();
 	echo "✅ Background processor loaded successfully\n\n";
 } catch ( Exception $e ) {
 	echo "❌ Failed to load background processor: " . $e->getMessage() . "\n";

@@ -58,16 +58,16 @@ class Aria_Content_Hooks {
 			return;
 		}
 
-		error_log( "Aria: handle_content_save triggered for {$post->post_type} {$post_id}" );
+		Aria_Logger::debug( "handle_content_save triggered for {$post->post_type} {$post_id}" );
 
 		$filter = new Aria_Content_Filter();
 		if ( $filter->is_content_public( $post_id, $post->post_type ) ) {
-			error_log( "Aria: Content {$post_id} is public, indexing immediately" );
+			Aria_Logger::debug( "Content {$post_id} is public, indexing immediately" );
 			
 			// In Docker environments, cron is unreliable, so index immediately
 			$this->index_single_content( $post_id, $post->post_type );
 		} else {
-			error_log( "Aria: Content {$post_id} is not public, removing from index" );
+		Aria_Logger::debug( "Content {$post_id} is not public, removing from index" );
 			// Remove from index if no longer public
 			$this->handle_content_delete( $post_id );
 		}
@@ -81,7 +81,7 @@ class Aria_Content_Hooks {
 	public function handle_product_update( $product_id ) {
 		$filter = new Aria_Content_Filter();
 		if ( $filter->is_content_public( $product_id, 'product' ) ) {
-			error_log( "Aria: Product {$product_id} is public, indexing immediately" );
+		Aria_Logger::debug( "Product {$product_id} is public, indexing immediately" );
 			$this->index_single_content( $product_id, 'product' );
 		} else {
 			$this->handle_content_delete( $product_id );
@@ -129,7 +129,7 @@ class Aria_Content_Hooks {
 			$filter = new Aria_Content_Filter();
 			if ( $filter->is_content_public( $post_id, $post_type ) ) {
 				// Re-index the parent post to include new comment
-				error_log( "Aria: Comment updated on {$post_type} {$post_id}, re-indexing immediately" );
+			Aria_Logger::debug( "Comment updated on {$post_type} {$post_id}, re-indexing immediately" );
 				$this->index_single_content( $post_id, $post_type );
 			}
 		}
@@ -147,7 +147,7 @@ class Aria_Content_Hooks {
 			$post_type = get_post_type( $post_id );
 
 			// Re-index parent post to remove deleted comment
-			error_log( "Aria: Comment deleted on {$post_type} {$post_id}, re-indexing immediately" );
+		Aria_Logger::debug( "Comment deleted on {$post_type} {$post_id}, re-indexing immediately" );
 			$this->index_single_content( $post_id, $post_type );
 		}
 	}
@@ -167,7 +167,7 @@ class Aria_Content_Hooks {
 			$filter = new Aria_Content_Filter();
 			if ( $filter->is_content_public( $post_id, $post_type ) ) {
 				// Re-index parent post to reflect comment status change
-				error_log( "Aria: Comment status changed on {$post_type} {$post_id}, re-indexing immediately" );
+			Aria_Logger::debug( "Comment status changed on {$post_type} {$post_id}, re-indexing immediately" );
 				$this->index_single_content( $post_id, $post_type );
 			}
 		}
@@ -190,9 +190,9 @@ class Aria_Content_Hooks {
 			if ( $filter->is_content_public( $post->ID, $post->post_type ) ) {
 				$success = $vectorizer->index_content( $post->ID, $post->post_type );
 				if ( $success ) {
-					error_log( "Aria: Successfully indexed {$post->post_type} {$post->ID}" );
+					Aria_Logger::debug( "Successfully indexed {$post->post_type} {$post->ID}" );
 				} else {
-					error_log( "Aria: Failed to index {$post->post_type} {$post->ID}" );
+					Aria_Logger::error( "Failed to index {$post->post_type} {$post->ID}" );
 				}
 			}
 
@@ -211,7 +211,7 @@ class Aria_Content_Hooks {
 
 			// Log completion
 			$total_indexed = $filter->get_indexing_stats()['total_vectors'] ?? 0;
-			error_log( "Aria: Initial content indexing completed. Total vectors: {$total_indexed}" );
+		Aria_Logger::debug( 'Initial content indexing completed. Total vectors: ' . $total_indexed );
 		}
 	}
 
@@ -228,9 +228,9 @@ class Aria_Content_Hooks {
 		if ( $filter->is_content_public( $content_id, $content_type ) ) {
 			$success = $vectorizer->index_content( $content_id, $content_type );
 			if ( $success ) {
-				error_log( "Aria: Successfully indexed {$content_type} {$content_id}" );
+				Aria_Logger::debug( "Successfully indexed {$content_type} {$content_id}" );
 			} else {
-				error_log( "Aria: Failed to index {$content_type} {$content_id}" );
+				Aria_Logger::error( "Failed to index {$content_type} {$content_id}" );
 			}
 		}
 	}

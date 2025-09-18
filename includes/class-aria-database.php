@@ -102,7 +102,19 @@ class Aria_Database {
 		}
 
 		$messages = json_decode( $conversation_log, true );
-		return is_array( $messages ) ? $messages : array();
+		if ( ! is_array( $messages ) ) {
+			return array();
+		}
+
+		foreach ( $messages as &$message ) {
+			$role = isset( $message['role'] ) ? $message['role'] : ( isset( $message['sender'] ) ? $message['sender'] : 'aria' );
+			$role = trim( strtolower( $role ) );
+			$message['role'] = $role ?: 'aria';
+			$message['sender'] = $message['role'];
+		}
+		unset( $message );
+
+		return $messages;
 	}
 
 	/**
@@ -157,8 +169,8 @@ class Aria_Database {
 		
 		// Debug logging for date-filtered queries
 		if ( ! empty( $args['date_from'] ) || ! empty( $args['date_to'] ) ) {
-			error_log( "Aria Database Query: $sql" );
-			error_log( "Aria Date Filter Args: " . wp_json_encode( array(
+			Aria_Logger::debug( "Aria Database Query: $sql" );
+			Aria_Logger::debug( 'Aria Date Filter Args: ' . wp_json_encode( array(
 				'date_from' => $args['date_from'],
 				'date_to' => $args['date_to'],
 				'status' => $args['status']
@@ -169,7 +181,7 @@ class Aria_Database {
 		
 		// Log the result for debugging
 		if ( ! empty( $args['date_from'] ) || ! empty( $args['date_to'] ) ) {
-			error_log( "Aria Query Result: $result conversations found" );
+			Aria_Logger::debug( "Aria Query Result: $result conversations found" );
 		}
 
 		return $result;
@@ -326,7 +338,7 @@ class Aria_Database {
 			if ( false !== $result ) {
 				try {
 					require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
-					$processor = new Aria_Background_Processor();
+					$processor = Aria_Background_Processor::instance();
 					
 					// Try immediate processing first
 					$processed_immediately = false;
@@ -337,21 +349,21 @@ class Aria_Database {
 							$processed_immediately = ( false !== $process_result );
 							
 							if ( $processed_immediately ) {
-								error_log( "Aria: Successfully processed updated entry {$entry_id} immediately" );
+								Aria_Logger::debug( "Aria: Successfully processed updated entry {$entry_id} immediately" );
 							}
 						} catch ( Exception $e ) {
-							error_log( "Aria: Immediate processing failed for updated entry {$entry_id}, falling back to scheduling: " . $e->getMessage() );
+							Aria_Logger::error( "Aria: Immediate processing failed for updated entry {$entry_id}, falling back to scheduling: " . $e->getMessage() );
 						}
 					}
 					
 					// If immediate processing failed, schedule it
 					if ( ! $processed_immediately ) {
 						$processor->schedule_embedding_generation( $entry_id );
-						error_log( "Aria: Scheduled background processing for updated entry {$entry_id}" );
+						Aria_Logger::debug( "Aria: Scheduled background processing for updated entry {$entry_id}" );
 					}
 					
 				} catch ( Exception $e ) {
-					error_log( "Aria: Failed to process/schedule updated entry {$entry_id}: " . $e->getMessage() );
+					Aria_Logger::error( "Aria: Failed to process/schedule updated entry {$entry_id}: " . $e->getMessage() );
 				}
 			}
 			
@@ -366,7 +378,7 @@ class Aria_Database {
 				$new_id = $wpdb->insert_id;
 				try {
 					require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
-					$processor = new Aria_Background_Processor();
+					$processor = Aria_Background_Processor::instance();
 					
 					// Always try immediate processing first, with fallback to scheduling
 					$processed_immediately = false;
@@ -378,21 +390,21 @@ class Aria_Database {
 							$processed_immediately = ( false !== $result );
 							
 							if ( $processed_immediately ) {
-								error_log( "Aria: Successfully processed entry {$new_id} immediately" );
+								Aria_Logger::debug( "Aria: Successfully processed entry {$new_id} immediately" );
 							}
 						} catch ( Exception $e ) {
-							error_log( "Aria: Immediate processing failed for entry {$new_id}, falling back to scheduling: " . $e->getMessage() );
+							Aria_Logger::error( "Aria: Immediate processing failed for entry {$new_id}, falling back to scheduling: " . $e->getMessage() );
 						}
 					}
 					
 					// If immediate processing failed or wasn't attempted, schedule it
 					if ( ! $processed_immediately ) {
 						$processor->schedule_embedding_generation( $new_id );
-						error_log( "Aria: Scheduled background processing for entry {$new_id}" );
+						Aria_Logger::debug( "Aria: Scheduled background processing for entry {$new_id}" );
 					}
 					
 				} catch ( Exception $e ) {
-					error_log( "Aria: Failed to process/schedule new entry {$new_id}: " . $e->getMessage() );
+					Aria_Logger::error( "Aria: Failed to process/schedule new entry {$new_id}: " . $e->getMessage() );
 				}
 				return $new_id;
 			}

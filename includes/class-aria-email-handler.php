@@ -465,21 +465,30 @@ class Aria_Email_Handler {
 							<div class="stat-label">Total Messages</div>
 						</div>
 						<div class="stat-box">
-							<div class="stat-number"><?php echo count( array_filter( $messages, function( $m ) { return $m['sender'] === 'user'; } ) ); ?></div>
+							<div class="stat-number"><?php echo count( array_filter( $messages, function( $m ) {
+									$role = isset( $m['role'] ) ? $m['role'] : ( isset( $m['sender'] ) ? $m['sender'] : '' );
+									return 'user' === $role;
+								} ) ); ?></div>
 							<div class="stat-label">User Messages</div>
 						</div>
 						<div class="stat-box">
-							<div class="stat-number"><?php echo count( array_filter( $messages, function( $m ) { return $m['sender'] === 'aria'; } ) ); ?></div>
+							<div class="stat-number"><?php echo count( array_filter( $messages, function( $m ) {
+									$role = isset( $m['role'] ) ? $m['role'] : ( isset( $m['sender'] ) ? $m['sender'] : '' );
+									return in_array( $role, array( 'aria', 'assistant' ), true );
+								} ) ); ?></div>
 							<div class="stat-label">Aria Responses</div>
 						</div>
 					</div>
 					
 					<h2 style="margin-top: 40px; color: #333;">Conversation Thread</h2>
 					<div class="conversation-thread">
-						<?php foreach ( $messages as $message ) : ?>
-							<div class="message message-<?php echo esc_attr( $message['sender'] ); ?>">
+						<?php foreach ( $messages as $message ) : 
+							$role = isset( $message['role'] ) ? $message['role'] : ( isset( $message['sender'] ) ? $message['sender'] : 'aria' );
+							$class_role = in_array( $role, array( 'aria', 'assistant' ), true ) ? 'aria' : $role;
+						?>
+							<div class="message message-<?php echo esc_attr( $class_role ); ?>">
 								<div class="message-header">
-									<?php echo $message['sender'] === 'user' ? esc_html( $conversation['guest_name'] ) : 'Aria'; ?>
+									<?php echo 'user' === $role ? esc_html( $conversation['guest_name'] ) : 'Aria'; ?>
 									<span class="message-time"><?php echo esc_html( date_i18n( get_option( 'time_format' ), strtotime( $message['timestamp'] ) ) ); ?></span>
 								</div>
 								<div><?php echo nl2br( esc_html( $message['content'] ) ); ?></div>

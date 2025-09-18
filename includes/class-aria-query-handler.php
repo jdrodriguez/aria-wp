@@ -102,7 +102,7 @@ class Aria_Query_Handler {
 			return $optimized_context;
 			
 		} catch ( Exception $e ) {
-			error_log( 'Aria Query Handler Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Query Handler Error: ' . $e->getMessage() );
 			
 			// Fallback to basic keyword search
 			$fallback_results = $this->keyword_search( $user_question );
@@ -144,7 +144,8 @@ class Aria_Query_Handler {
 		$recent_messages = array_slice( $history, -$limit );
 		
 		foreach ( $recent_messages as $message ) {
-			if ( isset( $message['content'] ) && $message['sender'] === 'user' ) {
+			$role = isset( $message['role'] ) ? $message['role'] : ( isset( $message['sender'] ) ? $message['sender'] : '' );
+			if ( isset( $message['content'] ) && 'user' === $role ) {
 				// Simple topic extraction using common keywords
 				$content = strtolower( $message['content'] );
 				$keywords = $this->extract_keywords( $content );
@@ -549,7 +550,7 @@ class Aria_Query_Handler {
 			}
 
 		} catch ( Exception $e ) {
-			error_log( 'Aria Query Handler Test Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Query Handler Test Error: ' . $e->getMessage() );
 		}
 
 		return $test_results;

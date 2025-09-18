@@ -119,7 +119,7 @@ function aria_process_stuck_entries() {
 	require_once( ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php' );
 	
 	try {
-		$processor = new Aria_Background_Processor();
+		$processor = Aria_Background_Processor::instance();
 		echo '<p style="color: green;">✅ Background processor loaded successfully</p>';
 	} catch ( Exception $e ) {
 		echo '<p style="color: red;">❌ Failed to load background processor: ' . esc_html( $e->getMessage() ) . '</p>';

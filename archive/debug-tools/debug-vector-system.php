@@ -117,7 +117,7 @@ echo '<p>API Key: <strong>' . ( $api_key ? 'Set (' . substr( $api_key, 0, 8 ) . 
 echo '<h2>Background Processor Test</h2>';
 try {
 	require_once( ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php' );
-	$processor = new Aria_Background_Processor();
+	$processor = Aria_Background_Processor::instance();
 	echo '<p style="color: green;">✅ Background processor loaded successfully</p>';
 	
 	// Get processing stats

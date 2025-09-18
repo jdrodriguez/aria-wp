@@ -146,7 +146,7 @@ class Aria_Gemini_Provider extends Aria_AI_Provider_Base {
 
 		} catch ( Exception $e ) {
 			// Log error
-			error_log( 'Aria Gemini Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Gemini Error: ' . $e->getMessage() );
 			throw $e;
 		}
 	}
@@ -181,7 +181,7 @@ class Aria_Gemini_Provider extends Aria_AI_Provider_Base {
 			
 			return isset( $response_data['candidates'][0]['content']['parts'][0]['text'] );
 		} catch ( Exception $e ) {
-			error_log( 'Aria Gemini Test Connection Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Gemini Test Connection Error: ' . $e->getMessage() );
 			return false;
 		}
 	}
@@ -262,7 +262,7 @@ class Aria_Gemini_Provider extends Aria_AI_Provider_Base {
 			}
 			return false;
 		} catch ( Exception $e ) {
-			error_log( 'Aria Gemini Embedding Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Gemini Embedding Error: ' . $e->getMessage() );
 			return false;
 		}
 	}
@@ -329,7 +329,7 @@ class Aria_Gemini_Provider extends Aria_AI_Provider_Base {
 			);
 
 		} catch ( Exception $e ) {
-			error_log( 'Aria Gemini Embeddings Error: ' . $e->getMessage() );
+			Aria_Logger::error( 'Aria Gemini Embeddings Error: ' . $e->getMessage() );
 			throw $e;
 		}
 	}

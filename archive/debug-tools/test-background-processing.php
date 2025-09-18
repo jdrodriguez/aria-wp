@@ -18,7 +18,7 @@ echo "Testing Aria Background Processing...\n\n";
 
 // Load background processor
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-aria-background-processor.php' );
-$processor = new Aria_Background_Processor();
+$processor = Aria_Background_Processor::instance();
 
 // Check database for pending entries
 global $wpdb;

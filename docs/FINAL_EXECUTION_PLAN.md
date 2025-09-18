@@ -9,7 +9,7 @@
 
 ## Phase 1 – Runtime Hardening (Week 1)
 - Fix `Aria_DB_Updater` callback invocation (`self::{$callback}()`), add PHPUnit coverage for the upgrade map, and normalize `ARIA_VERSION`/`ARIA_DB_VERSION` and related assertions.
-- Decide on MySQL ≥5.7 vs. 5.6 compatibility; either document the new requirement or migrate JSON columns/foreign keys accordingly with tests.
+- Document the MySQL ≥5.7 (or MariaDB ≥10.4) requirement in activation/docs; no fallback path for 5.6 is supported.
 - Replace unsupported `wp_cache_flush_group()` usage with guarded fallbacks (e.g., `wp_cache_flush()` or group-aware shims) so sites without persistent object cache do not fatal.
 - Expand deactivation cleanup to unschedule **all** cron entries the plugin creates, including `aria_daily_summary_email`, `aria_cleanup_cache`, `aria_initial_content_indexing`, `aria_process_learning`, `aria_index_single_content`, and background processor hooks with arguments.
 - Gate verbose logging (prompt dumps, IDs) behind a `aria_debug_logging` option or `WP_DEBUG`, ensuring no PII leaks to logs.

@@ -8,7 +8,7 @@
 /**
  * Test core plugin functionality.
  */
-class Test_Aria_Core extends WP_UnitTestCase {
+class Tests_Aria_Core extends WP_UnitTestCase {
 
 	/**
 	 * Plugin instance.
@@ -39,7 +39,7 @@ class Test_Aria_Core extends WP_UnitTestCase {
 	 * Test plugin version.
 	 */
 	public function test_plugin_version() {
-		$this->assertEquals( '1.0.0', ARIA_VERSION );
+		$this->assertEquals( '1.6.0', ARIA_VERSION );
 	}
 
 	/**
@@ -131,10 +131,35 @@ class Test_Aria_Core extends WP_UnitTestCase {
 	 * Test plugin deactivation.
 	 */
 	public function test_deactivation() {
+		$timestamp = time() + 60;
+
+		wp_schedule_event( $timestamp, 'daily', 'aria_daily_license_check' );
+		wp_schedule_event( $timestamp, 'hourly', 'aria_process_analytics' );
+		wp_schedule_event( $timestamp, 'daily', 'aria_daily_summary_email' );
+		wp_schedule_event( $timestamp, 'hourly', 'aria_cleanup_cache' );
+
+		wp_schedule_single_event( $timestamp, 'aria_initial_content_indexing' );
+		wp_schedule_single_event( $timestamp, 'aria_process_learning' );
+		wp_schedule_single_event( $timestamp, 'aria_process_embeddings', array( 123 ) );
+		wp_schedule_single_event( $timestamp, 'aria_process_migrated_entry', array( 456 ) );
+		wp_schedule_single_event( $timestamp, 'aria_process_entry_batch', array( array( 1, 2, 3 ) ) );
+		wp_schedule_single_event( $timestamp, 'aria_cleanup_processing' );
+		wp_schedule_single_event( $timestamp, 'aria_index_single_content', array( 99, 'post' ) );
+
 		// Run deactivation.
 		Aria_Deactivator::deactivate();
 
 		// Check scheduled events are cleared.
-		$this->assertFalse( wp_next_scheduled( 'aria_daily_cleanup' ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_daily_license_check' ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_process_analytics' ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_daily_summary_email' ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_cleanup_cache' ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_initial_content_indexing' ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_process_learning' ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_process_embeddings', array( 123 ) ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_process_migrated_entry', array( 456 ) ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_process_entry_batch', array( array( 1, 2, 3 ) ) ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_cleanup_processing' ) );
+		$this->assertFalse( wp_next_scheduled( 'aria_index_single_content', array( 99, 'post' ) ) );
 	}
 }

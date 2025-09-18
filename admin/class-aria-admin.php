@@ -34,6 +34,10 @@ class Aria_Admin {
 	public function __construct( $plugin_name, $version ) {
 		$this->plugin_name = $plugin_name;
 		$this->version     = $version;
+
+		add_action( 'admin_init', array( $this, 'sanitize_admin_globals' ), 0 );
+		add_action( 'admin_init', array( $this, 'validate_knowledge_entry_request' ), 1 );
+		add_filter( 'admin_title', array( $this, 'ensure_admin_title' ), 10, 2 );
 	}
 
 	/**
@@ -115,6 +119,7 @@ class Aria_Admin {
 			$localized_data = array(
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'adminUrl'    => admin_url(),
+				'pluginUrl'   => ARIA_PLUGIN_URL,
 				'nonce'       => wp_create_nonce( 'aria_admin_nonce' ),
 				'strings'     => array(
 					'confirmDelete'    => __( 'Are you sure you want to delete this item?', 'aria' ),
@@ -484,5 +489,24 @@ class Aria_Admin {
 			wp_safe_redirect( admin_url( 'admin.php?page=aria-knowledge' ) );
 			exit;
 		}
+	}
+
+	/**
+	 * Ensure admin pages always provide a non-null title to avoid PHP warnings.
+	 *
+	 * @param string|null $admin_title Filtered admin title.
+	 * @param string      $title       Original page title.
+	 * @return string
+	 */
+	public function ensure_admin_title( $admin_title, $title ) {
+		if ( empty( $admin_title ) && empty( $title ) ) {
+			return __( 'Aria', 'aria' );
+		}
+
+		if ( empty( $admin_title ) ) {
+			return wp_strip_all_tags( $title );
+		}
+
+ 		return $admin_title;
 	}
 }

@@ -1,5 +1,5 @@
-import { Card, CardBody, Flex } from '@wordpress/components';
 import PropTypes from 'prop-types';
+import { __ } from '@wordpress/i18n';
 
 /**
  * Reusable page header component with Card-based design
@@ -11,49 +11,39 @@ import PropTypes from 'prop-types';
  * @return {JSX.Element} PageHeader component
  */
 const PageHeader = ({ title, description, children, className = '' }) => {
+	const pluginUrl =
+		typeof window !== 'undefined' && window.ariaAdmin
+			? window.ariaAdmin.pluginUrl
+			: '';
+	const logoSrc = pluginUrl
+		? `${pluginUrl}assets/images/wordmark.png`
+		: null;
+
 	return (
-		<Card 
-			size="large" 
-			className={`aria-page-header-card ${className}`}
-			style={{ 
-				marginBottom: '24px',
-				background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)',
-				border: '1px solid #e1e4e8'
-			}}
-		>
-			<CardBody style={{ padding: '32px' }}>
-				<Flex direction="column" gap={2}>
-					<div>
-						<h1 style={{
-							fontSize: '28px',
-							fontWeight: '700',
-							color: '#1e1e1e',
-							margin: 0,
-							marginBottom: description ? '8px' : 0,
-							lineHeight: '1.2'
-						}}>
-							{title}
-						</h1>
-						{description && (
-							<p style={{
-								fontSize: '16px',
-								color: '#6c757d',
-								margin: 0,
-								lineHeight: '1.5',
-								fontWeight: '400'
-							}}>
-								{description}
-							</p>
-						)}
+		<header className={`aria-page-header-card ${className}`.trim()}>
+			<div className="aria-page-header-card__layout">
+				{logoSrc && (
+					<div className="aria-page-header-card__brand" aria-hidden="true">
+						<img
+							className="aria-page-header-card__logo"
+							src={logoSrc}
+							alt={__('ARIA', 'aria')}
+							loading="lazy"
+						/>
 					</div>
-					{children && (
-						<div style={{ marginTop: '16px' }}>
-							{children}
-						</div>
+				)}
+
+				<div className="aria-page-header-card__content">
+					<h1 className="aria-page-header-card__title">{title}</h1>
+					{description && (
+						<p className="aria-page-header-card__description">{description}</p>
 					)}
-				</Flex>
-			</CardBody>
-		</Card>
+					{children && (
+						<div className="aria-page-header-card__actions">{children}</div>
+					)}
+				</div>
+			</div>
+		</header>
 	);
 };
 

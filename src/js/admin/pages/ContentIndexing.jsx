@@ -39,28 +39,28 @@ const getProcessingLabel = (processed, total) =>
 const ContentIndexing = () => {
 	const [metrics, setMetrics] = useState([
 		{
-			icon: '📚',
+			icon: 'stack',
 			title: __('Total items', 'aria'),
 			value: 0,
 			subtitle: __('Tracked content', 'aria'),
 			theme: 'primary',
 		},
 		{
-			icon: '✅',
+			icon: 'check',
 			title: __('Indexed items', 'aria'),
 			value: 0,
 			subtitle: __('Ready for AI', 'aria'),
 			theme: 'success',
 		},
 		{
-			icon: '🕒',
+			icon: 'clock',
 			title: __('Last indexed', 'aria'),
 			value: __('Never', 'aria'),
 			subtitle: __('Most recent run', 'aria'),
 			theme: 'info',
 		},
 		{
-			icon: '💾',
+			icon: 'storage',
 			title: __('Storage used', 'aria'),
 			value: '0 MB',
 			subtitle: __('Vector store footprint', 'aria'),

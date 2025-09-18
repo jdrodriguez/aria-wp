@@ -1,5 +1,11 @@
 # Complete Migration Plan: Single Script System for Aria WordPress Plugin
 
+> **Status Update · 2025-09-18**
+> - ✅ Webpack now ships a single `admin.js` bundle; no `admin-react.js` artifact remains.
+> - ✅ WordPress enqueues `aria-admin` with a lightweight `aria-admin-react` alias handle (no extra network request) for backward compatibility.
+> - ✅ Diagnostics/docs updated to reference the consolidated bundle.
+> - 🔄 Remaining work: monitor downstream tooling/tests for stale `admin-react.js` assumptions and retire legacy notes once QA verifies.
+
 ## Current Situation
 - **Legacy State**: Historically shipped both `admin.js` and `admin-react.js`, doubling bundle size
 - **Webpack Cleanup**: Goal is a single `admin.js` entry; `admin-react` becomes a lightweight alias handle only

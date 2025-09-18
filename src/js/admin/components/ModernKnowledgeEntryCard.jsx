@@ -1,4 +1,4 @@
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { Button } from '@wordpress/components';
 import PropTypes from 'prop-types';
 
@@ -11,9 +11,21 @@ const categoryStyles = {
 	default: { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0' },
 };
 
+const formatStatusLabel = (status = '') =>
+	status
+		.replace(/_/g, ' ')
+		.replace(/\b\w/g, (char) => char.toUpperCase());
+
 const ModernKnowledgeEntryCard = ({ entry, onEdit, onDelete }) => {
 	const formatDate = (dateString) => new Date(dateString).toLocaleDateString();
 	const styles = categoryStyles[entry.category] || categoryStyles.default;
+	const status = entry.status || 'pending_processing';
+	const statusLabel = formatStatusLabel(status);
+
+	const chunkMeta =
+		typeof entry.totalChunks === 'number'
+			? sprintf(__('Chunks: %d', 'aria'), entry.totalChunks)
+			: null;
 
 	return (
 		<div className="modern-knowledge-card">
@@ -38,6 +50,14 @@ const ModernKnowledgeEntryCard = ({ entry, onEdit, onDelete }) => {
 				<span className="modern-knowledge-card__date">
 					{__('Updated', 'aria')} {formatDate(entry.updated_at)}
 				</span>
+				<span
+					className={`modern-knowledge-card__status modern-knowledge-card__status--${status}`}
+				>
+					{statusLabel}
+				</span>
+				{chunkMeta && (
+					<span className="modern-knowledge-card__chunks">{chunkMeta}</span>
+				)}
 			</div>
 
 			<p className="modern-knowledge-card__content">{entry.content}</p>
@@ -74,10 +94,13 @@ ModernKnowledgeEntryCard.propTypes = {
 		id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 		title: PropTypes.string.isRequired,
 		content: PropTypes.string.isRequired,
+		fullContent: PropTypes.string,
 		category: PropTypes.string,
 		categoryLabel: PropTypes.string,
 		tags: PropTypes.arrayOf(PropTypes.string),
 		updated_at: PropTypes.string,
+		status: PropTypes.string,
+		totalChunks: PropTypes.number,
 	}).isRequired,
 	onEdit: PropTypes.func.isRequired,
 	onDelete: PropTypes.func.isRequired,

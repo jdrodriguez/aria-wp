@@ -8,8 +8,7 @@
 - `assets/` stores media and icons, `languages/` holds translation files, and `tests/` includes PHPUnit specs plus `visual/` Playwright scenarios.
 - We are completing the migration from legacy PHP admin views to the React interface. Treat React (`src/js/admin`) as the single source of truth for new work and consult `docs/FINAL_EXECUTION_PLAN.md` for sequencing.
 - Shared admin layout primitives live under `src/js/admin/components` (`PageShell`, `SectionCard`, `MetricCard`, etc.). All admin pages should compose page-specific sections from these primitives; new section modules belong in `src/js/admin/pages/<page>-sections/` with matching SCSS in `src/scss/pages/`.
-  - Completed: `settings-panels/`, `knowledge-sections/`, `conversations-sections/`, `content-indexing-sections/` provide the pattern to follow.
-- Legacy inline styles remain in `KnowledgeEntry.jsx`; capture refactor follow-ups before tackling new features on that screen.
+  - Completed: `settings-panels/`, `knowledge-sections/`, `conversations-sections/`, `content-indexing-sections/`, and `knowledge-entry-sections/` provide the pattern to follow.
 
 ## Build, Test, and Development Commands
 - `npm install` and `composer install` fetch front-end and PHP dependencies.
@@ -46,8 +45,101 @@
 ## Environment Requirements
 - Database servers must run MySQL 5.7 or higher (or MariaDB 10.4+). The activator enforces this; do not introduce features that require falling back to 5.6 schemas.
 
-## Commit & Pull Request Guidelines
-- Keep commit subjects short, present-tense, and imperative (e.g., `Add personality caching layer`); include context in the body when behaviour changes.
-- Reference related issues with `Fixes #123` and split unrelated changes into separate commits.
-- Pull requests should summarize intent, list manual/automated test output, and attach screenshots or screen recordings for admin UI updates.
-- Ensure `npm run build`, `npm run test`, and `composer test` succeed locally before requesting review.
+## Git Workflow & Commit Guidelines
+
+### Standard Commit Process
+```bash
+# 1. Check current status
+git status
+
+# 2. Stage changes (choose one)
+git add -A                    # Stage all changes
+git add <file>                # Stage specific file
+git add .                     # Stage current directory
+
+# 3. Commit with descriptive message
+git commit -m "Short summary of changes
+
+- Detailed bullet point of what changed
+- Another change description
+- Reference issue if applicable"
+
+# 4. Push to remote repository
+git push origin main          # Push to main branch
+```
+
+### Important Git Files
+- **`.gitignore`** - Critical file that prevents tracking of:
+  - `node_modules/` and `vendor/` (dependencies)
+  - `dist/` (build artifacts, can be regenerated)
+  - `backup-before-reorg/` (temporary backup files)
+  - `.DS_Store` and system files
+  - **Never delete this file!** If accidentally deleted, restore immediately
+
+### Commit Message Format
+- **Subject line**: Short (50 chars), imperative mood (e.g., `Add personality caching layer`)
+- **Body**: Explain what and why, not how
+- **Footer**: Reference issues with `Fixes #123` or `Closes #456`
+
+Example:
+```
+Complete Phase 4 UI standardization
+
+- Migrated all admin pages to React components
+- Implemented shared design primitives
+- Reduced bundle size by 450KB
+- Updated documentation
+
+Fixes #123
+```
+
+### Before Committing Checklist
+```bash
+# 1. Run build to ensure everything compiles
+npm run build
+
+# 2. Check for linting issues
+npm run lint
+
+# 3. Run tests if applicable
+npm test
+composer test
+
+# 4. Verify no sensitive data in changes
+git diff --staged            # Review staged changes
+```
+
+### Common Git Commands
+```bash
+# View commit history
+git log --oneline -10        # Last 10 commits
+
+# Check remote status
+git fetch
+git status
+
+# Undo last commit (keep changes)
+git reset --soft HEAD~1
+
+# Discard local changes
+git checkout -- <file>        # Specific file
+git reset --hard HEAD         # All changes (CAUTION!)
+
+# Create and push a new branch
+git checkout -b feature/new-feature
+git push -u origin feature/new-feature
+```
+
+### Handling Large Commits
+When making extensive changes:
+1. Commit incrementally as you complete logical units of work
+2. Use descriptive commit messages for each phase
+3. Push regularly to avoid losing work
+4. Consider using feature branches for major changes
+
+### Pull Request Guidelines
+- Summarize the intent and changes made
+- List any breaking changes
+- Include test results (`npm test`, `composer test`)
+- Attach screenshots for UI changes
+- Ensure all CI checks pass before merging

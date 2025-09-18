@@ -12,30 +12,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<div class="wrap">
-	<div id="aria-knowledge-entry-root"></div>
+<?php
+	$action      = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : 'add';
+	$entry_id    = isset( $_GET['id'] ) ? intval( $_GET['id'] ) : 0;
+	$return_url  = admin_url( 'admin.php?page=aria-knowledge' );
+	$ajax_url    = admin_url( 'admin-ajax.php' );
+	$admin_nonce = wp_create_nonce( 'aria_admin_nonce' );
+	$generate_nonce = wp_create_nonce( 'aria_generate_knowledge' );
+	$entry_config = array(
+		'ajaxUrl'        => $ajax_url,
+		'adminUrl'       => admin_url(),
+		'pluginUrl'      => ARIA_PLUGIN_URL,
+		'action'         => $action,
+		'entryId'        => $entry_id,
+		'nonce'          => $admin_nonce,
+		'generateNonce'  => $generate_nonce,
+		'returnUrl'      => $return_url,
+	);
+?>
+
+<div class="wrap aria-knowledge-entry">
+	<div
+		id="aria-knowledge-entry-root"
+		data-action="<?php echo esc_attr( $entry_config['action'] ); ?>"
+		data-entry-id="<?php echo esc_attr( $entry_config['entryId'] ); ?>"
+		data-return-url="<?php echo esc_url( $entry_config['returnUrl'] ); ?>"
+		data-ajax-url="<?php echo esc_url( $entry_config['ajaxUrl'] ); ?>"
+		data-nonce="<?php echo esc_attr( $entry_config['nonce'] ); ?>"
+		data-generate-nonce="<?php echo esc_attr( $entry_config['generateNonce'] ); ?>"
+	></div>
 </div>
 
 <script type="text/javascript">
-	// Pass WordPress data to React component
-	window.ariaKnowledgeEntry = {
-		nonce: '<?php echo esc_js( wp_create_nonce( 'aria_admin_nonce' ) ); ?>',
-		ajaxUrl: '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>',
-		adminUrl: '<?php echo esc_url( admin_url() ); ?>',
-		pluginUrl: '<?php echo esc_url( ARIA_PLUGIN_URL ); ?>',
-		entryId: '<?php echo isset( $_GET['id'] ) ? esc_js( sanitize_text_field( $_GET['id'] ) ) : ''; ?>',
-		action: '<?php echo isset( $_GET['action'] ) ? esc_js( sanitize_text_field( $_GET['action'] ) ) : 'add'; ?>',
-		strings: {
-			addKnowledge: '<?php echo esc_js( __( 'Add Knowledge Entry', 'aria' ) ); ?>',
-			editKnowledge: '<?php echo esc_js( __( 'Edit Knowledge Entry', 'aria' ) ); ?>',
-			question: '<?php echo esc_js( __( 'Question', 'aria' ) ); ?>',
-			answer: '<?php echo esc_js( __( 'Answer', 'aria' ) ); ?>',
-			category: '<?php echo esc_js( __( 'Category', 'aria' ) ); ?>',
-			saveEntry: '<?php echo esc_js( __( 'Save Entry', 'aria' ) ); ?>',
-			cancel: '<?php echo esc_js( __( 'Cancel', 'aria' ) ); ?>',
-			saving: '<?php echo esc_js( __( 'Saving...', 'aria' ) ); ?>',
-			saved: '<?php echo esc_js( __( 'Entry saved successfully!', 'aria' ) ); ?>',
-			error: '<?php echo esc_js( __( 'An error occurred. Please try again.', 'aria' ) ); ?>',
-		}
-	};
+	window.ariaKnowledgeEntry = <?php echo wp_json_encode( $entry_config ); ?>;
 </script>

@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
 import { __ } from '@wordpress/i18n';
+import { Button } from '@wordpress/components';
 import {
-	Button,
+	SectionCard,
 	ToggleControl,
 	SelectControl,
 	TextareaControl,
 	TextControl,
-} from '@wordpress/components';
-import { SectionCard } from '../../components';
+} from '../../components';
 
 const ContentIndexingSettings = ({ settings, onChange, onSave, saving }) => (
 	<SectionCard

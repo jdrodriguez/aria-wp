@@ -1,7 +1,7 @@
 import { __ } from '@wordpress/i18n';
-import { SelectControl } from '@wordpress/components';
 import PropTypes from 'prop-types';
-import { SearchInput } from './index';
+import SearchInput from './SearchInput.jsx';
+import { SelectControl } from './WPControls.jsx';
 
 /**
  * SVG Search Icon

@@ -47,6 +47,12 @@
 		text-transform: capitalize;
 	}
 
+	&__status-meta {
+		font-size: $aria-text-xs;
+		font-weight: $aria-font-normal;
+		color: $aria-gray-500;
+	}
+
 	&__status-indicator {
 		width: 12px;
 		height: 12px;
@@ -78,11 +84,13 @@
 
 	&__loading {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		gap: $aria-space-3;
 		font-size: $aria-text-sm;
 		color: $aria-gray-600;
-		padding: $aria-space-4 0;
+		min-height: 220px;
 	}
 }
 

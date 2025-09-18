@@ -63,10 +63,13 @@ KnowledgeEntriesSection.propTypes = {
 				.isRequired,
 			title: PropTypes.string.isRequired,
 			content: PropTypes.string.isRequired,
+			fullContent: PropTypes.string,
 			category: PropTypes.string,
 			categoryLabel: PropTypes.string,
 			tags: PropTypes.arrayOf(PropTypes.string),
 			updated_at: PropTypes.string,
+			status: PropTypes.string,
+			totalChunks: PropTypes.number,
 		})
 	).isRequired,
 	onAddEntry: PropTypes.func.isRequired,

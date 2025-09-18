@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { __ } from '@wordpress/i18n';
-import { TextareaControl } from '@wordpress/components';
-import { SectionCard } from '../../components';
+import { SectionCard, TextareaControl } from '../../components';
 
 const PersonalityMessagesSection = ({
 	greetingMessage,

@@ -1,14 +1,47 @@
-import { useState } from '@wordpress/element';
+import { useState, useMemo, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import { Button } from '@wordpress/components';
 import {
-	Button,
+	SectionCard,
 	ToggleControl,
 	SelectControl,
 	TextControl,
-} from '@wordpress/components';
-import { SectionCard } from '../../components';
+} from '../../components';
 import { DISPLAY_OPTIONS } from '../../utils/constants';
 import SettingsNotice from './SettingsNotice.jsx';
+import { fetchGeneralSettings, saveGeneralSettings } from '../../utils/api';
+
+const INTEGER_PATTERN = /^\d+$/;
+
+const validateAutoOpenDelay = (value) => {
+	if (value === null || typeof value === 'undefined' || value === '') {
+		return __('Specify a delay (seconds) or use 0 to disable auto-open.', 'aria');
+	}
+
+	const trimmed = String(value).trim();
+	if (!INTEGER_PATTERN.test(trimmed)) {
+		return __('Use whole numbers only (seconds).', 'aria');
+	}
+
+	const numericValue = parseInt(trimmed, 10);
+	if (Number.isNaN(numericValue)) {
+		return __('Enter a valid number of seconds.', 'aria');
+	}
+
+	if (numericValue < 0) {
+		return __('Delay cannot be negative.', 'aria');
+	}
+
+	if (numericValue > 120) {
+		return __('Keep the delay at 120 seconds or less for a timely prompt.', 'aria');
+	}
+
+	return null;
+};
+
+const computeValidationState = (settings) => ({
+	autoOpenDelay: validateAutoOpenDelay(settings.autoOpenDelay),
+});
 
 const GeneralSettingsPanel = () => {
 	const [settings, setSettings] = useState({
@@ -17,20 +50,105 @@ const GeneralSettingsPanel = () => {
 		autoOpenDelay: '0',
 		requireEmail: false,
 	});
+	const [errors, setErrors] = useState({
+		autoOpenDelay: null,
+	});
 	const [saving, setSaving] = useState(false);
 	const [notice, setNotice] = useState(null);
+	const [loading, setLoading] = useState(true);
 
 	const updateSetting = (key, value) => {
-		setSettings((prev) => ({ ...prev, [key]: value }));
+		setSettings((prev) => {
+			const nextSettings = { ...prev, [key]: value };
+			setErrors(computeValidationState(nextSettings));
+			return nextSettings;
+		});
 	};
+
+	const hasValidationErrors = useMemo(
+		() => Object.values(errors).some(Boolean),
+		[errors]
+	);
+
+	useEffect(() => {
+		let mounted = true;
+
+		const loadSettings = async () => {
+			setLoading(true);
+			try {
+				const data = await fetchGeneralSettings();
+				if (!mounted) {
+					return;
+				}
+
+				if (data?.settings) {
+					const nextSettings = {
+						enableChat: Boolean(data.settings.enableChat),
+						displayOn: data.settings.displayOn || 'all',
+						autoOpenDelay: String(data.settings.autoOpenDelay ?? '0'),
+						requireEmail: Boolean(data.settings.requireEmail),
+					};
+					setSettings(nextSettings);
+					setErrors(computeValidationState(nextSettings));
+				}
+			} catch (error) {
+				if (mounted) {
+					setNotice({
+						type: 'error',
+						message:
+							error?.message || __('Failed to load general settings.', 'aria'),
+					});
+				}
+			} finally {
+				if (mounted) {
+					setLoading(false);
+				}
+			}
+		};
+
+		loadSettings();
+
+		return () => {
+			mounted = false;
+		};
+	}, []);
 
 	const handleSave = async () => {
 		setSaving(true);
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			const validationState = computeValidationState(settings);
+			const validationFailed = Object.values(validationState).some(Boolean);
+			setErrors(validationState);
+			if (validationFailed) {
+				setNotice({
+					type: 'error',
+					message: __('Fix the highlighted general settings before saving.', 'aria'),
+				});
+				setSaving(false);
+				return;
+			}
+
+			const payload = {
+				enableChat: settings.enableChat,
+				displayOn: settings.displayOn,
+				autoOpenDelay: parseInt(settings.autoOpenDelay, 10),
+				requireEmail: settings.requireEmail,
+			};
+			const data = await saveGeneralSettings(payload);
+			if (data?.settings) {
+				const nextSettings = {
+					enableChat: Boolean(data.settings.enableChat),
+					displayOn: data.settings.displayOn || 'all',
+					autoOpenDelay: String(data.settings.autoOpenDelay ?? '0'),
+					requireEmail: Boolean(data.settings.requireEmail),
+				};
+				setSettings(nextSettings);
+				setErrors(computeValidationState(nextSettings));
+			}
 			setNotice({
 				type: 'success',
-				message: __('General settings saved successfully!', 'aria'),
+				message:
+					data?.message || __('General settings saved successfully!', 'aria'),
 			});
 			setTimeout(() => setNotice(null), 5000);
 		} catch (error) {
@@ -46,6 +164,14 @@ const GeneralSettingsPanel = () => {
 		}
 	};
 
+	if (loading) {
+		return (
+			<div className="aria-settings__tab-content aria-settings__loading">
+				<Button isBusy>{__('Loading general settings…', 'aria')}</Button>
+			</div>
+		);
+	}
+
 	return (
 		<div className="aria-settings__tab-content">
 			<SectionCard
@@ -60,7 +186,7 @@ const GeneralSettingsPanel = () => {
 							variant="primary"
 							onClick={handleSave}
 							isBusy={saving}
-							disabled={saving}
+							disabled={saving || hasValidationErrors}
 						>
 							{saving
 								? __('Saving…', 'aria')
@@ -96,16 +222,19 @@ const GeneralSettingsPanel = () => {
 					/>
 
 					<TextControl
+						className={errors.autoOpenDelay ? 'aria-input--error' : ''}
 						label={__('Auto-open Delay (seconds)', 'aria')}
 						type="number"
 						value={settings.autoOpenDelay}
-						help={__(
-							'Automatically open chat after this delay (0 to disable)',
-							'aria'
-						)}
+						help={
+							errors.autoOpenDelay
+								|| __('Automatically open chat after this delay (0 to disable)', 'aria')
+						}
 						onChange={(value) =>
 							updateSetting('autoOpenDelay', value)
 						}
+						min={0}
+						max={120}
 					/>
 
 					<ToggleControl

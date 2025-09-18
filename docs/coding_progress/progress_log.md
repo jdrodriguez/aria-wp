@@ -419,3 +419,76 @@ const AriaDesign = () => (
 - Visual documentation: Wide layout screenshot captured for reference
 
 **Technical Details:** Used `@media (min-width: 1400px)` breakpoints to optimize grid-template-columns for better content display on larger screens.
+## [2025-09-18 13:50] AI Setup & Design Pages Modularized
+
+**Task Completed**: Decomposed the AI Setup and Design admin pages into section-based React modules backed by shared layout primitives and refreshed SCSS.
+
+**Key Updates**:
+1. Created `ai-config-sections/` and `design-sections/` directories with reusable notice, provider, tuning, branding, preview, and action components, consolidating state handling in the parent screens.
+2. Replaced inline styles with scoped BEM classes in `_ai-config.scss` and `_design.scss`, aligning typography, spacing, and responsive behavior with the admin design system.
+3. Standardized Content Indexing metrics to use the shared `ModernMetricCard` icon set (stack/check/clock/storage) preventing runtime PropTypes crashes while keeping the visual layout intact.
+4. Added shared wrappers around WordPress form controls to opt into the new `__next` sizing/margin props, removing the 6.7+ deprecation spam across admin pages.
+5. Hardened conversation persistence (role normalization, sanitized context) and introduced background processor scheduling guards to avoid duplicate cron events.
+6. Hooked the Knowledge Base admin to real AJAX endpoints, delivering sanitized entries, dynamic category filters, and live metrics back to the React UI.
+7. Connected the Design page to persisted options with sanitised AJAX handlers and loading states so UI updates reflect stored settings immediately.
+8. Brought the Notifications, Privacy, and License panels online with live data, validation, and AJAX-backed saves (test-email routing, GDPR retention, license activation), plus refreshed AI Setup panels with modern SectionCard styling and usage metrics.
+
+**Verification**:
+- `npm run build`
+
+**Result**: AI Setup, Design, and Content Indexing pages now render consistently with the new admin shell without console errors, and the codebase is ready for follow-up linting/tests when requested.
+
+## [2025-09-18 16:59] React Runtime Alignment & Admin Hardening
+
+**Task Completed**: Aligned the webpack/Babel pipeline with WordPress's React runtime and tightened admin initialization safeguards.
+
+**Key Updates**:
+1. Reconfigured `@babel/preset-react` to use `@wordpress/element`'s automatic JSX runtime and exposed the matching external so bundled pages rely on the core-provided React 18 instance (fixing the `setExtraStackFrame` runtime fatal on Content Indexing metrics).
+2. Restored `createRoot`-powered pages by importing the missing `useEffect` dependency within `Design.jsx` and rebuilding production assets via `npm run build`.
+3. Registered early `admin_init` hooks in `Aria_Admin` to sanitize `$_GET` parameters and validate knowledge-entry requests before WordPress core renders, preventing the recurring `strip_tags()` deprecation notices.
+
+**Verification**:
+- `npm run build`
+
+**Result**: Admin screens render again without React runtime fatals, and WordPress admin notices stay clean thanks to the new global sanitization pass.
+
+## [2025-09-18 17:13] Advanced Settings UX Polish
+
+**Task Completed**: Added real-time validation and visual feedback to the Advanced settings panel so operators catch configuration mistakes before saving.
+
+**Key Updates**:
+1. Introduced numeric validators for cache duration and rate limit fields with descriptive error copy, clamped payloads before saving, and disabled the primary action until inputs pass validation.
+2. Applied a shared `.aria-input--error` style for text controls to surface inline error states consistently across admin screens.
+3. Normalized API payloads to respect configured numeric bounds, preventing out-of-range values from hitting the backend.
+
+**Verification**:
+- `npm run build`
+
+**Result**: The Advanced tab now guides users with immediate feedback on invalid numbers and keeps the save button aligned with the new design system.
+
+## [2025-09-18 17:21] React Runtime Compatibility Fix
+
+**Task Completed**: Reverted the JSX transform to the classic runtime so the admin bundle targets `wp.element.createElement`, eliminating the `(0,n.jsx)` browser fatal introduced by the automatic runtime.
+
+**Key Updates**:
+1. Updated `webpack.config.js` to compile JSX with the classic pragma (`wp.element.createElement` / `wp.element.Fragment`), removing the `@wordpress/element/jsx-runtime` external.
+2. Rebuilt production assets to ensure all modules use the legacy transform while keeping the rest of the UI updates intact.
+
+**Verification**:
+- `npm run build`
+
+**Result**: Admin screens now mount without runtime errors while continuing to rely on WordPress’ bundled React instance.
+
+## [2025-09-18 17:32] Settings Panel Validation Sweep
+
+**Task Completed**: Brought inline validation, error styling, and safer button states to the Notifications, Privacy, and License tabs.
+
+**Key Updates**:
+1. Notifications: live email validation, recipient requirements tied to the enable toggle, and smarter button disabling for test emails and saves.
+2. Privacy: URL + retention guards with friendly copy, numeric clamping, and inline error feedback that aligns with the new `.aria-input--error` style.
+3. License: instant key validation with pattern checks and activation safeguards so the CTA only fires when the key format looks valid.
+
+**Verification**:
+- `npm run build`
+
+**Result**: All settings panels now guide admins with immediate, consistent feedback while preventing invalid payloads from reaching the backend.

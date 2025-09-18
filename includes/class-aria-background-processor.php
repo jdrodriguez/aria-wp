@@ -40,6 +40,13 @@ class Aria_Background_Processor {
 	private $knowledge_processor;
 
 	/**
+	 * Initialization flag to prevent duplicate hook registration.
+	 *
+	 * @var bool
+	 */
+	private $initialized = false;
+
+	/**
 	 * Constructor.
 	 */
 	private function __construct() {
@@ -70,6 +77,10 @@ class Aria_Background_Processor {
 	 * Initialize the processor.
 	 */
 	private function init() {
+		if ( $this->initialized ) {
+			return;
+		}
+
 		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-knowledge-processor.php';
 		$this->knowledge_processor = new Aria_Knowledge_Processor();
 		
@@ -78,6 +89,8 @@ class Aria_Background_Processor {
 		add_action( 'aria_process_migrated_entry', array( $this, 'process_migrated_entry' ) );
 		add_action( 'aria_process_entry_batch', array( $this, 'process_entry_batch' ) );
 		add_action( 'aria_cleanup_processing', array( $this, 'cleanup_processing_tasks' ) );
+
+		$this->initialized = true;
 	}
 	
 	/**
@@ -99,8 +112,15 @@ class Aria_Background_Processor {
 			$this->init();
 		}
 		
+		$entry_id = absint( $entry_id );
+
 		// Check if entry exists and needs processing
 		if ( ! $this->entry_needs_processing( $entry_id ) ) {
+			return false;
+		}
+
+		$hook_args = array( $entry_id );
+		if ( false !== wp_next_scheduled( 'aria_process_embeddings', $hook_args ) ) {
 			return false;
 		}
 
@@ -109,7 +129,7 @@ class Aria_Background_Processor {
 		$scheduled = wp_schedule_single_event(
 			time() + $delay,
 			'aria_process_embeddings',
-			array( $entry_id )
+			$hook_args
 		);
 
 		if ( $scheduled ) {
@@ -398,10 +418,16 @@ class Aria_Background_Processor {
 		// Exponential backoff: 5 minutes, 15 minutes, 45 minutes
 		$delay = 300 * pow( 3, $retry_count - 1 );
 		
+		$hook_args = array( $entry_id );
+		$existing  = wp_next_scheduled( 'aria_process_embeddings', $hook_args );
+		if ( $existing ) {
+			wp_unschedule_event( $existing, 'aria_process_embeddings', $hook_args );
+		}
+
 		wp_schedule_single_event(
 			time() + $delay,
 			'aria_process_embeddings',
-			array( $entry_id )
+			$hook_args
 		);
 		
 		// Store retry count

@@ -169,67 +169,49 @@ class Aria_Ajax_Handler {
 		}
 
 		$id       = isset( $_POST['entry_id'] ) ? intval( $_POST['entry_id'] ) : 0;
-		$title    = isset( $_POST['title'] ) ? sanitize_text_field( $_POST['title'] ) : '';
-		$content  = isset( $_POST['content'] ) ? wp_kses_post( $_POST['content'] ) : '';
-		$context  = isset( $_POST['context'] ) ? sanitize_textarea_field( $_POST['context'] ) : '';
-		$response_instructions = isset( $_POST['response_instructions'] ) ? sanitize_textarea_field( $_POST['response_instructions'] ) : '';
-		$category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
-		$tags     = isset( $_POST['tags'] ) ? sanitize_text_field( $_POST['tags'] ) : '';
-		$language = isset( $_POST['language'] ) ? sanitize_text_field( $_POST['language'] ) : 'en';
+		$title   = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+		$content = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : '';
+		$context = isset( $_POST['context'] ) ? wp_kses_post( wp_unslash( $_POST['context'] ) ) : '';
+		$response_instructions = isset( $_POST['response_instructions'] ) ? wp_kses_post( wp_unslash( $_POST['response_instructions'] ) ) : '';
+		$category = isset( $_POST['category'] ) ? sanitize_text_field( wp_unslash( $_POST['category'] ) ) : '';
+		$language = isset( $_POST['language'] ) ? sanitize_text_field( wp_unslash( $_POST['language'] ) ) : 'en';
 		$priority = isset( $_POST['priority'] ) ? intval( $_POST['priority'] ) : 0;
+
+		$raw_tags = isset( $_POST['tags'] ) ? wp_unslash( $_POST['tags'] ) : '';
+		$tag_items = array_filter( array_map( 'trim', explode( ',', $raw_tags ) ) );
+		$sanitized_tags = array_map( 'sanitize_text_field', $tag_items );
+		$tags = implode( ', ', $sanitized_tags );
 
 		if ( empty( $title ) || empty( $content ) ) {
 			wp_send_json_error( array( 'message' => __( 'Title and content are required.', 'aria' ) ) );
 		}
 
-		global $wpdb;
-		$table = $wpdb->prefix . 'aria_knowledge_entries';
-
 		$data = array(
-			'title'    => $title,
-			'content'  => $content,
-			'context'  => $context,
+			'title'                 => $title,
+			'content'               => $content,
+			'context'               => $context,
 			'response_instructions' => $response_instructions,
-			'category' => $category,
-			'tags'     => $tags,
-			'language' => $language,
-			'priority' => $priority,
-			'status'   => 'pending_processing',
-			'site_id'  => get_current_blog_id(),
+			'category'              => $category,
+			'tags'                  => $tags,
+			'language'              => $language,
+			'priority'              => $priority,
 		);
 
-		if ( $id > 0 ) {
-			// Update existing
-			$data['updated_at'] = current_time( 'mysql' );
-			$result = $wpdb->update( $table, $data, array( 'id' => $id ) );
-		} else {
-			// Insert new
-			$data['created_at'] = current_time( 'mysql' );
-			$result = $wpdb->insert( $table, $data );
-			$id     = $wpdb->insert_id;
-		}
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-database.php';
+		$result = Aria_Database::save_knowledge_entry( $data, $id );
 
 		if ( false === $result ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to save knowledge.', 'aria' ) ) );
 		}
-
-		// Schedule background processing for the entry
-		try {
-			require_once ARIA_PLUGIN_PATH . 'includes/class-aria-background-processor.php';
-			
-			$processor = Aria_Background_Processor::instance();
-			$scheduled = $processor->schedule_embedding_generation( $id );
-			
-			if ( $scheduled ) {
-				Aria_Logger::debug( "Aria: Scheduled processing for knowledge entry {$id}" );
-			}
-		} catch ( Exception $e ) {
-			Aria_Logger::error( "Aria: Failed to schedule processing for entry {$id}: " . $e->getMessage() );
-		}
+		
+		$entry_id = $result;
+		$entry    = Aria_Database::get_knowledge_entry( $entry_id );
+		$response_entry = $entry ? $this->prepare_knowledge_entry_for_response( $entry ) : array();
 
 		wp_send_json_success( array(
-			'message' => __( 'Knowledge saved successfully and scheduled for processing.', 'aria' ),
-			'entry_id' => $id,
+			'message'  => __( 'Knowledge saved successfully and scheduled for processing.', 'aria' ),
+			'entry_id' => $entry_id,
+			'entry'    => $response_entry,
 		) );
 	}
 
@@ -247,42 +229,52 @@ class Aria_Ajax_Handler {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
 		}
 
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-database.php';
 		global $wpdb;
-		$table = $wpdb->prefix . 'aria_knowledge_entries';
-
-		// Get all knowledge entries
-		$entries = $wpdb->get_results( 
-			$wpdb->prepare( 
-				"SELECT id, title, content, context, response_instructions, category, tags, language, created_at, updated_at 
-				FROM {$table} 
-				WHERE site_id = %d 
-				ORDER BY updated_at DESC",
-				get_current_blog_id()
-			), 
-			ARRAY_A 
+		
+		$entries = Aria_Database::get_knowledge_entries(
+			array(
+				'orderby' => 'updated_at',
+				'order'   => 'DESC',
+				'limit'   => 250,
+			)
 		);
 
-		// Get statistics
-		$total_entries = count( $entries );
-		$categories = array_unique( array_filter( array_column( $entries, 'category' ) ) );
-		$categories_count = count( $categories );
-		
-		// Calculate last updated
-		$last_updated = 'Never';
-		if ( ! empty( $entries ) ) {
-			$last_updated_time = strtotime( $entries[0]['updated_at'] );
-			$last_updated = human_time_diff( $last_updated_time, current_time( 'timestamp' ) ) . ' ago';
+		$prepared_entries = array_map( array( $this, 'prepare_knowledge_entry_for_response' ), $entries );
+
+		$table            = $wpdb->prefix . 'aria_knowledge_entries';
+		$total_entries    = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE site_id = %d", get_current_blog_id() ) );
+		$categories_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(DISTINCT category) FROM {$table} WHERE site_id = %d AND category <> ''", get_current_blog_id() ) );
+		$last_updated_raw = $wpdb->get_var( $wpdb->prepare( "SELECT MAX(updated_at) FROM {$table} WHERE site_id = %d", get_current_blog_id() ) );
+
+		$chunks_table = $wpdb->prefix . 'aria_knowledge_chunks';
+		$usage_stats  = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COALESCE(SUM(c.usage_count), 0)
+				FROM {$chunks_table} c
+				INNER JOIN {$table} e ON c.entry_id = e.id
+				WHERE e.site_id = %d",
+				get_current_blog_id()
+			)
+		);
+
+		$last_updated = __( 'Never', 'aria' );
+		if ( $last_updated_raw ) {
+			$last_updated = sprintf(
+				__( '%s ago', 'aria' ),
+				human_time_diff( strtotime( $last_updated_raw ), current_time( 'timestamp' ) )
+			);
 		}
 
-		// For usage stats, we could track this in the future
-		$usage_stats = 0;
+		$category_values = array_filter( array_unique( array_map( 'trim', wp_list_pluck( $prepared_entries, 'category' ) ) ) );
 
 		wp_send_json_success( array(
-			'entries' => $entries,
-			'totalEntries' => $total_entries,
-			'categories' => $categories_count,
-			'lastUpdated' => $last_updated,
-			'usageStats' => $usage_stats,
+			'entries'         => $prepared_entries,
+			'totalEntries'    => $total_entries,
+			'categories'      => $categories_count,
+			'categoriesList'  => array_values( $category_values ),
+			'lastUpdated'     => $last_updated,
+			'usageStats'      => $usage_stats,
 		) );
 	}
 
@@ -306,30 +298,459 @@ class Aria_Ajax_Handler {
 			wp_send_json_error( array( 'message' => __( 'Invalid entry ID.', 'aria' ) ) );
 		}
 
-		global $wpdb;
-		$table = $wpdb->prefix . 'aria_knowledge_entries';
+		require_once ARIA_PLUGIN_PATH . 'includes/class-aria-database.php';
 
-		// Delete the entry
-		$result = $wpdb->delete( 
-			$table, 
-			array( 
-				'id' => $entry_id,
-				'site_id' => get_current_blog_id()
-			),
-			array( '%d', '%d' )
-		);
+		$entry = Aria_Database::get_knowledge_entry( $entry_id );
+		if ( ! $entry || intval( $entry['site_id'] ) !== get_current_blog_id() ) {
+			wp_send_json_error( array( 'message' => __( 'Knowledge entry not found.', 'aria' ) ) );
+		}
+
+		$result = Aria_Database::delete_knowledge_entry( $entry_id );
 
 		if ( false === $result ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to delete knowledge entry.', 'aria' ) ) );
 		}
 
-		if ( 0 === $result ) {
-			wp_send_json_error( array( 'message' => __( 'Knowledge entry not found.', 'aria' ) ) );
+		// Clear related caches
+		if ( class_exists( 'Aria_Cache_Manager' ) ) {
+			Aria_Cache_Manager::flush_cache_group( 'aria_responses' );
 		}
 
 		wp_send_json_success( array(
 			'message' => __( 'Knowledge entry deleted successfully.', 'aria' ),
 		) );
+	}
+
+	/**
+	 * Handle get design settings AJAX request.
+	 */
+	public function handle_get_design_settings() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$settings  = get_option( 'aria_design_settings', array() );
+		$prepared  = $this->sanitize_design_settings( $settings );
+		$configured = (bool) get_option( 'aria_design_configured', false );
+
+		wp_send_json_success(
+			array(
+				'settings'   => $prepared,
+				'configured' => $configured,
+			)
+		);
+	}
+
+	/**
+	 * Handle get notification settings AJAX request.
+	 */
+	public function handle_get_notification_settings() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$settings = get_option( 'aria_notification_settings', array() );
+		$prepared = $this->sanitize_notification_settings( $settings );
+
+		wp_send_json_success(
+			array(
+				'settings' => $prepared,
+			)
+		);
+	}
+
+	/**
+	 * Handle save notification settings AJAX request.
+	 */
+	public function handle_save_notification_settings() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$raw_settings = array(
+			'enableNotifications'  => isset( $_POST['enableNotifications'] ) ? wp_unslash( $_POST['enableNotifications'] ) : '',
+			'additionalRecipients' => isset( $_POST['additionalRecipients'] ) ? wp_unslash( $_POST['additionalRecipients'] ) : '',
+			'newConversation'      => isset( $_POST['newConversation'] ) ? wp_unslash( $_POST['newConversation'] ) : '',
+		);
+
+		$sanitized = $this->sanitize_notification_settings( $raw_settings );
+
+		update_option( 'aria_notification_settings', $sanitized );
+
+		wp_send_json_success(
+			array(
+				'message'  => __( 'Notification settings saved successfully.', 'aria' ),
+				'settings' => $sanitized,
+			)
+		);
+	}
+
+	/**
+	 * Handle get privacy settings AJAX request.
+	 */
+	public function handle_get_privacy_settings() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$settings = get_option( 'aria_privacy_settings', array() );
+		$prepared = $this->sanitize_privacy_settings( $settings );
+
+		wp_send_json_success(
+			array(
+				'settings' => $prepared,
+			)
+		);
+	}
+
+	/**
+	 * Handle save privacy settings AJAX request.
+	 */
+	public function handle_save_privacy_settings() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$raw_settings = array(
+			'enableGDPR'        => isset( $_POST['enableGDPR'] ) ? wp_unslash( $_POST['enableGDPR'] ) : '',
+			'privacyPolicyUrl' => isset( $_POST['privacyPolicyUrl'] ) ? wp_unslash( $_POST['privacyPolicyUrl'] ) : '',
+			'dataRetention'    => isset( $_POST['dataRetention'] ) ? wp_unslash( $_POST['dataRetention'] ) : '',
+		);
+
+		$sanitized = $this->sanitize_privacy_settings( $raw_settings );
+
+		update_option( 'aria_privacy_settings', $sanitized );
+		update_option( 'aria_privacy_enabled', $sanitized['enableGDPR'] );
+
+		wp_send_json_success(
+			array(
+				'message'  => __( 'Privacy settings saved successfully.', 'aria' ),
+				'settings' => $sanitized,
+			)
+		);
+	}
+
+	/**
+	 * Handle get license settings AJAX request.
+	 */
+	public function handle_get_license_settings() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$settings = get_option( 'aria_license_settings', array() );
+		$prepared = $this->sanitize_license_settings( $settings );
+
+		wp_send_json_success(
+			array(
+				'settings' => $prepared,
+			)
+		);
+	}
+
+	/**
+	 * Handle license activation AJAX request.
+	 */
+	public function handle_activate_license() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) || ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		$license_key = isset( $_POST['licenseKey'] ) ? sanitize_text_field( wp_unslash( $_POST['licenseKey'] ) ) : '';
+		if ( empty( $license_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'License key is required.', 'aria' ) ) );
+		}
+
+		// TODO: Replace with real remote validation when available.
+		// Currently we simulate activation success if key matches pattern.
+		if ( ! preg_match( '/^[A-Z0-9\-]{10,}$/', $license_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid license key format.', 'aria' ) ) );
+		}
+
+		$now = current_time( 'mysql' );
+		$license_data = array(
+			'licenseKey'    => $license_key,
+			'licenseStatus' => 'active',
+			'activatedAt'   => $now,
+		);
+
+		update_option( 'aria_license_settings', $license_data );
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'License activated successfully.', 'aria' ),
+				'settings' => $license_data,
+			)
+		);
+	}
+
+	/**
+	 * Handle save design settings AJAX request.
+	 */
+	public function handle_save_design_settings() {
+		if ( ! check_ajax_referer( 'aria_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'aria' ) ) );
+		}
+
+		$raw_settings = array(
+			'position'        => isset( $_POST['position'] ) ? wp_unslash( $_POST['position'] ) : '',
+			'size'            => isset( $_POST['size'] ) ? wp_unslash( $_POST['size'] ) : '',
+			'theme'           => isset( $_POST['theme'] ) ? wp_unslash( $_POST['theme'] ) : '',
+			'primaryColor'    => isset( $_POST['primaryColor'] ) ? wp_unslash( $_POST['primaryColor'] ) : '',
+			'backgroundColor' => isset( $_POST['backgroundColor'] ) ? wp_unslash( $_POST['backgroundColor'] ) : '',
+			'textColor'       => isset( $_POST['textColor'] ) ? wp_unslash( $_POST['textColor'] ) : '',
+			'title'           => isset( $_POST['title'] ) ? wp_unslash( $_POST['title'] ) : '',
+			'welcomeMessage'  => isset( $_POST['welcomeMessage'] ) ? wp_unslash( $_POST['welcomeMessage'] ) : '',
+		);
+
+		$sanitized = $this->sanitize_design_settings( $raw_settings );
+
+		update_option( 'aria_design_settings', $sanitized );
+		update_option( 'aria_design_configured', true );
+
+		wp_send_json_success(
+			array(
+				'message'  => __( 'Design settings saved successfully.', 'aria' ),
+				'settings' => $sanitized,
+			)
+		);
+	}
+
+	/**
+	 * Get default design settings.
+	 *
+	 * @return array
+	 */
+	private function get_default_design_settings() {
+		return array(
+			'position'        => 'bottom-right',
+			'size'            => 'medium',
+			'theme'           => 'light',
+			'primaryColor'    => '#2271b1',
+			'backgroundColor' => '#ffffff',
+			'textColor'       => '#1e1e1e',
+			'title'           => __( 'Chat with us', 'aria' ),
+			'welcomeMessage'  => __( 'Hi! How can I help you today?', 'aria' ),
+		);
+	}
+
+	/**
+	 * Default notification settings.
+	 *
+	 * @return array
+	 */
+	private function get_default_notification_settings() {
+		return array(
+			'enableNotifications'  => false,
+			'additionalRecipients' => '',
+			'newConversation'      => true,
+		);
+	}
+
+	/**
+	 * Default privacy settings.
+	 *
+	 * @return array
+	 */
+	private function get_default_privacy_settings() {
+		return array(
+			'enableGDPR'        => false,
+			'privacyPolicyUrl' => '',
+			'dataRetention'    => 90,
+		);
+	}
+
+	/**
+	 * Sanitize design settings array.
+	 *
+	 * @param array $settings Raw settings.
+	 * @return array Sanitized settings.
+	 */
+	private function sanitize_design_settings( $settings ) {
+		$defaults = $this->get_default_design_settings();
+		$allowed_positions = array( 'bottom-right', 'bottom-left', 'top-right', 'top-left' );
+		$allowed_sizes     = array( 'small', 'medium', 'large' );
+		$allowed_themes    = array( 'light', 'dark', 'auto' );
+
+		$position = sanitize_text_field( $settings['position'] ?? $defaults['position'] );
+		if ( ! in_array( $position, $allowed_positions, true ) ) {
+			$position = $defaults['position'];
+		}
+
+		$size = sanitize_text_field( $settings['size'] ?? $defaults['size'] );
+		if ( ! in_array( $size, $allowed_sizes, true ) ) {
+			$size = $defaults['size'];
+		}
+
+		$theme = sanitize_text_field( $settings['theme'] ?? $defaults['theme'] );
+		if ( ! in_array( $theme, $allowed_themes, true ) ) {
+			$theme = $defaults['theme'];
+		}
+
+		$primary = sanitize_hex_color( $settings['primaryColor'] ?? '' );
+		$background = sanitize_hex_color( $settings['backgroundColor'] ?? '' );
+		$text = sanitize_hex_color( $settings['textColor'] ?? '' );
+
+		return array(
+			'position'        => $position,
+			'size'            => $size,
+			'theme'           => $theme,
+			'primaryColor'    => $primary ? $primary : $defaults['primaryColor'],
+			'backgroundColor' => $background ? $background : $defaults['backgroundColor'],
+			'textColor'       => $text ? $text : $defaults['textColor'],
+			'title'           => sanitize_text_field( $settings['title'] ?? $defaults['title'] ),
+			'welcomeMessage'  => sanitize_text_field( $settings['welcomeMessage'] ?? $defaults['welcomeMessage'] ),
+		);
+	}
+
+	/**
+	 * Sanitize notification settings.
+	 *
+	 * @param array $settings Raw settings.
+	 * @return array
+	 */
+	private function sanitize_notification_settings( $settings ) {
+		$defaults = $this->get_default_notification_settings();
+		
+		$enable = isset( $settings['enableNotifications'] )
+			? filter_var( $settings['enableNotifications'], FILTER_VALIDATE_BOOLEAN )
+			: $defaults['enableNotifications'];
+
+		$new_conversation = isset( $settings['newConversation'] )
+			? filter_var( $settings['newConversation'], FILTER_VALIDATE_BOOLEAN )
+			: $defaults['newConversation'];
+
+		$raw_recipients = isset( $settings['additionalRecipients'] )
+			? explode( ',', $settings['additionalRecipients'] )
+			: array();
+
+		$clean_recipients = array();
+		foreach ( $raw_recipients as $recipient ) {
+			$recipient = sanitize_email( trim( $recipient ) );
+			if ( ! empty( $recipient ) && is_email( $recipient ) ) {
+				$clean_recipients[] = $recipient;
+			}
+		}
+
+		return array(
+			'enableNotifications'  => $enable,
+			'additionalRecipients' => implode( ', ', $clean_recipients ),
+			'newConversation'      => $new_conversation,
+		);
+	}
+
+	/**
+	 * Sanitize privacy settings.
+	 *
+	 * @param array $settings Raw settings.
+	 * @return array
+	 */
+	private function sanitize_privacy_settings( $settings ) {
+		$defaults = $this->get_default_privacy_settings();
+
+		$enable_gdpr = isset( $settings['enableGDPR'] )
+			? filter_var( $settings['enableGDPR'], FILTER_VALIDATE_BOOLEAN )
+			: $defaults['enableGDPR'];
+
+		$privacy_url = isset( $settings['privacyPolicyUrl'] )
+			? esc_url_raw( $settings['privacyPolicyUrl'] )
+			: $defaults['privacyPolicyUrl'];
+
+		$data_retention = isset( $settings['dataRetention'] )
+			? max( 1, absint( $settings['dataRetention'] ) )
+			: $defaults['dataRetention'];
+
+		return array(
+			'enableGDPR'        => $enable_gdpr,
+			'privacyPolicyUrl' => $privacy_url,
+			'dataRetention'    => $data_retention,
+		);
+	}
+
+	/**
+	 * Default license settings.
+	 *
+	 * @return array
+	 */
+	private function get_default_license_settings() {
+		return array(
+			'licenseKey'    => '',
+			'licenseStatus' => 'inactive',
+			'activatedAt'   => '',
+		);
+	}
+
+	/**
+	 * Sanitize license settings.
+	 *
+	 * @param array $settings Raw settings.
+	 * @return array
+	 */
+	private function sanitize_license_settings( $settings ) {
+		$defaults = $this->get_default_license_settings();
+
+		$license_key = sanitize_text_field( $settings['licenseKey'] ?? $defaults['licenseKey'] );
+		$license_status = sanitize_text_field( $settings['licenseStatus'] ?? $defaults['licenseStatus'] );
+		$activated_at = sanitize_text_field( $settings['activatedAt'] ?? $defaults['activatedAt'] );
+
+		if ( ! $license_key ) {
+			$license_status = 'inactive';
+			$activated_at   = '';
+		}
+
+		return array(
+			'licenseKey'    => $license_key,
+			'licenseStatus' => $license_status ?: 'inactive',
+			'activatedAt'   => $activated_at,
+		);
+	}
+
+	/**
+	 * Prepare knowledge entry for JSON response.
+	 *
+	 * @param array $entry Entry data.
+	 * @return array
+	 */
+	private function prepare_knowledge_entry_for_response( $entry ) {
+		if ( empty( $entry ) ) {
+			return array();
+		}
+
+		$tags_string = isset( $entry['tags'] ) ? (string) $entry['tags'] : '';
+		$tag_items   = array_filter( array_map( 'trim', explode( ',', $tags_string ) ) );
+		$tags_array  = array_map( 'sanitize_text_field', $tag_items );
+
+		$content_plain = wp_strip_all_tags( (string) $entry['content'] );
+
+		return array(
+			'id'                   => isset( $entry['id'] ) ? intval( $entry['id'] ) : 0,
+			'title'                => sanitize_text_field( $entry['title'] ?? '' ),
+			'content'              => wp_kses_post( $entry['content'] ?? '' ),
+			'content_preview'      => wp_trim_words( $content_plain, 35, '…' ),
+			'context'              => wp_kses_post( $entry['context'] ?? '' ),
+			'response_instructions'=> wp_kses_post( $entry['response_instructions'] ?? '' ),
+			'category'             => sanitize_text_field( $entry['category'] ?? '' ),
+			'tags'                 => implode( ', ', $tags_array ),
+			'tags_array'           => $tags_array,
+			'language'             => sanitize_text_field( $entry['language'] ?? 'en' ),
+			'priority'             => isset( $entry['priority'] ) ? intval( $entry['priority'] ) : 0,
+			'status'               => sanitize_text_field( $entry['status'] ?? 'pending_processing' ),
+			'total_chunks'         => isset( $entry['total_chunks'] ) ? intval( $entry['total_chunks'] ) : 0,
+			'created_at'           => $entry['created_at'] ?? '',
+			'updated_at'           => $entry['updated_at'] ?? '',
+		);
 	}
 
 	/**
@@ -965,11 +1386,14 @@ class Aria_Ajax_Handler {
 
 		foreach ( $recent_messages as $msg ) {
 			$role    = isset( $msg['role'] ) ? $msg['role'] : ( isset( $msg['sender'] ) ? $msg['sender'] : '' );
-			$content = isset( $msg['content'] ) ? $msg['content'] : '';
-			if ( empty( $role ) || '' === trim( $content ) ) {
+			$role    = Aria_Database::normalize_conversation_role( $role );
+			$content = isset( $msg['content'] ) ? wp_strip_all_tags( $msg['content'] ) : '';
+			$content = trim( $content );
+			if ( empty( $role ) || '' === $content ) {
 				continue;
 			}
-			$context .= $role . ': ' . $content . "\n";
+			$prompt_role = ( 'aria' === $role ) ? 'assistant' : $role;
+			$context    .= $prompt_role . ': ' . $content . "\n";
 		}
 
 		return $context;
@@ -1000,13 +1424,26 @@ class Aria_Ajax_Handler {
 			$messages = array();
 		}
 
-		$normalized_role = trim( strtolower( $role ) );
+		foreach ( $messages as &$existing_message ) {
+			$existing_role                  = isset( $existing_message['role'] ) ? $existing_message['role'] : ( isset( $existing_message['sender'] ) ? $existing_message['sender'] : 'aria' );
+			$normalized_existing_role       = Aria_Database::normalize_conversation_role( $existing_role );
+			$existing_message['role']       = $normalized_existing_role;
+			$existing_message['sender']     = $normalized_existing_role;
+			$existing_message['timestamp']  = isset( $existing_message['timestamp'] ) ? $existing_message['timestamp'] : current_time( 'mysql' );
+		}
+		unset( $existing_message );
 
-		// Add new message
+		$normalized_role = Aria_Database::normalize_conversation_role( $role );
+		$sanitized_content = Aria_Security::sanitize_conversation_input( $message );
+
+		if ( '' === $sanitized_content ) {
+			return;
+		}
+
 		$messages[] = array(
 			'role'      => $normalized_role,
-			'sender'    => $normalized_role, // Maintain legacy key until UI fully migrates.
-			'content'   => $message,
+			'sender'    => $normalized_role,
+			'content'   => $sanitized_content,
 			'timestamp' => current_time( 'mysql' ),
 		);
 
@@ -1014,7 +1451,7 @@ class Aria_Ajax_Handler {
 		$wpdb->update(
 			$table,
 			array(
-				'conversation_log' => json_encode( $messages ),
+				'conversation_log' => wp_json_encode( $messages ),
 				'updated_at'       => current_time( 'mysql' ),
 			),
 			array( 'id' => $conversation_id )
@@ -1048,7 +1485,12 @@ class Aria_Ajax_Handler {
 	 */
 	public function handle_test_notification() {
 		// Verify nonce
-		if ( ! check_ajax_referer( 'aria_test_notification', 'nonce', false ) ) {
+		$nonce_valid = check_ajax_referer( 'aria_test_notification', 'nonce', false );
+		if ( ! $nonce_valid ) {
+			$nonce_valid = check_ajax_referer( 'aria_admin_nonce', 'nonce', false );
+		}
+
+		if ( ! $nonce_valid ) {
 			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'aria' ) ) );
 		}
 		

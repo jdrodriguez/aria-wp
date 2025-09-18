@@ -13,27 +13,13 @@
 .aria-conversations,
 .aria-settings,
 .aria-ai-config,
-.aria-content-indexing {
-  
-  // Logo header consistency across all pages
-  .aria-logo-header {
-    padding: $aria-space-8 0 $aria-space-4 0; // 32px top, 16px bottom
-    border-bottom: 1px solid $aria-gray-200;
-    margin-bottom: $aria-space-8; // 32px bottom margin
-  }
-
-  // Page header card styling
+.aria-content-indexing,
+.aria-knowledge-entry {
   .aria-page-header-card {
-    margin-top: 0; // Remove default margin since logo header provides spacing
-    margin-bottom: $aria-space-6 !important; // 24px consistent spacing
-    
-    // Override WordPress Card styles for better visual hierarchy
-    .components-card__body {
-      padding: $aria-space-8 !important; // 32px consistent padding
-    }
+    margin-top: 0;
+    margin-bottom: $aria-space-6;
   }
 
-  // Ensure consistent right padding for all React containers
   .aria-dashboard-react,
   .aria-personality-react,
   .aria-design-react,
@@ -41,8 +27,9 @@
   .aria-conversations-react,
   .aria-settings-react,
   .aria-ai-config-react,
-  .aria-content-indexing-react {
-    padding-right: $aria-space-8; // 32px consistent right padding
+  .aria-content-indexing-react,
+  .aria-knowledge-entry-react {
+    padding-right: $aria-space-8;
   }
 }
 
@@ -91,24 +78,75 @@
 // ===================================
 
 .aria-page-header-card {
-  // Subtle gradient background for visual hierarchy
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
-  border: 1px solid #e1e4e8 !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-  
-  // Enhanced typography within cards
-  h1 {
-    font-size: 28px !important;
-    font-weight: 700 !important;
-    color: #1e1e1e !important;
-    line-height: 1.2 !important;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 1px solid #e1e4e8;
+  border-radius: $aria-radius-xl;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  padding: clamp($aria-space-6, 4vw, $aria-space-10);
+
+  &__layout {
+    display: flex;
+    flex-direction: column;
+    gap: $aria-space-4;
   }
-  
-  p {
-    font-size: 16px !important;
-    color: #6c757d !important;
-    line-height: 1.5 !important;
-    font-weight: 400 !important;
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  &__logo {
+    height: clamp(32px, 6vw, 42px);
+    width: auto;
+    max-width: 240px;
+    object-fit: contain;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: $aria-space-3;
+  }
+
+  &__title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e1e1e;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  &__description {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #6c757d;
+    font-weight: 400;
+  }
+
+  &__actions {
+    margin-top: $aria-space-3;
+    display: flex;
+    flex-wrap: wrap;
+    gap: $aria-space-3;
+    align-items: center;
+  }
+}
+
+// ===================================
+// FORM FIELD STATES
+// ===================================
+
+.aria-input--error {
+  .components-text-control__input {
+    border-color: $aria-error;
+    box-shadow: 0 0 0 1px rgba($aria-error, 0.2);
+  }
+
+  .components-base-control__help {
+    color: $aria-error;
+    font-weight: $aria-font-medium;
   }
 }
 
@@ -124,13 +162,8 @@
   .aria-conversations,
   .aria-settings,
   .aria-ai-config,
-  .aria-content-indexing {
-    
-    .aria-logo-header {
-      padding: $aria-space-6 0 $aria-space-3 0; // Reduce padding on mobile
-      margin-bottom: $aria-space-6; // Reduce bottom margin on mobile
-    }
-    
+  .aria-content-indexing,
+  .aria-knowledge-entry {
     .aria-dashboard-react,
     .aria-personality-react,
     .aria-design-react,
@@ -138,8 +171,17 @@
     .aria-conversations-react,
     .aria-settings-react,
     .aria-ai-config-react,
-    .aria-content-indexing-react {
-      padding-right: $aria-space-4; // Reduce right padding on mobile
+    .aria-content-indexing-react,
+    .aria-knowledge-entry-react {
+      padding-right: $aria-space-4;
+    }
+  }
+
+  .aria-page-header-card {
+    padding: $aria-space-6;
+
+    &__logo {
+      height: 32px;
     }
   }
 }

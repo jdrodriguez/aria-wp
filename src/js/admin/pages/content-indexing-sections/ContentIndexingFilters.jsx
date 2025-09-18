@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { __ } from '@wordpress/i18n';
-import { SearchControl, SelectControl } from '@wordpress/components';
-import { SectionCard } from '../../components';
+import { SectionCard, SearchControl, SelectControl } from '../../components';
 
 const ContentIndexingFilters = ({
 	searchValue,

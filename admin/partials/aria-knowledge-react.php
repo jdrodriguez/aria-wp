@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<div class="wrap">
+<div class="wrap aria-knowledge">
 	<div id="aria-knowledge-root"></div>
 </div>
 

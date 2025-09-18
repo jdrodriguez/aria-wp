@@ -11,7 +11,7 @@ import {
 import { fetchKnowledgeData, deleteKnowledgeEntry } from '../utils/api';
 import { getAdminUrl } from '../utils/helpers';
 
-const KNOWLEDGE_CATEGORIES = [
+const DEFAULT_KNOWLEDGE_CATEGORIES = [
 	{ label: __('General Information', 'aria'), value: 'general' },
 	{ label: __('Products & Services', 'aria'), value: 'products' },
 	{ label: __('Support & Troubleshooting', 'aria'), value: 'support' },
@@ -19,11 +19,20 @@ const KNOWLEDGE_CATEGORIES = [
 	{ label: __('Policies & Terms', 'aria'), value: 'policies' },
 ];
 
-const getCategoryLabel = (categoryValue) => {
-	const category = KNOWLEDGE_CATEGORIES.find(
-		(cat) => cat.value === categoryValue
-	);
-	return category ? category.label : categoryValue;
+const formatCategoryLabel = (slug = '') => {
+	if (!slug) {
+		return '';
+	}
+
+	return slug
+		.replace(/-/g, ' ')
+		.replace(/_/g, ' ')
+		.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const getCategoryLabel = (categoryValue, options) => {
+	const category = options.find((cat) => cat.value === categoryValue);
+	return category ? category.label : formatCategoryLabel(categoryValue);
 };
 
 const Knowledge = () => {
@@ -38,6 +47,9 @@ const Knowledge = () => {
 	const [searchTerm, setSearchTerm] = useState('');
 	const [selectedCategory, setSelectedCategory] = useState('all');
 	const [notice, setNotice] = useState(null);
+	const [availableCategories, setAvailableCategories] = useState(
+		DEFAULT_KNOWLEDGE_CATEGORIES
+	);
 
 	useEffect(() => {
 		loadKnowledgeData();
@@ -45,25 +57,55 @@ const Knowledge = () => {
 
 	const loadKnowledgeData = async () => {
 		setLoading(true);
+		setNotice(null);
 		try {
 			const data = await fetchKnowledgeData();
 			const knowledgeEntries = data.entries || [];
-			const processedEntries = knowledgeEntries.map((entry) => ({
-				id: entry.id,
-				title: entry.title,
-				content: entry.content,
-				category: entry.category,
-				categoryLabel: getCategoryLabel(entry.category),
-				tags: entry.tags
+
+			const derivedCategories = Array.isArray(data.categoriesList)
+				? data.categoriesList
+						.filter(Boolean)
+						.map((slug) => ({
+							value: slug,
+							label: formatCategoryLabel(slug),
+						}))
+				: [];
+
+			const mergedCategoriesMap = new Map();
+			[...DEFAULT_KNOWLEDGE_CATEGORIES, ...derivedCategories].forEach((cat) => {
+				if (!mergedCategoriesMap.has(cat.value)) {
+					mergedCategoriesMap.set(cat.value, cat);
+				}
+			});
+			setAvailableCategories(Array.from(mergedCategoriesMap.values()));
+
+			const processedEntries = knowledgeEntries.map((entry) => {
+				const tagsList = Array.isArray(entry.tags_array)
+					? entry.tags_array
+					: entry.tags
 					? entry.tags.split(',').map((tag) => tag.trim())
-					: [],
-				updated_at: entry.updated_at,
-			}));
+					: [];
+
+				return {
+					id: entry.id,
+					title: entry.title,
+					content: entry.content_preview || entry.content || '',
+					fullContent: entry.content || '',
+					category: entry.category,
+					categoryLabel: getCategoryLabel(entry.category, Array.from(mergedCategoriesMap.values())),
+					tags: tagsList,
+					updated_at: entry.updated_at,
+					status: entry.status,
+					totalChunks: entry.total_chunks || 0,
+					language: entry.language || 'en',
+				};
+			});
 
 			setEntries(processedEntries);
 			setKnowledgeData({
 				totalEntries: data.totalEntries || processedEntries.length,
-				categories: data.categories || KNOWLEDGE_CATEGORIES.length,
+				categories:
+					data.categories || mergedCategoriesMap.size || DEFAULT_KNOWLEDGE_CATEGORIES.length,
 				lastUpdated: data.lastUpdated || __('Today', 'aria'),
 				usageStats: data.usageStats || 0,
 			});
@@ -76,6 +118,10 @@ const Knowledge = () => {
 				categories: 0,
 				lastUpdated: __('Never', 'aria'),
 				usageStats: 0,
+			});
+			setNotice({
+				type: 'error',
+				message: error?.message || __('Failed to load knowledge entries.', 'aria'),
 			});
 		} finally {
 			setLoading(false);
@@ -144,7 +190,7 @@ const Knowledge = () => {
 		const matchesSearch =
 			!term ||
 			entry.title.toLowerCase().includes(term) ||
-			entry.content.toLowerCase().includes(term) ||
+			entry.fullContent?.toLowerCase().includes(term) ||
 			entry.tags.some((tag) => tag.toLowerCase().includes(term));
 		const matchesCategory =
 			selectedCategory === 'all' || entry.category === selectedCategory;
@@ -197,7 +243,7 @@ const Knowledge = () => {
 					onSearchChange={setSearchTerm}
 					filterValue={selectedCategory}
 					onFilterChange={setSelectedCategory}
-					categories={KNOWLEDGE_CATEGORIES}
+					categories={availableCategories}
 				/>
 				<KnowledgeEntriesSection
 					entries={filteredEntries}

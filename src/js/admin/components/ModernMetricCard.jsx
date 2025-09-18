@@ -9,6 +9,32 @@ const Icons = {
 			<polyline points="22,12 18,12 15,21 9,3 6,12 2,12"></polyline>
 		</svg>
 	),
+	stack: (
+		<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+			<polygon points="12 2 3 7 12 12 21 7 12 2"></polygon>
+			<polyline points="3 12 12 17 21 12"></polyline>
+			<polyline points="3 17 12 22 21 17"></polyline>
+		</svg>
+	),
+	check: (
+		<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+			<path d="M20 6L9 17l-5-5"></path>
+			<circle cx="12" cy="12" r="10"></circle>
+		</svg>
+	),
+	clock: (
+		<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+			<circle cx="12" cy="12" r="10"></circle>
+			<polyline points="12 6 12 12 16 14"></polyline>
+		</svg>
+	),
+	storage: (
+		<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+			<ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+			<path d="M3 5v6c0 1.657 4.03 3 9 3s9-1.343 9-3V5"></path>
+			<path d="M3 11v6c0 1.657 4.03 3 9 3s9-1.343 9-3v-6"></path>
+		</svg>
+	),
 	users: (
 		<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
 			<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -181,7 +207,16 @@ const ModernMetricCard = ({ icon, title, value, subtitle, theme = 'primary' }) =
 };
 
 ModernMetricCard.propTypes = {
-	icon: PropTypes.oneOf(['activity', 'users', 'knowledge', 'license']).isRequired,
+	icon: PropTypes.oneOf([
+		'activity',
+		'stack',
+		'check',
+		'clock',
+		'storage',
+		'users',
+		'knowledge',
+		'license',
+	]).isRequired,
 	title: PropTypes.string.isRequired,
 	value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 	subtitle: PropTypes.string.isRequired,

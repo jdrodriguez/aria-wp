@@ -1,154 +1,227 @@
-// AI Configuration Page Styles
-// Specific styles for AI Config React components
+@import '../variables';
 
 .aria-ai-config {
-  // React container styles matching Dashboard
-  .aria-ai-config-react {
-    // Header styles matching Dashboard
-    .aria-ai-config-header {
-      margin-bottom: $aria-space-6;
-      
-      h1 {
-        font-size: 28px !important;
-        font-weight: 700 !important;
-        color: #1e1e1e !important;
-        margin-bottom: 8px !important;
-      }
-      
-      p {
-        font-size: 16px !important;
-        color: #6c757d !important;
-        line-height: 1.5 !important;
-        margin-bottom: 0 !important;
-      }
-    }
-  }
+	&__notice {
+		margin-bottom: $aria-space-6;
+	}
 
-  // Grid layout for provider and API key cards
-  .aria-metrics-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: $aria-space-6;
-    margin-bottom: $aria-space-8;
-    
-    @media (min-width: $aria-screen-lg) {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
+	&__grid {
+		display: grid;
+		gap: $aria-space-6;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		align-items: flex-start;
+	}
 
-  // Model configuration grid
-  .aria-model-config-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: $aria-space-6;
-    
-    @media (min-width: $aria-screen-lg) {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
+	&__panel {
+		display: flex;
+		flex-direction: column;
+		gap: $aria-space-4;
+		background: $aria-white;
+		border: 1px solid $aria-gray-200;
+		border-radius: $aria-radius-lg;
+		padding: $aria-space-6;
+		box-shadow: $aria-shadow-xs;
+	}
 
-  // API key help links
-  a {
-    color: $aria-primary;
-    text-decoration: none;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
+	&__panel-heading {
+		display: flex;
+		align-items: flex-start;
+		gap: $aria-space-4;
+	}
 
-  // Recent activity list
-  .aria-recent-activity {
-    .activity-item {
-      display: flex;
-      justify-content: space-between;
-      padding: $aria-space-3 0;
-      border-bottom: 1px solid $aria-gray-200;
-      
-      &:last-child {
-        border-bottom: none;
-      }
-      
-      .activity-time {
-        color: $aria-gray-600;
-        font-size: $aria-text-sm;
-      }
-      
-      .activity-tokens {
-        color: $aria-gray-700;
-        font-weight: $aria-font-medium;
-      }
-    }
-  }
+	&__panel-icon {
+		font-size: $aria-text-2xl;
+	}
 
-  // Metric card value styles
-  .metric-item {
-    text-align: center;
-    padding: $aria-space-4 0;
-    
-    &.large {
-      .item-value {
-        font-size: $aria-text-3xl;
-        font-weight: $aria-font-bold;
-      }
-    }
-    
-    .item-value {
-      display: block;
-      font-size: $aria-text-2xl;
-      font-weight: $aria-font-semibold;
-      margin-bottom: $aria-space-2;
-      
-      &.primary {
-        color: $aria-primary;
-      }
-      
-      &.secondary {
-        color: $aria-success;
-      }
-    }
-    
-    .item-label {
-      display: block;
-      color: $aria-gray-600;
-      font-size: $aria-text-sm;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-  }
+	&__panel-text {
+		display: flex;
+		flex-direction: column;
+		gap: $aria-space-2;
 
-  // Code display
-  code {
-    background: $aria-gray-100;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: $aria-text-sm;
-    font-family: 'Monaco', 'Consolas', monospace;
-  }
+		h3 {
+			margin: 0;
+			font-size: $aria-text-base;
+			font-weight: $aria-font-semibold;
+			color: $aria-gray-900;
+		}
 
-  // Notice adjustments for AI Config context
-  .components-notice {
-    margin-bottom: $aria-space-4;
-  }
+		p {
+			margin: 0;
+			font-size: $aria-text-sm;
+			color: $aria-gray-600;
+		}
+	}
 
-  // Color control wrappers for provider settings
-  .aria-color-control {
-    margin-bottom: $aria-space-6;
-    
-    label {
-      display: block;
-      margin-bottom: $aria-space-2;
-      font-weight: $aria-font-medium;
-    }
-    
-    .components-base-control__help {
-      margin-top: $aria-space-2;
-      margin-bottom: $aria-space-3;
-    }
-  }
+	&__masked-key {
+		margin: 0;
+		font-size: $aria-text-sm;
+		color: $aria-gray-600;
+		word-break: break-all;
+	}
 
-  // Button alignment
-  .aria-btn-primary {
-    margin-top: $aria-space-2;
-  }
+	&__field-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: $aria-space-3;
+	}
+
+	&__help-text {
+		font-size: $aria-text-sm;
+		color: $aria-gray-600;
+		line-height: $aria-leading-relaxed;
+
+		a {
+			color: $aria-primary;
+			text-decoration: none;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+	}
+
+	&__form-grid {
+		display: grid;
+		gap: $aria-space-6;
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	}
+
+	&__model-details {
+		margin-top: $aria-space-3;
+		padding: $aria-space-4;
+		border: 1px solid $aria-gray-200;
+		border-radius: $aria-radius-lg;
+		background: linear-gradient(135deg, rgba($aria-primary, 0.08) 0%, rgba($aria-primary, 0.03) 100%);
+	}
+
+	&__model-description {
+		margin: 0 0 $aria-space-3 0;
+		color: $aria-gray-700;
+		font-size: $aria-text-sm;
+		line-height: $aria-leading-relaxed;
+	}
+
+	&__model-notice {
+		margin: 0;
+	}
+
+	&__usage-grid {
+		display: grid;
+		gap: $aria-space-6;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		margin-bottom: $aria-space-6;
+		align-items: stretch;
+	}
+
+	&__metric {
+		display: flex;
+		flex-direction: column;
+		gap: $aria-space-2;
+		align-items: center;
+		justify-content: center;
+		padding: $aria-space-5;
+		border-radius: $aria-radius-lg;
+		border: 1px solid $aria-gray-200;
+		background: linear-gradient(135deg, $aria-white 0%, $aria-gray-50 100%);
+		box-shadow: $aria-shadow-xs;
+		text-align: center;
+	}
+
+	&__metric-value {
+		font-size: $aria-text-3xl;
+		font-weight: $aria-font-bold;
+		color: $aria-gray-900;
+
+		&--primary {
+			color: $aria-primary;
+		}
+
+		&--secondary {
+			color: $aria-success;
+		}
+	}
+
+	&__metric-label {
+		font-size: $aria-text-xs;
+		font-weight: $aria-font-semibold;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: $aria-gray-600;
+	}
+
+	&__activity {
+		display: flex;
+		flex-direction: column;
+		gap: $aria-space-3;
+	}
+
+	&__activity-title {
+		margin: 0;
+		font-size: $aria-text-base;
+		font-weight: $aria-font-semibold;
+		color: $aria-gray-900;
+	}
+
+	&__activity-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: $aria-space-3;
+	}
+
+	&__activity-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: $aria-space-4;
+		padding: $aria-space-3 $aria-space-4;
+		border: 1px solid $aria-gray-200;
+		border-radius: $aria-radius-md;
+		background: $aria-white;
+		box-shadow: $aria-shadow-xs;
+	}
+
+	&__activity-time {
+		font-size: $aria-text-sm;
+		color: $aria-gray-600;
+	}
+
+	&__activity-tokens {
+		font-size: $aria-text-sm;
+		font-weight: $aria-font-semibold;
+		color: $aria-gray-900;
+	}
+
+	&__empty-activity {
+		margin: 0;
+		padding: $aria-space-4;
+		border-radius: $aria-radius-md;
+		border: 1px dashed rgba($aria-primary, 0.4);
+		background: rgba($aria-primary, 0.05);
+		color: $aria-gray-600;
+		font-size: $aria-text-sm;
+		text-align: center;
+	}
+
+	&__actions-note {
+		margin: 0;
+		font-size: $aria-text-sm;
+		color: $aria-gray-600;
+		line-height: $aria-leading-relaxed;
+	}
+}
+
+@media (max-width: $aria-screen-md) {
+	.aria-ai-config {
+		&__field-actions {
+			align-items: stretch;
+		}
+
+		&__metric {
+			padding: $aria-space-4;
+		}
+	}
 }

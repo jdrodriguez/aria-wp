@@ -301,7 +301,15 @@ class Aria_Core {
 			// AI Config React AJAX actions
 			'aria_get_ai_config',
 			'aria_save_ai_config',
-			'aria_get_usage_stats'
+			'aria_get_usage_stats',
+			'aria_get_design_settings',
+			'aria_save_design_settings',
+			'aria_get_notification_settings',
+			'aria_save_notification_settings',
+			'aria_get_privacy_settings',
+			'aria_save_privacy_settings',
+			'aria_get_license_settings',
+			'aria_activate_license'
 		);
 		
 		// Register handlers for both logged in and non-logged in users
@@ -328,9 +336,16 @@ class Aria_Core {
 		// Map action to method name
 		$method_name = 'handle_' . $action_name;
 		
-		// Call the appropriate method if it exists
+		// Call the appropriate method if it exists, with legacy fallback
 		if ( method_exists( $ajax_handler, $method_name ) ) {
 			$ajax_handler->$method_name();
+			return;
+		}
+
+		// Legacy handlers dropped the `aria_` prefix
+		$legacy_method = str_replace( 'handle_aria_', 'handle_', $method_name );
+		if ( method_exists( $ajax_handler, $legacy_method ) ) {
+			$ajax_handler->$legacy_method();
 		}
 	}
 

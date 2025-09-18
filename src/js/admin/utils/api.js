@@ -96,8 +96,12 @@ export const savePersonalitySettings = (settings) => {
  * @param {Object} settings - Design settings
  * @return {Promise} Save result
  */
+export const fetchDesignSettings = () => {
+	return makeAjaxRequest('aria_get_design_settings');
+};
+
 export const saveDesignSettings = (settings) => {
-	return makeAjaxRequest('aria_save_design', settings);
+	return makeAjaxRequest('aria_save_design_settings', settings);
 };
 
 /**
@@ -158,4 +162,28 @@ export const fetchAdvancedSettings = () => {
  */
 export const saveAdvancedSettings = (settings) => {
 	return makeAjaxRequest('aria_save_advanced_settings', settings);
+};
+
+export const fetchNotificationSettings = () => {
+	return makeAjaxRequest('aria_get_notification_settings');
+};
+
+export const saveNotificationSettings = (settings) => {
+	return makeAjaxRequest('aria_save_notification_settings', settings);
+};
+
+export const fetchPrivacySettings = () => {
+	return makeAjaxRequest('aria_get_privacy_settings');
+};
+
+export const savePrivacySettings = (settings) => {
+	return makeAjaxRequest('aria_save_privacy_settings', settings);
+};
+
+export const fetchLicenseSettings = () => {
+	return makeAjaxRequest('aria_get_license_settings');
+};
+
+export const activateLicense = ({ licenseKey }) => {
+	return makeAjaxRequest('aria_activate_license', { licenseKey });
 };

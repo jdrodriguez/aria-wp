@@ -86,6 +86,54 @@
 		flex-wrap: wrap;
 	}
 
+	&__status {
+		display: inline-flex;
+		align-items: center;
+		gap: $aria-space-1;
+		padding: $aria-space-1 $aria-space-3;
+		border-radius: $aria-radius-full;
+		font-size: $aria-text-xs;
+		font-weight: $aria-font-semibold;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		background: $aria-gray-100;
+		color: $aria-gray-700;
+		border: 1px solid $aria-gray-200;
+
+		&--active {
+			background: rgba($aria-success, 0.12);
+			color: $aria-success;
+			border-color: rgba($aria-success, 0.3);
+		}
+
+		&--pending_processing,
+		&--processing_scheduled {
+			background: rgba($aria-warning, 0.15);
+			color: $aria-warning;
+			border-color: rgba($aria-warning, 0.35);
+
+			&::before {
+				content: '';
+				display: inline-block;
+				width: 6px;
+				height: 6px;
+				border-radius: 50%;
+				background: currentColor;
+			}
+		}
+
+		&--processing_failed {
+			background: rgba($aria-error, 0.12);
+			color: $aria-error;
+			border-color: rgba($aria-error, 0.3);
+		}
+	}
+
+	&__chunks {
+		font-size: $aria-text-xs;
+		color: $aria-gray-600;
+	}
+
 	&__category {
 		font-size: $aria-text-xs;
 		font-weight: $aria-font-semibold;

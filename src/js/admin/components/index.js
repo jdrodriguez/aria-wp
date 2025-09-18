@@ -10,3 +10,10 @@ export { default as ActionCard } from './ActionCard.jsx';
 export { default as SearchInput } from './SearchInput.jsx';
 export { default as AIKnowledgeGenerator } from './AIKnowledgeGenerator.jsx';
 export { default as SimpleKnowledgeModal } from './SimpleKnowledgeModal.jsx';
+export {
+	SelectControl,
+	TextControl,
+	TextareaControl,
+	ToggleControl,
+	SearchControl,
+} from './WPControls.jsx';

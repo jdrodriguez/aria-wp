@@ -12,6 +12,30 @@
 class Aria_Database {
 
 	/**
+	 * Normalize a conversation role string to expected values.
+	 *
+	 * @param string $role Raw role value.
+	 * @return string Normalized role.
+	 */
+	public static function normalize_conversation_role( $role ) {
+		$role = strtolower( trim( (string) $role ) );
+
+		if ( in_array( $role, array( 'system' ), true ) ) {
+			return 'system';
+		}
+
+		if ( in_array( $role, array( 'tool', 'function' ), true ) ) {
+			return 'tool';
+		}
+
+		if ( in_array( $role, array( 'assistant', 'bot', 'aria', 'ai' ), true ) ) {
+			return 'aria';
+		}
+
+		return 'user';
+	}
+
+	/**
 	 * Get conversation by ID.
 	 *
 	 * @param int $conversation_id Conversation ID.
@@ -108,9 +132,12 @@ class Aria_Database {
 
 		foreach ( $messages as &$message ) {
 			$role = isset( $message['role'] ) ? $message['role'] : ( isset( $message['sender'] ) ? $message['sender'] : 'aria' );
-			$role = trim( strtolower( $role ) );
-			$message['role'] = $role ?: 'aria';
-			$message['sender'] = $message['role'];
+			$normalized_role = self::normalize_conversation_role( $role );
+			$message['role']   = $normalized_role;
+			$message['sender'] = $normalized_role;
+			if ( empty( $message['timestamp'] ) ) {
+				$message['timestamp'] = current_time( 'mysql' );
+			}
 		}
 		unset( $message );
 

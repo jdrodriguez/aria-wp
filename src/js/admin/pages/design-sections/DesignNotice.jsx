@@ -1,0 +1,29 @@
+import PropTypes from 'prop-types';
+import { Notice } from '@wordpress/components';
+
+const DesignNotice = ({ notice, onRemove }) => {
+	if (!notice) {
+		return null;
+	}
+
+	return (
+		<Notice
+			status={notice.type}
+			onRemove={onRemove}
+			isDismissible
+			className="aria-design__notice"
+		>
+			{notice.message}
+		</Notice>
+	);
+};
+
+DesignNotice.propTypes = {
+	notice: PropTypes.shape({
+		type: PropTypes.oneOf(['info', 'success', 'warning', 'error']).isRequired,
+		message: PropTypes.string.isRequired,
+	}),
+	onRemove: PropTypes.func.isRequired,
+};
+
+export default DesignNotice;

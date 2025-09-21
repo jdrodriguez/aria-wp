@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import { __ } from '@wordpress/i18n';
-import { Button } from '@wordpress/components';
+import { Button, Icon } from '@wordpress/components';
 import { SelectControl } from '../../components';
+import { envelope, globe, calendar, comment } from '@wordpress/icons';
 
 const statusClassMap = {
 	active: 'is-active',
@@ -36,17 +37,17 @@ const ConversationCard = ({
 				<div className="aria-conversations__item-meta">
 					{conversation.visitor_email && (
 						<span className="aria-conversations__item-meta-chip">
-							📧 {conversation.visitor_email}
+							<Icon icon={envelope} size={14} /> {conversation.visitor_email}
 						</span>
 					)}
 					<span className="aria-conversations__item-meta-chip">
-						🌐 {conversation.source}
+						<Icon icon={globe} size={14} /> {conversation.source}
 					</span>
 					<span className="aria-conversations__item-meta-chip">
-						📅 {conversation.created_at}
+						<Icon icon={calendar} size={14} /> {conversation.created_at}
 					</span>
 					<span className="aria-conversations__item-meta-chip">
-						💬 {conversation.message_count} {__('messages', 'aria')}
+						<Icon icon={comment} size={14} /> {conversation.message_count} {__('messages', 'aria')}
 					</span>
 				</div>
 				<p className="aria-conversations__item-preview">

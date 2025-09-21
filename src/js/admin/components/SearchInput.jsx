@@ -1,6 +1,8 @@
-import { TextControl, Flex, Button } from '@wordpress/components';
+import { TextControl, Flex, Button, Icon } from '@wordpress/components';
 import { useState, useEffect } from '@wordpress/element';
 import PropTypes from 'prop-types';
+import { __ } from '@wordpress/i18n';
+import { search as searchIcon, closeSmall } from '@wordpress/icons';
 
 /**
  * Enhanced search input component with debouncing and clear functionality
@@ -17,6 +19,13 @@ import PropTypes from 'prop-types';
  * @param {Function} [props.onSubmit]     - Submit handler for Enter key
  * @return {JSX.Element} SearchInput component
  */
+const SIZE_KEYS = ['small', 'medium', 'large'];
+const SIZE_CLASS_MAP = {
+	small: 'aria-search-input--small',
+	medium: 'aria-search-input--medium',
+	large: 'aria-search-input--large',
+};
+
 const SearchInput = ({
 	value = '',
 	onChange,
@@ -26,7 +35,8 @@ const SearchInput = ({
 	size = 'medium',
 	disabled = false,
 	onClear,
-	onSubmit
+	onSubmit,
+	className,
 }) => {
 	const [inputValue, setInputValue] = useState(value);
 	const [debounceTimer, setDebounceTimer] = useState(null);
@@ -73,32 +83,6 @@ const SearchInput = ({
 		}
 	};
 
-	// Get size-specific styles
-	const getSizeStyles = () => {
-		switch (size) {
-			case 'small':
-				return {
-					fontSize: '13px',
-					height: '32px',
-					padding: '4px 8px'
-				};
-			case 'large':
-				return {
-					fontSize: '16px',
-					height: '48px',
-					padding: '12px 16px'
-				};
-			default: // medium
-				return {
-					fontSize: '14px',
-					height: '40px',
-					padding: '8px 12px'
-				};
-		}
-	};
-
-	const sizeStyles = getSizeStyles();
-
 	// Clean up timer on unmount
 	useEffect(() => {
 		return () => {
@@ -108,91 +92,71 @@ const SearchInput = ({
 		};
 	}, [debounceTimer]);
 
-	return (
-		<div style={{ position: 'relative', width: '100%' }}>
-			<Flex gap={2} align="center">
-				<div style={{ position: 'relative', flex: 1 }}>
-					{/* Search Icon */}
-					<div style={{
-						position: 'absolute',
-						left: '12px',
-						top: '50%',
-						transform: 'translateY(-50%)',
-						color: disabled ? '#9ca3af' : '#6c757d',
-						fontSize: '14px',
-						pointerEvents: 'none',
-						zIndex: 1
-					}}>
-						🔍
-					</div>
+	const sizeKey = SIZE_KEYS.includes(size) ? size : 'medium';
 
+	const rootClasses = [
+		'aria-search-input',
+		SIZE_CLASS_MAP[sizeKey],
+		showClearBtn && inputValue ? 'aria-search-input--has-clear' : '',
+		disabled ? 'aria-search-input--disabled' : '',
+		className,
+	]
+		.filter(Boolean)
+		.join(' ');
+
+	const submitClasses = [
+		'aria-search-input__submit',
+		sizeKey === 'small' ? 'aria-search-input__submit--small' : '',
+		sizeKey === 'large' ? 'aria-search-input__submit--large' : '',
+	]
+		.filter(Boolean)
+		.join(' ');
+
+	const controlClasses = [
+		'aria-search-input__control',
+		`aria-search-input__control--${sizeKey}`,
+	]
+		.filter(Boolean)
+		.join(' ');
+
+	return (
+		<div className={rootClasses}>
+			<Flex gap={2} align="center">
+				<div className="aria-search-input__control-wrapper">
+					<span className="aria-search-input__icon">
+						<Icon icon={searchIcon} size={14} />
+					</span>
 					<TextControl
 						value={inputValue}
 						onChange={handleInputChange}
 						onKeyPress={handleKeyPress}
 						placeholder={placeholder}
 						disabled={disabled}
-						style={{
-							...sizeStyles,
-							paddingLeft: '36px', // Make room for search icon
-							paddingRight: showClearBtn && inputValue ? '36px' : sizeStyles.padding.split(' ')[1],
-							border: '1px solid #ddd',
-							borderRadius: '6px',
-							width: '100%',
-							transition: 'border-color 0.2s ease',
-							fontSize: sizeStyles.fontSize,
-							':focus': {
-								borderColor: '#2271b1',
-								boxShadow: '0 0 0 1px #2271b1'
-							}
-						}}
+						className={controlClasses}
+						__nextHasNoMarginBottom
 					/>
 
-					{/* Clear Button */}
 					{showClearBtn && inputValue && !disabled && (
 						<button
 							type="button"
 							onClick={handleClear}
-							style={{
-								position: 'absolute',
-								right: '8px',
-								top: '50%',
-								transform: 'translateY(-50%)',
-								background: 'none',
-								border: 'none',
-								color: '#6c757d',
-								cursor: 'pointer',
-								padding: '4px',
-								borderRadius: '3px',
-								fontSize: '12px',
-								lineHeight: 1,
-								transition: 'color 0.2s ease',
-								':hover': {
-									color: '#dc3545'
-								}
-							}}
-							title="Clear search"
-							aria-label="Clear search input"
-							tabIndex={0}
+							className="aria-search-input__clear"
+							title={__('Clear search input', 'aria')}
+							aria-label={__('Clear search input', 'aria')}
 						>
-							<span aria-hidden="true">✕</span>
+							<Icon icon={closeSmall} size={14} />
 						</button>
 					)}
 				</div>
 
-				{/* Optional Submit Button */}
 				{onSubmit && (
 					<Button
 						variant="primary"
-						size={size === 'small' ? 'small' : 'medium'}
 						onClick={() => onSubmit(inputValue)}
 						disabled={disabled || !inputValue.trim()}
-						style={{
-							height: sizeStyles.height,
-							minWidth: size === 'small' ? '60px' : '80px'
-						}}
+						className={submitClasses}
 					>
-						Search
+						{__('Search', 'aria')}
 					</Button>
 				)}
 			</Flex>
@@ -210,6 +174,7 @@ SearchInput.propTypes = {
 	disabled: PropTypes.bool,
 	onClear: PropTypes.func,
 	onSubmit: PropTypes.func,
+ 	className: PropTypes.string,
 };
 
 export default SearchInput;

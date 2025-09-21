@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { Button } from '@wordpress/components';
+import { Button, Spinner } from '@wordpress/components';
 import {
 	SectionCard,
 	ToggleControl,
@@ -42,6 +42,23 @@ const validateAutoOpenDelay = (value) => {
 const computeValidationState = (settings) => ({
 	autoOpenDelay: validateAutoOpenDelay(settings.autoOpenDelay),
 });
+
+const normalizeAutoOpenDelay = (value) => {
+	const parsed = parseInt(String(value ?? '').trim(), 10);
+	if (Number.isNaN(parsed)) {
+		return 0;
+	}
+
+	if (parsed < 0) {
+		return 0;
+	}
+
+	if (parsed > 120) {
+		return 120;
+	}
+
+	return parsed;
+};
 
 const GeneralSettingsPanel = () => {
 	const [settings, setSettings] = useState({
@@ -131,7 +148,7 @@ const GeneralSettingsPanel = () => {
 			const payload = {
 				enableChat: settings.enableChat,
 				displayOn: settings.displayOn,
-				autoOpenDelay: parseInt(settings.autoOpenDelay, 10),
+				autoOpenDelay: normalizeAutoOpenDelay(settings.autoOpenDelay),
 				requireEmail: settings.requireEmail,
 			};
 			const data = await saveGeneralSettings(payload);
@@ -164,10 +181,18 @@ const GeneralSettingsPanel = () => {
 		}
 	};
 
+	const panelTitle = __('Chat Widget Settings', 'aria');
+	const panelDescription = __('Configure basic settings for your chat widget', 'aria');
+
 	if (loading) {
 		return (
-			<div className="aria-settings__tab-content aria-settings__loading">
-				<Button isBusy>{__('Loading general settings…', 'aria')}</Button>
+			<div className="aria-settings__tab-content">
+				<SectionCard title={panelTitle} description={panelDescription}>
+					<div className="aria-settings__loading">
+						<Spinner />
+						<span>{__('Loading general settings…', 'aria')}</span>
+					</div>
+				</SectionCard>
 			</div>
 		);
 	}
@@ -175,11 +200,8 @@ const GeneralSettingsPanel = () => {
 	return (
 		<div className="aria-settings__tab-content">
 			<SectionCard
-				title={__('Chat Widget Settings', 'aria')}
-				description={__(
-					'Configure basic settings for your chat widget',
-					'aria'
-				)}
+				title={panelTitle}
+				description={panelDescription}
 				footer={
 					<div className="aria-settings__actions">
 						<Button

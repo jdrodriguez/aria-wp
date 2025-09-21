@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import { __ } from '@wordpress/i18n';
-import { Button } from '@wordpress/components';
+import { Button, Icon } from '@wordpress/components';
 import { SectionCard, SelectControl, TextControl } from '../../components';
+import { plugins, lock } from '@wordpress/icons';
 
 const AIConfigProviderSection = ({
 	provider,
@@ -35,7 +36,9 @@ const AIConfigProviderSection = ({
 			<div className="aria-ai-config__grid">
 			<div className="aria-ai-config__panel">
 				<div className="aria-ai-config__panel-heading">
-					<span className="aria-ai-config__panel-icon" aria-hidden="true">🔌</span>
+					<span className="aria-ai-config__panel-icon" aria-hidden="true">
+						<Icon icon={plugins} size={20} />
+					</span>
 					<div className="aria-ai-config__panel-text">
 						<h3>{__('Provider Selection', 'aria')}</h3>
 						<p>{__('Choose which AI service powers Aria and manage its credentials.', 'aria')}</p>
@@ -54,7 +57,9 @@ const AIConfigProviderSection = ({
 
 			<div className="aria-ai-config__panel">
 				<div className="aria-ai-config__panel-heading">
-					<span className="aria-ai-config__panel-icon" aria-hidden="true">🔐</span>
+					<span className="aria-ai-config__panel-icon" aria-hidden="true">
+						<Icon icon={lock} size={20} />
+					</span>
 					<div className="aria-ai-config__panel-text">
 						<h3>{__('API Credentials', 'aria')}</h3>
 						<p>{__('Store and test the API key used to authenticate with your AI provider.', 'aria')}</p>

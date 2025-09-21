@@ -1,9 +1,10 @@
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useMemo } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { PageHeader, PageShell } from '../components';
 import {
 	KnowledgeMetrics,
 	KnowledgeSearchControls,
+	KnowledgeCategoryPills,
 	KnowledgeEntriesSection,
 	KnowledgeNotice,
 	KnowledgeLoading,
@@ -35,6 +36,10 @@ const getCategoryLabel = (categoryValue, options) => {
 	return category ? category.label : formatCategoryLabel(categoryValue);
 };
 
+const defaultCategoryValues = new Set(
+	DEFAULT_KNOWLEDGE_CATEGORIES.map((category) => category.value)
+);
+
 const Knowledge = () => {
 	const [knowledgeData, setKnowledgeData] = useState({
 		totalEntries: 0,
@@ -50,6 +55,58 @@ const Knowledge = () => {
 	const [availableCategories, setAvailableCategories] = useState(
 		DEFAULT_KNOWLEDGE_CATEGORIES
 	);
+
+	const categoryCounts = useMemo(() => {
+		const counts = entries.reduce((acc, entry) => {
+			const key = entry.category || 'uncategorized';
+			acc[key] = (acc[key] || 0) + 1;
+			return acc;
+		}, {});
+		return counts;
+	}, [entries]);
+
+	const categoryPillOptions = useMemo(() => {
+		const dedupe = new Map();
+		const baseOptions = [
+			{
+				label: __('All', 'aria'),
+				value: 'all',
+				count: entries.length,
+			},
+			...availableCategories.map((category) => ({
+				label: category.label,
+				value: category.value,
+				count: categoryCounts[category.value] || 0,
+			})),
+		];
+
+		baseOptions.forEach((option) => {
+			if (!dedupe.has(option.value)) {
+				dedupe.set(option.value, option);
+			} else {
+				const existing = dedupe.get(option.value);
+				dedupe.set(option.value, {
+					...existing,
+					count: option.count,
+				});
+			}
+		});
+
+		const filtered = Array.from(dedupe.values()).filter((option) => {
+			if (option.value === 'all') {
+				return true;
+			}
+			if (defaultCategoryValues.has(option.value)) {
+				return true;
+			}
+			if (option.value === 'uncategorized') {
+				return option.count > 0;
+			}
+			return option.count > 1;
+		});
+
+		return filtered;
+	}, [availableCategories, categoryCounts, entries.length]);
 
 	useEffect(() => {
 		loadKnowledgeData();
@@ -197,6 +254,9 @@ const Knowledge = () => {
 		return matchesSearch && matchesCategory;
 	});
 
+	const hasFiltersApplied =
+		Boolean(searchTerm.trim()) || selectedCategory !== 'all';
+
 	if (loading) {
 		return <KnowledgeLoading />;
 	}
@@ -245,8 +305,16 @@ const Knowledge = () => {
 					onFilterChange={setSelectedCategory}
 					categories={availableCategories}
 				/>
+				<KnowledgeCategoryPills
+					categories={categoryPillOptions}
+					activeValue={selectedCategory}
+					onSelect={setSelectedCategory}
+				/>
 				<KnowledgeEntriesSection
 					entries={filteredEntries}
+					totalCount={entries.length}
+					filteredCount={filteredEntries.length}
+					isFiltered={hasFiltersApplied}
 					onAddEntry={handleAddEntry}
 					onEditEntry={handleEditEntry}
 					onDeleteEntry={handleDeleteEntry}

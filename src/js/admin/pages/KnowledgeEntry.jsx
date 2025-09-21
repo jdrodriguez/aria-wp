@@ -5,6 +5,7 @@ import { fetchKnowledgeData, saveKnowledgeEntry } from '../utils/api';
 import {
 	HeaderNotice,
 	AiGenerationWizard,
+	AiGenerationSummary,
 	ManualEditor,
 	ActionFooter,
 	KnowledgeEntryLoading,
@@ -253,6 +254,11 @@ const KnowledgeEntry = () => {
 					onCancel={handleCancel}
 					onSwitchToManual={handleSwitchToManual}
 					generating={generating}
+				/>
+
+				<AiGenerationSummary
+					visible={generationStep === 'review'}
+					formData={formData}
 				/>
 
 				<ManualEditor

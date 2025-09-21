@@ -27,6 +27,9 @@ class Aria_Activator {
 		// Set default options
 		self::set_default_options();
 
+		// Ensure license row exists without creating duplicates.
+		self::ensure_license_row();
+
 		// Create upload directories
 		self::create_directories();
 
@@ -41,6 +44,37 @@ class Aria_Activator {
 
 		// Clear permalinks
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Ensure a license row exists for the current site without creating duplicates.
+	 */
+	private static function ensure_license_row() {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'aria_license';
+		$site_url = trailingslashit( get_site_url() );
+
+		$existing = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT site_url FROM {$table} WHERE site_url = %s",
+				$site_url
+			)
+		);
+
+		if ( $existing ) {
+			return;
+		}
+
+		$wpdb->insert(
+			$table,
+			array(
+				'site_url'       => $site_url,
+				'license_status' => 'trial',
+				'trial_started'  => current_time( 'mysql' ),
+			),
+			array( '%s', '%s', '%s' )
+		);
 	}
 
 	/**

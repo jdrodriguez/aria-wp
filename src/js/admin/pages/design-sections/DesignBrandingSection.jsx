@@ -33,30 +33,80 @@ const DesignBrandingSection = ({ settings, onChange, onUploadIcon, onUploadAvata
 			/>
 		</div>
 
-		<div className="aria-design__upload-group">
-			<h4 className="aria-design__upload-title">{__('Custom Assets', 'aria')}</h4>
-			<div className="aria-design__upload-actions">
-				<Button variant="secondary" onClick={onUploadIcon}>
-					{__('Upload Custom Icon', 'aria')}
-				</Button>
-				<Button variant="secondary" onClick={onUploadAvatar}>
-					{__('Upload Avatar', 'aria')}
-				</Button>
+			<div className="aria-design__upload-group">
+				<h4 className="aria-design__upload-title">{__('Custom Assets', 'aria')}</h4>
+				<div className="aria-design__upload-actions">
+					<Button variant="secondary" onClick={onUploadIcon}>
+						{__('Upload Custom Icon', 'aria')}
+					</Button>
+					<Button variant="secondary" onClick={onUploadAvatar}>
+						{__('Upload Avatar', 'aria')}
+					</Button>
+				</div>
+				<div className="aria-design__asset-grid">
+					<div className="aria-design__asset-card">
+						<span className="aria-design__asset-label">{__('Widget Icon', 'aria')}</span>
+						{settings.iconUrl ? (
+							<>
+								<img
+									src={settings.iconUrl}
+									alt={__('Widget icon preview', 'aria')}
+									className="aria-design__asset-image"
+								/>
+								<Button
+									variant="link"
+									onClick={() => onChange('iconUrl', '')}
+									className="aria-design__asset-remove"
+								>
+									{__('Remove Icon', 'aria')}
+								</Button>
+							</>
+						) : (
+							<p className="aria-design__asset-placeholder">
+								{__('No icon selected yet.', 'aria')}
+							</p>
+						)}
+					</div>
+					<div className="aria-design__asset-card">
+						<span className="aria-design__asset-label">{__('Chat Avatar', 'aria')}</span>
+						{settings.avatarUrl ? (
+							<>
+								<img
+									src={settings.avatarUrl}
+									alt={__('Avatar preview', 'aria')}
+									className="aria-design__asset-image aria-design__asset-image--avatar"
+								/>
+								<Button
+									variant="link"
+									onClick={() => onChange('avatarUrl', '')}
+									className="aria-design__asset-remove"
+								>
+									{__('Remove Avatar', 'aria')}
+								</Button>
+							</>
+						) : (
+							<p className="aria-design__asset-placeholder">
+								{__('No avatar selected yet.', 'aria')}
+							</p>
+						)}
+					</div>
+				</div>
+				<p className="aria-design__upload-note">
+					{__(
+						'Upload PNG or SVG assets to personalize Aria. We recommend square images at least 128px.',
+						'aria'
+					)}
+				</p>
 			</div>
-			<p className="aria-design__upload-note">
-				{__(
-					'Upload PNG or SVG assets to personalize Aria. We recommend square images at least 128px.',
-					'aria'
-				)}
-			</p>
-		</div>
-	</SectionCard>
+		</SectionCard>
 );
 
 DesignBrandingSection.propTypes = {
 	settings: PropTypes.shape({
 		title: PropTypes.string.isRequired,
 		welcomeMessage: PropTypes.string.isRequired,
+		iconUrl: PropTypes.string,
+		avatarUrl: PropTypes.string,
 	}).isRequired,
 	onChange: PropTypes.func.isRequired,
 	onUploadIcon: PropTypes.func.isRequired,

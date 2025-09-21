@@ -1,0 +1,161 @@
+@use 'sass:color';
+@use '../variables' as *;
+
+/**
+ * Modern metric card styling shared by dashboard and analytics views.
+ */
+
+.aria-modern-metric-card {
+  --aria-metric-background: linear-gradient(
+    135deg,
+    color.adjust($aria-primary, $lightness: 32%) 0%,
+    color.adjust($aria-primary, $lightness: 12%) 100%
+  );
+  --aria-metric-border-color: rgba($aria-primary, 0.25);
+  --aria-metric-icon-bg: linear-gradient(
+    135deg,
+    $aria-primary 0%,
+    color.adjust($aria-primary, $lightness: -18%) 100%
+  );
+  --aria-metric-shadow: rgba($aria-primary, 0.25);
+  --aria-metric-value: $aria-primary;
+  --aria-metric-pattern: radial-gradient(circle, rgba($aria-primary, 0.08) 0%, transparent 70%);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: $aria-space-6;
+  padding: clamp($aria-space-6, 4vw, $aria-space-8);
+  border-radius: $aria-radius-xl;
+  background: var(--aria-metric-background);
+  border: 1px solid var(--aria-metric-border-color);
+  box-shadow: 0 4px 16px rgba($aria-navy, 0.08), 0 2px 4px rgba($aria-navy, 0.08);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 110px;
+    height: 110px;
+    background: var(--aria-metric-pattern);
+    border-radius: 50%;
+    transform: translate(35%, -40%);
+    pointer-events: none;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba($aria-navy, 0.14), 0 6px 12px rgba($aria-navy, 0.08);
+  }
+
+  &__icon {
+    position: relative;
+    z-index: 1;
+    width: 56px;
+    height: 56px;
+    border-radius: $aria-radius-lg;
+    background: var(--aria-metric-icon-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $aria-white;
+    flex-shrink: 0;
+    box-shadow: 0 10px 20px rgba($aria-navy, 0.15);
+  }
+
+  &__body {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: $aria-text-sm;
+    font-weight: $aria-font-semibold;
+    color: $aria-gray-600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 $aria-space-2 0;
+  }
+
+  &__value {
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    font-weight: $aria-font-extrabold;
+    color: var(--aria-metric-value);
+    line-height: 1.2;
+    margin: 0 0 $aria-space-1 0;
+  }
+
+  &__subtitle {
+    font-size: $aria-text-sm;
+    color: $aria-gray-600;
+    font-weight: $aria-font-medium;
+    margin: 0;
+  }
+
+  &--primary {
+    // Uses default variables declared above for base theme.
+  }
+
+  &--success {
+    --aria-metric-background: linear-gradient(
+      135deg,
+      color.adjust($aria-success-light, $lightness: 6%) 0%,
+      color.adjust($aria-success-light, $lightness: -6%) 100%
+    );
+    --aria-metric-border-color: rgba($aria-success, 0.25);
+    --aria-metric-icon-bg: linear-gradient(135deg, $aria-success 0%, color.adjust($aria-success, $lightness: -14%) 100%);
+    --aria-metric-shadow: rgba($aria-success, 0.25);
+    --aria-metric-value: $aria-success;
+    --aria-metric-pattern: radial-gradient(circle, rgba($aria-success, 0.12) 0%, transparent 70%);
+  }
+
+  &--warning {
+    --aria-metric-background: linear-gradient(
+      135deg,
+      color.adjust($aria-warning-light, $lightness: 4%) 0%,
+      color.adjust($aria-warning-light, $lightness: -6%) 100%
+    );
+    --aria-metric-border-color: rgba($aria-warning, 0.25);
+    --aria-metric-icon-bg: linear-gradient(135deg, $aria-warning 0%, color.adjust($aria-warning, $lightness: -18%) 100%);
+    --aria-metric-shadow: rgba($aria-warning, 0.25);
+    --aria-metric-value: $aria-warning;
+    --aria-metric-pattern: radial-gradient(circle, rgba($aria-warning, 0.12) 0%, transparent 70%);
+  }
+
+  &--info {
+    --aria-metric-background: linear-gradient(
+      135deg,
+      color.adjust($aria-info-light, $lightness: 6%) 0%,
+      color.adjust($aria-info-light, $lightness: -8%) 100%
+    );
+    --aria-metric-border-color: rgba($aria-info, 0.25);
+    --aria-metric-icon-bg: linear-gradient(135deg, $aria-info 0%, color.adjust($aria-info, $lightness: -18%) 100%);
+    --aria-metric-shadow: rgba($aria-info, 0.25);
+    --aria-metric-value: $aria-info;
+    --aria-metric-pattern: radial-gradient(circle, rgba($aria-info, 0.12) 0%, transparent 70%);
+  }
+}
+
+@media (max-width: $aria-screen-sm) {
+  .aria-modern-metric-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $aria-space-4;
+
+    &__icon {
+      width: 48px;
+      height: 48px;
+    }
+
+    &__value {
+      font-size: clamp(1.5rem, 8vw, 2rem);
+    }
+  }
+}

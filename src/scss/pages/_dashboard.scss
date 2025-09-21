@@ -1,8 +1,22 @@
-@import '../variables';
+@use '../components/layout' as layout;
+@use '../variables' as *;
 
 .aria-dashboard {
 	&__metrics {
-		@extend .aria-grid-metrics;
+		@include layout.aria-grid-metrics();
+	}
+
+	&__notice {
+		.aria-section-card__body {
+			background: linear-gradient(135deg, rgba($aria-warning-light, 0.35) 0%, rgba($aria-warning-light, 0.15) 100%);
+			border-radius: $aria-radius-lg;
+		}
+
+		.aria-dashboard__notice-message {
+			margin: 0;
+			font-size: $aria-text-sm;
+			color: $aria-gray-700;
+		}
 	}
 
 	&__setup-list {
@@ -154,6 +168,19 @@
 		gap: $aria-space-4;
 		padding: $aria-space-8 $aria-space-4;
 		color: $aria-gray-600;
+	}
+
+	&__empty-icon {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background: rgba($aria-info, 0.15);
+		color: $aria-info;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: $aria-text-3xl;
+		box-shadow: 0 10px 20px rgba($aria-info, 0.15);
 	}
 
 	&__quick-actions {

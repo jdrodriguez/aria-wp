@@ -47,8 +47,6 @@ const SparklesIcon = () => (
  * using AI generation capabilities, replacing the basic modal approach.
  */
 const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
-	console.log('🔧 AIKnowledgeGenerator rendered with props:', { isOpen, entry: !!entry });
-	
 	// Form state
 	const [formData, setFormData] = useState({
 		title: '',
@@ -131,8 +129,12 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 		try {
 			// Get AJAX configuration
 			const config = getAjaxConfig();
-			const rootElement = document.getElementById('aria-knowledge-root');
-			const generateNonce = rootElement?.getAttribute('data-generate-nonce') || '';
+			const rootElement = document.getElementById('aria-knowledge-root') || document.getElementById('aria-knowledge-entry-root');
+			const generateNonce =
+				window.ariaKnowledge?.generateNonce ||
+				window.ariaKnowledgeEntry?.generateNonce ||
+				rootElement?.getAttribute('data-generate-nonce') ||
+				'';
 
 			if (!generateNonce) {
 				throw new Error(__('Generation nonce not available', 'aria'));
@@ -243,51 +245,43 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 			title={
 				<Flex align="center" gap="12px">
 					<MagicWandIcon />
-					{entry
-						? __('Edit Knowledge Entry', 'aria')
-						: __('Create Knowledge Entry', 'aria')}
+					{entry ? __('Edit Knowledge Entry', 'aria') : __('Create Knowledge Entry', 'aria')}
 				</Flex>
 			}
 			onRequestClose={onClose}
-			style={{ 
-				maxWidth: '800px',
-				width: '90vw',
-				maxHeight: '90vh'
-			}}
 			className="aria-ai-knowledge-generator"
 		>
-			<div style={{ padding: '16px 0' }}>
+			<div className="aria-ai-generator">
 				{notice && (
 					<Notice
 						status={notice.type}
 						isDismissible={true}
 						onRemove={() => setNotice(null)}
-						style={{ marginBottom: '24px' }}
+						className="aria-ai-generator__notice"
 					>
 						{notice.message}
 					</Notice>
 				)}
 
-				{/* Step 1: Raw Content Input */}
 				{generationStep === 'input' && (
 					<>
 						<Card>
-							<CardHeader>
-								<Flex align="center" gap="12px">
+							<CardHeader className="aria-ai-generator__info-header">
+								<Flex align="center" gap="12px" className="aria-ai-generator__info-header">
 									<SparklesIcon />
-									<h3 style={{ margin: 0 }}>
+									<h3 className="aria-ai-generator__card-title">
 										{__('AI-Powered Knowledge Generation', 'aria')}
 									</h3>
 								</Flex>
 							</CardHeader>
 							<CardBody>
-								<p style={{ marginBottom: '20px', color: '#666' }}>
+								<p className="aria-ai-generator__intro-text">
 									{__(
 										'Paste any raw content (emails, documents, notes, FAQs) and let Aria\'s AI structure it into a comprehensive knowledge entry.',
 										'aria'
 									)}
 								</p>
-								
+
 								<TextareaControl
 									label={__('Raw Content', 'aria')}
 									value={rawContent}
@@ -305,18 +299,13 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 							</CardBody>
 						</Card>
 
-						<div style={{ 
-							height: '1px', 
-							background: '#e2e8f0', 
-							margin: '24px 0' 
-						}} />
+						<div className="aria-ai-generator__divider" />
 
-						<Flex justify="space-between" align="center">
+						<Flex justify="space-between" align="center" className="aria-ai-generator__footer">
 							<Button variant="tertiary" onClick={switchToManualEntry}>
 								{__('Create Manually Instead', 'aria')}
 							</Button>
-							
-							<Flex gap="12px">
+							<Flex gap="12px" className="aria-ai-generator__footer-actions">
 								<Button variant="secondary" onClick={onClose}>
 									{__('Cancel', 'aria')}
 								</Button>
@@ -328,7 +317,7 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 								>
 									{generating ? (
 										<>
-											<Spinner style={{ marginRight: '8px' }} />
+											<Spinner className="aria-ai-generator__loading-spinner" />
 											{__('Generating...', 'aria')}
 										</>
 									) : (
@@ -343,12 +332,11 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 					</>
 				)}
 
-				{/* Step 2: Generating (Loading State) */}
 				{generationStep === 'generating' && (
-					<div style={{ textAlign: 'center', padding: '40px 20px' }}>
-						<Spinner style={{ width: '40px', height: '40px', marginBottom: '20px' }} />
-						<h3>{__('AI is analyzing your content...', 'aria')}</h3>
-						<p style={{ color: '#666', maxWidth: '400px', margin: '0 auto' }}>
+					<div className="aria-ai-generator__loading">
+						<Spinner className="aria-ai-generator__loading-spinner" />
+						<h3 className="aria-ai-generator__card-title">{__('AI is analyzing your content...', 'aria')}</h3>
+						<p className="aria-ai-generator__loading-text">
 							{__(
 								'Our AI is reading through your content and structuring it into a comprehensive knowledge entry. This may take a few moments.',
 								'aria'
@@ -357,17 +345,16 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 					</div>
 				)}
 
-				{/* Step 3: Review Generated Content or Manual Entry */}
 				{(generationStep === 'review' || generationStep === 'manual') && (
 					<>
 						{generationStep === 'review' && (
-							<Card style={{ marginBottom: '24px', backgroundColor: '#f0f9ff', border: '1px solid #0ea5e9' }}>
+							<Card className="aria-ai-generator__info-card">
 								<CardBody>
-									<Flex align="center" gap="12px" style={{ marginBottom: '12px' }}>
+									<Flex align="center" gap="12px" className="aria-ai-generator__info-header">
 										<SparklesIcon />
 										<strong>{__('AI Generation Complete!', 'aria')}</strong>
 									</Flex>
-									<p style={{ margin: 0, fontSize: '14px' }}>
+									<p className="aria-ai-generator__info-text">
 										{__(
 											'Review the generated fields below and make any adjustments needed. The AI has structured your content with appropriate categories, tags, and formatting.',
 											'aria'
@@ -377,12 +364,12 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 							</Card>
 						)}
 
-						<div style={{ display: 'grid', gap: '24px' }}>
+						<div className="aria-ai-generator__grid aria-ai-generator__grid--lg">
 							{/* Primary Information Panel */}
 							<Panel>
 								<PanelHeader>{__('Primary Information', 'aria')}</PanelHeader>
 								<PanelBody opened={true}>
-									<div style={{ display: 'grid', gap: '20px' }}>
+									<div className="aria-ai-generator__grid">
 										<TextControl
 											label={__('Title', 'aria')}
 											value={formData.title}
@@ -421,7 +408,7 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 							<Panel>
 								<PanelHeader>{__('AI Behavior & Context', 'aria')}</PanelHeader>
 								<PanelBody opened={true}>
-									<div style={{ display: 'grid', gap: '20px' }}>
+									<div className="aria-ai-generator__grid">
 										<TextareaControl
 											label={__('Context', 'aria')}
 											value={formData.context}
@@ -459,7 +446,7 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 							<Panel>
 								<PanelHeader>{__('Organization & Discovery', 'aria')}</PanelHeader>
 								<PanelBody opened={true}>
-									<div style={{ display: 'grid', gap: '20px' }}>
+									<div className="aria-ai-generator__grid">
 										<TextControl
 											label={__('Tags', 'aria')}
 											value={formData.tags}
@@ -488,13 +475,9 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 							</Panel>
 						</div>
 
-						<div style={{ 
-							height: '1px', 
-							background: '#e2e8f0', 
-							margin: '24px 0' 
-						}} />
+						<div className="aria-ai-generator__divider" />
 
-						<Flex justify="space-between" align="center">
+						<Flex justify="space-between" align="center" className="aria-ai-generator__review-footer">
 							<div>
 								{generationStep === 'review' && (
 									<Button variant="tertiary" onClick={startOver}>
@@ -503,7 +486,7 @@ const AIKnowledgeGenerator = ({ isOpen, onClose, entry = null, onSave }) => {
 								)}
 							</div>
 							
-							<Flex gap="12px">
+							<Flex gap="12px" className="aria-ai-generator__review-actions">
 								<Button variant="secondary" onClick={onClose}>
 									{__('Cancel', 'aria')}
 								</Button>

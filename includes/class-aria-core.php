@@ -285,23 +285,29 @@ class Aria_Core {
 			'aria_toggle_immediate_processing',
 			'aria_get_advanced_settings',
 			'aria_save_advanced_settings',
-			'aria_export_conversations_csv',
-			// Conversation management
-			'aria_update_conversation_status',
+				'aria_export_conversations_csv',
+				'aria_get_conversations_data',
+				// Conversation management
+				'aria_update_conversation_status',
 			'aria_email_transcript',
 			'aria_add_conversation_note',
 			// Content indexing
-			'aria_reindex_all_content',
-			'aria_test_content_search',
-			'aria_clear_search_cache',
-			'aria_save_content_settings',
-			'aria_index_single_item',
+				'aria_get_content_indexing_data',
+				'aria_reindex_all_content',
+				'aria_test_content_search',
+				'aria_clear_search_cache',
+				'aria_save_content_settings',
+				'aria_save_content_indexing_settings',
+				'aria_index_single_item',
+				'aria_toggle_content_indexing',
 			'aria_debug_vectors',
 			'aria_get_dashboard_data',
 			// AI Config React AJAX actions
 			'aria_get_ai_config',
 			'aria_save_ai_config',
 			'aria_get_usage_stats',
+			'aria_get_general_settings',
+			'aria_save_general_settings',
 			'aria_get_design_settings',
 			'aria_save_design_settings',
 			'aria_get_notification_settings',
@@ -365,9 +371,16 @@ class Aria_Core {
 		// Initialize vector system background processing after WordPress is loaded
 		add_action( 'init', array( $this, 'init_background_processor' ) );
 		
-		// Schedule cache cleanup
-		if ( ! wp_next_scheduled( 'aria_cleanup_cache' ) ) {
-			wp_schedule_event( time(), 'hourly', 'aria_cleanup_cache' );
+		// Schedule cache cleanup with backoff if scheduling fails (prevents repeated log spam).
+		$cache_schedule_failed_at = (int) get_option( 'aria_cleanup_cache_schedule_failed', 0 );
+		$retry_window_passed       = ( time() - $cache_schedule_failed_at ) > HOUR_IN_SECONDS;
+		if ( ! wp_next_scheduled( 'aria_cleanup_cache' ) && ( 0 === $cache_schedule_failed_at || $retry_window_passed ) ) {
+			$scheduled = wp_schedule_event( time(), 'hourly', 'aria_cleanup_cache' );
+			if ( false === $scheduled ) {
+				update_option( 'aria_cleanup_cache_schedule_failed', time() );
+			} else {
+				delete_option( 'aria_cleanup_cache_schedule_failed' );
+			}
 		}
 		$this->loader->add_action( 'aria_cleanup_cache', $this, 'cleanup_vector_caches' );
 	}

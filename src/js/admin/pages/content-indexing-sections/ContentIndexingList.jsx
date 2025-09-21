@@ -1,14 +1,16 @@
 import PropTypes from 'prop-types';
-import { __, sprintf } from '@wordpress/i18n';
-import { Button } from '@wordpress/components';
-import { SectionCard } from '../../components';
+import { __ } from '@wordpress/i18n';
+import { Button, Icon } from '@wordpress/components';
+import { SectionCard, ResultsSummary } from '../../components';
 import ContentIndexingItemCard from './ContentIndexingItemCard.jsx';
+import { file as fileIcon } from '@wordpress/icons';
 
 const ContentIndexingList = ({
 	items,
 	onToggleIndex,
 	onViewContent,
-	count,
+	totalCount,
+	filteredCount,
 	hasFiltersApplied,
 	onStartIndexing,
 	isIndexing,
@@ -17,18 +19,20 @@ const ContentIndexingList = ({
 		'Manage which content is available to Aria’s knowledge base.',
 		'aria'
 	);
-	const formattedDescription = sprintf(
-		/* translators: 1: base description text, 2: content item count */
-		__('%1$s (%2$s)', 'aria'),
-		description,
-		count
-	);
 
 	return (
 		<SectionCard
 			title={__('Content Items', 'aria')}
-			description={formattedDescription}
+			description={description}
 		>
+			{totalCount > 0 && (
+				<ResultsSummary
+					totalCount={totalCount}
+					filteredCount={filteredCount}
+					isFiltered={hasFiltersApplied}
+					label={__('content items', 'aria')}
+				/>
+			)}
 			{items.length > 0 ? (
 				<div className="aria-content-indexing__list">
 					{items.map((item) => (
@@ -42,13 +46,13 @@ const ContentIndexingList = ({
 				</div>
 			) : (
 				<div className="aria-content-indexing__empty">
-					<span
-						role="img"
+					<div
+						role="presentation"
 						aria-hidden="true"
 						className="aria-content-indexing__empty-icon"
 					>
-						📄
-					</span>
+						<Icon icon={fileIcon} size={36} />
+					</div>
 					<p>
 						{hasFiltersApplied
 							? __(
@@ -82,7 +86,8 @@ ContentIndexingList.propTypes = {
 	items: PropTypes.arrayOf(PropTypes.object).isRequired,
 	onToggleIndex: PropTypes.func.isRequired,
 	onViewContent: PropTypes.func.isRequired,
-	count: PropTypes.number.isRequired,
+	totalCount: PropTypes.number.isRequired,
+	filteredCount: PropTypes.number.isRequired,
 	hasFiltersApplied: PropTypes.bool.isRequired,
 	onStartIndexing: PropTypes.func.isRequired,
 	isIndexing: PropTypes.bool.isRequired,

@@ -128,11 +128,24 @@ class Aria_OpenAI_Provider extends Aria_AI_Provider_Base {
 				)
 			);
 
+			delete_transient( 'aria_ai_provider_error' );
+
 			return trim( $response );
 
 		} catch ( Exception $e ) {
 			// Log error
 			Aria_Logger::error( 'Aria OpenAI Error: ' . $e->getMessage() );
+
+			if ( function_exists( 'sanitize_text_field' ) ) {
+				set_transient(
+					'aria_ai_provider_error',
+					array(
+						'provider' => 'openai',
+						'message'  => sanitize_text_field( $e->getMessage() ),
+					),
+					HOUR_IN_SECONDS
+				);
+			}
 			throw $e;
 		}
 	}

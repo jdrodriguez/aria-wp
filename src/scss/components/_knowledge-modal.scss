@@ -1,0 +1,59 @@
+@use '../variables' as *;
+
+.aria-knowledge-modal {
+  .components-modal__frame {
+    max-width: 600px;
+    width: min(90vw, 600px);
+    border-radius: $aria-radius-xl;
+    box-shadow: 0 24px 48px rgba($aria-navy, 0.18);
+  }
+
+  .components-modal__header {
+    border-bottom: 1px solid $aria-gray-200;
+    padding: $aria-space-4 $aria-space-5;
+  }
+
+  .components-modal__content {
+    padding: 0;
+  }
+
+  &__body {
+    padding: $aria-space-5;
+    display: flex;
+    flex-direction: column;
+    gap: $aria-space-5;
+  }
+
+  &__notice {
+    margin: 0;
+  }
+
+  &__form {
+    display: grid;
+    gap: $aria-space-5;
+  }
+
+  &__actions {
+    margin-top: $aria-space-2;
+    display: flex;
+    justify-content: flex-end;
+    gap: $aria-space-3;
+  }
+}
+
+@media (max-width: $aria-screen-sm) {
+  .aria-knowledge-modal {
+    .components-modal__frame {
+      width: 95vw;
+    }
+
+    &__actions {
+      flex-direction: column;
+      align-items: stretch;
+
+      .components-button {
+        width: 100%;
+      }
+    }
+  }
+}

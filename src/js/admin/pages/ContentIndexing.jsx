@@ -1,6 +1,7 @@
 import { useEffect, useState } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 import { PageHeader, PageShell } from '../components';
+import { makeAjaxRequest } from '../utils/api';
 import {
 	ContentIndexingNotice,
 	ContentIndexingLoading,
@@ -27,14 +28,6 @@ const INDEXING_STATUS = [
 	{ label: __('Failed', 'aria'), value: 'failed' },
 	{ label: __('Excluded', 'aria'), value: 'excluded' },
 ];
-
-const getProcessingLabel = (processed, total) =>
-	sprintf(
-		/* translators: 1: processed item count, 2: total item count */
-		__('Processing item %1$s/%2$s…', 'aria'),
-		processed,
-		total
-	);
 
 const ContentIndexing = () => {
 	const [metrics, setMetrics] = useState([
@@ -72,7 +65,8 @@ const ContentIndexing = () => {
 	const [searchTerm, setSearchTerm] = useState('');
 	const [selectedType, setSelectedType] = useState('all');
 	const [selectedStatus, setSelectedStatus] = useState('all');
-	const [settings, setSettings] = useState({
+    const [typeOptions, setTypeOptions] = useState(CONTENT_TYPES);
+    const [settings, setSettings] = useState({
 		autoIndex: true,
 		indexFrequency: 'daily',
 		excludePatterns: '',
@@ -96,94 +90,39 @@ const ContentIndexing = () => {
 	const loadContentData = async () => {
 		setLoading(true);
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			const data = await makeAjaxRequest('aria_get_content_indexing_data');
 
-			const mockItems = [
-				{
-					id: 1,
-					title: 'About Our Company',
-					type: 'page',
-					status: 'indexed',
-					url: '/about',
-					updated_at: '2024-01-15',
-					word_count: 547,
-					excerpt:
-						'We are a leading provider of innovative solutions for businesses of all sizes…',
-					tags: ['company', 'about'],
-				},
-				{
-					id: 2,
-					title: 'Product Features Guide',
-					type: 'post',
-					status: 'indexed',
-					url: '/blog/product-features',
-					updated_at: '2024-01-14',
-					word_count: 1205,
-					excerpt:
-						'Discover all the powerful features our product offers to help streamline your workflow…',
-					tags: ['features', 'guide', 'product'],
-				},
-				{
-					id: 3,
-					title: 'Pricing Plans',
-					type: 'page',
-					status: 'pending',
-					url: '/pricing',
-					updated_at: '2024-01-13',
-					word_count: 892,
-					excerpt:
-						'Choose the perfect plan for your needs with our flexible pricing options…',
-					tags: ['pricing', 'plans'],
-				},
-				{
-					id: 4,
-					title: 'Installation Documentation',
-					type: 'document',
-					status: 'failed',
-					url: '/docs/installation.pdf',
-					updated_at: '2024-01-12',
-					word_count: 2341,
-					excerpt:
-						'Complete step-by-step guide for installing and configuring the software…',
-					tags: ['documentation', 'installation'],
-				},
-			];
+			if (Array.isArray(data?.metrics) && data.metrics.length) {
+				setMetrics(data.metrics);
+			}
 
-			setContentItems(mockItems);
-			setMetrics([
-				{
-					icon: '📚',
-					title: __('Total items', 'aria'),
-					value: mockItems.length,
-					subtitle: __('Tracked content', 'aria'),
-					theme: 'primary',
-				},
-				{
-					icon: '✅',
-					title: __('Indexed items', 'aria'),
-					value: mockItems.filter((item) => item.status === 'indexed')
-						.length,
-					subtitle: __('Ready for AI', 'aria'),
-					theme: 'success',
-				},
-				{
-					icon: '🕒',
-					title: __('Last indexed', 'aria'),
-					value: __('Today, 3:45 PM', 'aria'),
-					subtitle: __('Most recent run', 'aria'),
-					theme: 'info',
-				},
-				{
-					icon: '💾',
-					title: __('Storage used', 'aria'),
-					value: '2.4 MB',
-					subtitle: __('Vector store footprint', 'aria'),
-					theme: 'warning',
-				},
-			]);
+			const incomingItems = Array.isArray(data?.items)
+				? data.items.map((item) => ({
+					...item,
+					typeLabel: item.type_label || item.type,
+					tags: Array.isArray(item.tags) ? item.tags : [],
+				}))
+				: [];
+			setContentItems(incomingItems);
+
+			if (data?.settings) {
+				setSettings({
+					autoIndex: Boolean(data.settings.autoIndex),
+					indexFrequency: data.settings.indexFrequency || 'daily',
+					excludePatterns: data.settings.excludePatterns || '',
+					maxFileSize: data.settings.maxFileSize || '0',
+				});
+			}
+
+			if (Array.isArray(data?.availableTypes) && data.availableTypes.length) {
+				setTypeOptions(data.availableTypes);
+			}
+
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.error('Failed to load content data:', error);
+			setNotice({
+				type: 'error',
+				message: error?.message || __('Failed to load content indexing data.', 'aria'),
+			});
 		} finally {
 			setLoading(false);
 		}
@@ -196,22 +135,23 @@ const ContentIndexing = () => {
 	const handleSaveSettings = async () => {
 		setSaving(true);
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			await makeAjaxRequest('aria_save_content_indexing_settings', {
+				auto_index: settings.autoIndex ? '1' : '0',
+				index_frequency: settings.indexFrequency,
+				exclude_patterns: settings.excludePatterns,
+				max_file_size: settings.maxFileSize,
+			});
+
 			setNotice({
 				type: 'success',
-				message: __(
-					'Content indexing settings saved successfully!',
-					'aria'
-				),
+				message: __('Content indexing settings saved successfully!', 'aria'),
 			});
 			setTimeout(() => setNotice(null), 5000);
 		} catch (error) {
 			setNotice({
 				type: 'error',
-				message: __(
-					'Failed to save settings. Please try again.',
-					'aria'
-				),
+				message:
+					error?.message || __('Failed to save settings. Please try again.', 'aria'),
 			});
 		} finally {
 			setSaving(false);
@@ -220,73 +160,64 @@ const ContentIndexing = () => {
 
 	const handleStartIndexing = async () => {
 		setIsIndexing(true);
-		setIsProgressModalOpen(true);
-		setIndexingProgress({
-			percentage: 0,
-			processed: 0,
-			total: 100,
-			currentItem: __('Initializing…', 'aria'),
-		});
-
 		try {
-			for (let i = 0; i <= 100; i += 10) {
-				// eslint-disable-next-line no-await-in-loop
-				await new Promise((resolve) => setTimeout(resolve, 500));
-				const currentItemLabel = getProcessingLabel(i, 100);
-				setIndexingProgress({
-					percentage: i,
-					processed: i,
-					total: 100,
-					currentItem: currentItemLabel,
-				});
-			}
+			const response = await makeAjaxRequest('aria_reindex_all_content');
 
 			setNotice({
 				type: 'success',
-				message: __('Content indexing completed successfully!', 'aria'),
+				message:
+					response?.message || __('Content indexing started successfully.', 'aria'),
 			});
 			setTimeout(() => setNotice(null), 5000);
-			loadContentData();
+			await loadContentData();
 		} catch (error) {
 			setNotice({
 				type: 'error',
-				message: __(
-					'Content indexing failed. Please try again.',
-					'aria'
-				),
+				message:
+					error?.message || __('Content indexing failed. Please try again.', 'aria'),
 			});
 		} finally {
 			setIsIndexing(false);
+			setIsProgressModalOpen(false);
 		}
 	};
 
 	const handleToggleIndex = async (itemId) => {
+		const targetItem = contentItems.find((item) => item.id === itemId);
+		const shouldIndex = targetItem
+			? targetItem.status === 'excluded' || targetItem.status === 'pending'
+			: true;
+
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 500));
+			const response = await makeAjaxRequest('aria_toggle_content_indexing', {
+				content_id: itemId,
+				should_index: shouldIndex ? '1' : '0',
+			});
 
 			setContentItems((prev) =>
 				prev.map((item) =>
 					item.id === itemId
 						? {
-								...item,
-								status:
-									item.status === 'indexed'
-										? 'excluded'
-										: 'indexed',
-							}
+							...item,
+							status:
+								response?.status || (shouldIndex ? 'indexed' : 'excluded'),
+						}
 						: item
 				)
 			);
 
 			setNotice({
 				type: 'success',
-				message: __('Content indexing status updated!', 'aria'),
+				message:
+					response?.message || __('Content indexing status updated!', 'aria'),
 			});
 			setTimeout(() => setNotice(null), 3000);
+			await loadContentData();
 		} catch (error) {
 			setNotice({
 				type: 'error',
-				message: __('Failed to update content status.', 'aria'),
+				message:
+					error?.message || __('Failed to update content status.', 'aria'),
 			});
 		}
 	};
@@ -297,13 +228,12 @@ const ContentIndexing = () => {
 
 	const filteredItems = contentItems.filter((item) => {
 		const normalizedSearch = searchTerm.toLowerCase();
+		const tagList = Array.isArray(item.tags) ? item.tags : [];
 		const matchesSearch =
 			!normalizedSearch ||
 			item.title.toLowerCase().includes(normalizedSearch) ||
 			item.excerpt.toLowerCase().includes(normalizedSearch) ||
-			item.tags.some((tag) =>
-				tag.toLowerCase().includes(normalizedSearch)
-			);
+			tagList.some((tag) => tag.toLowerCase().includes(normalizedSearch));
 
 		const matchesType =
 			selectedType === 'all' || item.type === selectedType;
@@ -352,21 +282,22 @@ const ContentIndexing = () => {
 					onSave={handleSaveSettings}
 					saving={saving}
 				/>
-				<ContentIndexingFilters
-					searchValue={searchTerm}
-					onSearchChange={setSearchTerm}
-					typeValue={selectedType}
-					onTypeChange={setSelectedType}
-					typeOptions={CONTENT_TYPES}
-					statusValue={selectedStatus}
-					onStatusChange={setSelectedStatus}
-					statusOptions={INDEXING_STATUS}
-				/>
+					<ContentIndexingFilters
+						searchValue={searchTerm}
+						onSearchChange={setSearchTerm}
+						typeValue={selectedType}
+						onTypeChange={setSelectedType}
+						typeOptions={typeOptions}
+						statusValue={selectedStatus}
+						onStatusChange={setSelectedStatus}
+						statusOptions={INDEXING_STATUS}
+					/>
 				<ContentIndexingList
 					items={filteredItems}
 					onToggleIndex={handleToggleIndex}
 					onViewContent={handleViewContent}
-					count={filteredItems.length}
+					totalCount={contentItems.length}
+					filteredCount={filteredItems.length}
 					hasFiltersApplied={hasFiltersApplied}
 					onStartIndexing={handleStartIndexing}
 					isIndexing={isIndexing}

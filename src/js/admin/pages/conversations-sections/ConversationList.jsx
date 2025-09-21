@@ -1,6 +1,8 @@
 import PropTypes from 'prop-types';
-import { __, sprintf } from '@wordpress/i18n';
-import { SectionCard } from '../../components';
+import { __ } from '@wordpress/i18n';
+import { SectionCard, ResultsSummary } from '../../components';
+import { Icon } from '@wordpress/components';
+import { comment } from '@wordpress/icons';
 import ConversationCard from './ConversationCard.jsx';
 
 const ConversationList = ({
@@ -8,25 +10,28 @@ const ConversationList = ({
 	statusOptions,
 	onView,
 	onUpdateStatus,
-	count,
+	totalCount,
+	filteredCount,
 	hasFiltersApplied,
 }) => {
 	const description = __(
 		'Review recent visitor conversations, update their status, or dive deeper for context.',
 		'aria'
 	);
-	const formattedDescription = sprintf(
-		/* translators: 1: Base description text, 2: conversation count */
-		__('%1$s (%2$s)', 'aria'),
-		description,
-		count
-	);
 
 	return (
 		<SectionCard
 			title={__('Conversations', 'aria')}
-			description={formattedDescription}
+			description={description}
 		>
+			{totalCount > 0 && (
+				<ResultsSummary
+					totalCount={totalCount}
+					filteredCount={filteredCount}
+					isFiltered={hasFiltersApplied}
+					label={__('conversations', 'aria')}
+				/>
+			)}
 			{conversations.length > 0 ? (
 				<div className="aria-conversations__list">
 					{conversations.map((conversation) => (
@@ -41,13 +46,13 @@ const ConversationList = ({
 				</div>
 			) : (
 				<div className="aria-conversations__empty">
-					<span
-						role="img"
+					<div
+						role="presentation"
 						aria-hidden="true"
 						className="aria-conversations__empty-icon"
 					>
-						💬
-					</span>
+						<Icon icon={comment} size={40} />
+					</div>
 					<p>
 						{hasFiltersApplied
 							? __(
@@ -70,7 +75,8 @@ ConversationList.propTypes = {
 	statusOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
 	onView: PropTypes.func.isRequired,
 	onUpdateStatus: PropTypes.func.isRequired,
-	count: PropTypes.number.isRequired,
+	totalCount: PropTypes.number.isRequired,
+	filteredCount: PropTypes.number.isRequired,
 	hasFiltersApplied: PropTypes.bool.isRequired,
 };
 

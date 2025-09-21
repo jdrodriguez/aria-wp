@@ -23,7 +23,7 @@ ContentIndexingMetrics.propTypes = {
 			value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
 				.isRequired,
 			subtitle: PropTypes.string.isRequired,
-			icon: PropTypes.string.isRequired,
+			icon: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
 			theme: PropTypes.string,
 		})
 	).isRequired,

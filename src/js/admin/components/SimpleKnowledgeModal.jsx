@@ -7,7 +7,6 @@ import {
 	TextareaControl,
 	SelectControl,
 	Notice,
-	Flex,
 } from '@wordpress/components';
 import PropTypes from 'prop-types';
 
@@ -74,23 +73,23 @@ const SimpleKnowledgeModal = ({ isOpen, onClose, entry = null, onSave }) => {
 
 	return (
 		<Modal
+			className="aria-knowledge-modal"
 			title={entry ? __('Edit Knowledge Entry', 'aria') : __('Add Knowledge Entry', 'aria')}
 			onRequestClose={onClose}
-			style={{ maxWidth: '600px', width: '90vw' }}
 		>
-			<div style={{ padding: '16px 0' }}>
+			<div className="aria-knowledge-modal__body">
 				{notice && (
 					<Notice
 						status={notice.type}
 						isDismissible={true}
 						onRemove={() => setNotice(null)}
-						style={{ marginBottom: '24px' }}
+						className="aria-knowledge-modal__notice"
 					>
 						{notice.message}
 					</Notice>
 				)}
 
-				<div style={{ display: 'grid', gap: '20px' }}>
+				<div className="aria-knowledge-modal__form">
 					<TextControl
 						label={__('Title', 'aria')}
 						value={formData.title}
@@ -122,24 +121,22 @@ const SimpleKnowledgeModal = ({ isOpen, onClose, entry = null, onSave }) => {
 					/>
 				</div>
 
-				<div style={{ marginTop: '24px' }}>
-					<Flex justify="flex-end" gap="12px">
-						<Button variant="secondary" onClick={onClose}>
-							{__('Cancel', 'aria')}
-						</Button>
-						<Button
-							variant="primary"
-							onClick={handleSave}
-							disabled={saving || !formData.title.trim() || !formData.content.trim()}
-							isBusy={saving}
-						>
-							{saving
-								? __('Saving…', 'aria')
-								: entry
-								? __('Update Entry', 'aria')
-								: __('Save Entry', 'aria')}
-						</Button>
-					</Flex>
+				<div className="aria-knowledge-modal__actions">
+					<Button variant="secondary" onClick={onClose}>
+						{__('Cancel', 'aria')}
+					</Button>
+					<Button
+						variant="primary"
+						onClick={handleSave}
+						disabled={saving || !formData.title.trim() || !formData.content.trim()}
+						isBusy={saving}
+					>
+						{saving
+							? __('Saving…', 'aria')
+							: entry
+							? __('Update Entry', 'aria')
+							: __('Save Entry', 'aria')}
+					</Button>
 				</div>
 			</div>
 		</Modal>

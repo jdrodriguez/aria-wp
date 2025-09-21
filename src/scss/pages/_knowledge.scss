@@ -1,4 +1,4 @@
-@import '../variables';
+@use '../variables' as *;
 
 .aria-knowledge {
 	&__notice {
@@ -7,6 +7,77 @@
 
 	&__search {
 		margin-bottom: $aria-space-6;
+	}
+
+
+	&__category-pills {
+		display: flex;
+		flex-direction: column;
+		gap: $aria-space-3;
+		margin-bottom: $aria-space-6;
+	}
+
+	&__category-label {
+		font-size: $aria-text-xs;
+		font-weight: $aria-font-semibold;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: $aria-gray-500;
+	}
+
+	&__category-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: $aria-space-3;
+	}
+
+	&__category-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: $aria-space-2;
+		padding: $aria-space-2 $aria-space-4;
+		border-radius: $aria-radius-full;
+		border: 1px solid $aria-gray-200;
+		background: $aria-white;
+		color: $aria-gray-600;
+		font-size: $aria-text-sm;
+		font-weight: $aria-font-medium;
+		transition: background-color $aria-transition-base ease,
+			color $aria-transition-base ease,
+			box-shadow $aria-transition-base ease,
+			border-color $aria-transition-base ease;
+
+		&:hover,
+		&:focus-visible {
+			background: rgba($aria-primary, 0.08);
+			color: $aria-primary;
+			border-color: rgba($aria-primary, 0.35);
+			box-shadow: $aria-shadow-xs;
+		}
+
+		&--active {
+			background: linear-gradient(
+				135deg,
+				rgba($aria-primary, 0.18) 0%,
+				rgba($aria-primary, 0.12) 100%
+			);
+			color: $aria-primary-dark;
+			border-color: rgba($aria-primary, 0.35);
+			box-shadow: $aria-shadow-sm;
+		}
+	}
+
+	&__category-count {
+		min-width: 1.5rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0 $aria-space-2;
+		border-radius: $aria-radius-full;
+		background: rgba($aria-gray-900, 0.08);
+		color: inherit;
+		font-size: $aria-text-xs;
+		font-weight: $aria-font-semibold;
 	}
 
 	&__entries-list {
@@ -33,6 +104,10 @@
 @media (max-width: $aria-screen-md) {
 	.aria-knowledge {
 		&__search {
+			margin-bottom: $aria-space-4;
+		}
+
+		&__category-pills {
 			margin-bottom: $aria-space-4;
 		}
 	}

@@ -1,4 +1,4 @@
-@import '../variables';
+@use '../variables' as *;
 
 .aria-page-shell {
 	margin: 0 auto;
@@ -45,7 +45,7 @@
 	gap: $aria-space-8;
 }
 
-.aria-grid-metrics {
+@mixin aria-grid-metrics() {
 	display: grid;
 	gap: $aria-space-6;
 	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -53,6 +53,10 @@
 	@media (min-width: $aria-screen-lg) {
 		grid-template-columns: repeat(4, minmax(220px, 1fr));
 	}
+}
+
+.aria-grid-metrics {
+	@include aria-grid-metrics();
 }
 
 .aria-grid-two-column {

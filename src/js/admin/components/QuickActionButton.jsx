@@ -1,91 +1,80 @@
-import { Button } from '@wordpress/components';
+import { Button, Icon } from '@wordpress/components';
+import { isValidElement } from 'react';
 import PropTypes from 'prop-types';
 
-/**
- * Reusable quick action button component
- *
- * @param {Object}   props            - Component props
- * @param {Function} props.onClick    - Click handler function
- * @param {string}   props.icon       - Icon to display
- * @param {string}   props.label      - Button label text
- * @param {string}   props.gradient   - Gradient theme (primary, purple, green, orange)
- * @param {string}   props.hoverColor - Hover color
- * @return {JSX.Element} Quick action button component
- */
-const QuickActionButton = ({
-	onClick,
-	icon,
-	label,
-	gradient = 'primary',
-	hoverColor = '#2271b1',
-}) => {
-	const getGradient = () => {
-		switch (gradient) {
-			case 'purple':
-				return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-			case 'green':
-				return 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-			case 'orange':
-				return 'linear-gradient(135deg, #fd7e14 0%, #f093fb 100%)';
-			default:
-				return 'linear-gradient(135deg, #2271b1 0%, #1a5d8a 100%)';
+const HOVER_FALLBACKS = {
+	primary: '#1a5d8a',
+	purple: '#6650e6',
+	green: '#1d9f6f',
+	orange: '#f06b24',
+};
+
+const getShadowFromHex = (hex) => {
+	if (typeof hex !== 'string' || hex[0] !== '#' || (hex.length !== 7 && hex.length !== 4)) {
+		return undefined;
+	}
+
+	let normalized = hex.slice(1);
+	if (normalized.length === 3) {
+		normalized = normalized
+			.split('')
+			.map((char) => char + char)
+			.join('');
+	}
+
+	const r = parseInt(normalized.slice(0, 2), 16);
+	const g = parseInt(normalized.slice(2, 4), 16);
+	const b = parseInt(normalized.slice(4, 6), 16);
+
+	if ([r, g, b].some(Number.isNaN)) {
+		return undefined;
+	}
+
+	return `rgba(${r}, ${g}, ${b}, 0.18)`;
+};
+
+const QuickActionButton = ({ onClick, icon, label, gradient = 'primary', hoverColor }) => {
+	const classNames = ['aria-quick-action-button', `aria-quick-action-button--${gradient}`]
+		.filter(Boolean)
+		.join(' ');
+
+	const resolvedHoverColor = hoverColor || HOVER_FALLBACKS[gradient] || HOVER_FALLBACKS.primary;
+	const customShadow = hoverColor ? getShadowFromHex(hoverColor) : undefined;
+	const inlineStyle = hoverColor
+		? {
+			'--aria-qab-hover': resolvedHoverColor,
+			...(customShadow ? { '--aria-qab-shadow': customShadow } : {}),
 		}
+		: undefined;
+
+	const renderIcon = () => {
+		if (typeof icon === 'string') {
+			return <span aria-hidden="true">{icon}</span>;
+		}
+
+		if (isValidElement(icon)) {
+			return icon;
+		}
+
+		return <Icon icon={icon} size={24} />;
 	};
 
 	return (
 		<Button
 			variant="secondary"
 			onClick={onClick}
-			style={{
-				height: '72px',
-				fontSize: '15px',
-				fontWeight: '600',
-				display: 'flex',
-				alignItems: 'center',
-				justifyContent: 'center',
-				gap: '12px',
-				background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-				border: '2px solid #e1e4e8',
-				borderRadius: '12px',
-				color: '#1e1e1e',
-				boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-				transition: 'all 0.3s ease',
-				cursor: 'pointer',
-			}}
-			onMouseEnter={(e) => {
-				e.target.style.transform = 'translateY(-2px)';
-				e.target.style.borderColor = hoverColor;
-				e.target.style.boxShadow = `0 4px 16px ${hoverColor}15`;
-			}}
-			onMouseLeave={(e) => {
-				e.target.style.transform = 'translateY(0)';
-				e.target.style.borderColor = '#e1e4e8';
-				e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
-			}}
+			className={classNames}
+			style={inlineStyle}
 		>
-			<span
-				style={{
-					fontSize: '20px',
-					background: getGradient(),
-					WebkitBackgroundClip: 'text',
-					WebkitTextFillColor: 'transparent',
-					backgroundClip: 'text',
-					padding: '6px',
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-				}}
-			>
-				{icon}
-			</span>
-			{label}
+			<span className="aria-quick-action-button__icon">{renderIcon()}</span>
+			<span className="aria-quick-action-button__label">{label}</span>
 		</Button>
 	);
 };
 
 QuickActionButton.propTypes = {
 	onClick: PropTypes.func.isRequired,
-	icon: PropTypes.string.isRequired,
+	icon: PropTypes.oneOfType([PropTypes.node, PropTypes.object, PropTypes.string]).isRequired,
 	label: PropTypes.string.isRequired,
 	gradient: PropTypes.oneOf(['primary', 'purple', 'green', 'orange']),
 	hoverColor: PropTypes.string,

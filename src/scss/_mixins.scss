@@ -5,6 +5,8 @@
  * @version 2.0.0
  */
 
+@use 'variables' as *;
+
 // ===================================
 // UTILITY MIXINS
 // ===================================
@@ -37,26 +39,28 @@
 
 // Button Base
 @mixin aria-button-base {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: $aria-space-2;
-  padding: $aria-space-3 $aria-space-6;
-  font-family: $aria-font-primary;
-  font-size: $aria-text-base;
-  font-weight: $aria-font-semibold;
-  line-height: $aria-leading-tight;
-  text-decoration: none;
-  border-radius: $aria-radius-base;
-  border: none;
-  cursor: pointer;
-  transition: all $aria-transition-base ease;
-  
+  & {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: $aria-space-2;
+    padding: $aria-space-3 $aria-space-6;
+    font-family: $aria-font-primary;
+    font-size: $aria-text-base;
+    font-weight: $aria-font-semibold;
+    line-height: $aria-leading-tight;
+    text-decoration: none;
+    border-radius: $aria-radius-base;
+    border: none;
+    cursor: pointer;
+    transition: all $aria-transition-base ease;
+  }
+
   &:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba($aria-primary, 0.2);
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -66,16 +70,18 @@
 // Primary Button
 @mixin aria-button-primary {
   @include aria-button-base;
-  background: linear-gradient(135deg, $aria-primary 0%, $aria-primary-dark 100%);
-  color: $aria-white;
-  border: 2px solid $aria-primary;
-  
+  & {
+    background: linear-gradient(135deg, $aria-primary 0%, $aria-primary-dark 100%);
+    color: $aria-white;
+    border: 2px solid $aria-primary;
+  }
+
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, $aria-primary-hover 0%, $aria-primary 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba($aria-primary, 0.25);
   }
-  
+
   &:active:not(:disabled) {
     transform: translateY(0);
   }
@@ -84,10 +90,12 @@
 // Secondary Button
 @mixin aria-button-secondary {
   @include aria-button-base;
-  background: $aria-white;
-  color: $aria-navy;
-  border: 2px solid $aria-gray-300;
-  
+  & {
+    background: $aria-white;
+    color: $aria-navy;
+    border: 2px solid $aria-gray-300;
+  }
+
   &:hover:not(:disabled) {
     background: $aria-gray-50;
     border-color: $aria-primary;
@@ -98,10 +106,12 @@
 // Ghost Button
 @mixin aria-button-ghost {
   @include aria-button-base;
-  background: transparent;
-  color: $aria-primary;
-  padding: $aria-space-2 $aria-space-4;
-  
+  & {
+    background: transparent;
+    color: $aria-primary;
+    padding: $aria-space-2 $aria-space-4;
+  }
+
   &:hover:not(:disabled) {
     background: $aria-primary-light;
   }

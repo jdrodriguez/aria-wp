@@ -1,3 +1,6 @@
+@use 'sass:color';
+@use '../variables' as *;
+
 // React Dashboard Styling
 // Professional layout for React-based dashboard
 
@@ -106,7 +109,7 @@
       }
 
       &.completed {
-        background: lighten($aria-success, 45%);
+        background: color.adjust($aria-success, $lightness: 45%);
         border-color: $aria-success;
 
         .step-icon {
@@ -185,7 +188,7 @@
           letter-spacing: 0.5px;
 
           &.status-open {
-            background: lighten($aria-success, 45%);
+            background: color.adjust($aria-success, $lightness: 45%);
             color: $aria-success;
           }
 

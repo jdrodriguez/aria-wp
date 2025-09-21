@@ -1,0 +1,99 @@
+@use 'sass:map';
+@use 'sass:color';
+@use '../variables' as *;
+
+$aria-quick-action-gradients: (
+  'primary': (
+    bubble: linear-gradient(135deg, $aria-primary 0%, color.adjust($aria-primary, $lightness: -18%) 100%),
+    hover: color.adjust($aria-primary, $lightness: -12%),
+    shadow: rgba($aria-primary, 0.12)
+  ),
+  'purple': (
+    bubble: linear-gradient(135deg, #6250e6 0%, color.adjust(#6250e6, $lightness: -12%) 100%),
+    hover: color.adjust(#6250e6, $lightness: -10%),
+    shadow: rgba(#6250e6, 0.12)
+  ),
+  'green': (
+    bubble: linear-gradient(135deg, #1fa97a 0%, color.adjust(#1fa97a, $lightness: -14%) 100%),
+    hover: color.adjust(#1fa97a, $lightness: -12%),
+    shadow: rgba(#1fa97a, 0.12)
+  ),
+  'orange': (
+    bubble: linear-gradient(135deg, #fd7e14 0%, color.adjust(#fd7e14, $lightness: -12%) 100%),
+    hover: color.adjust(#fd7e14, $lightness: -10%),
+    shadow: rgba(#fd7e14, 0.12)
+  )
+);
+
+.aria-quick-action-button {
+  --aria-qab-hover: #1a5d8a;
+  --aria-qab-shadow: rgba($aria-navy, 0.1);
+  height: 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $aria-space-3;
+  padding: 0 $aria-space-5;
+  border-radius: $aria-radius-lg;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid #e1e4e8;
+  color: $aria-gray-900;
+  font-size: $aria-text-sm;
+  font-weight: $aria-font-semibold;
+  box-shadow: 0 2px 8px rgba($aria-navy, 0.08);
+  transition: transform $aria-transition-base ease, box-shadow $aria-transition-base ease, border-color $aria-transition-base ease;
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-3px);
+    border-color: var(--aria-qab-hover);
+    box-shadow: 0 6px 18px var(--aria-qab-shadow), 0 2px 8px rgba($aria-navy, 0.08);
+    color: $aria-gray-900;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--aria-qab-hover);
+    outline-offset: 2px;
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $aria-primary 0%, color.adjust($aria-primary, $lightness: -18%) 100%);
+    color: $aria-white;
+    font-size: $aria-text-lg;
+    flex-shrink: 0;
+    box-shadow: 0 10px 20px rgba($aria-primary, 0.2);
+  }
+
+  &__label {
+    font-weight: $aria-font-semibold;
+  }
+
+  &--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+    box-shadow: none;
+  }
+}
+
+@each $name, $config in $aria-quick-action-gradients {
+  .aria-quick-action-button--#{$name} {
+    --aria-qab-hover: map.get($config, hover);
+    --aria-qab-shadow: map.get($config, shadow);
+
+    .aria-quick-action-button__icon {
+      background: map.get($config, bubble);
+      box-shadow: 0 10px 20px map.get($config, shadow);
+    }
+  }
+}
+
+.aria-quick-action-button__icon svg {
+  width: 24px;
+  height: 24px;
+}

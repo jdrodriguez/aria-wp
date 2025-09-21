@@ -1,5 +1,6 @@
 export { default as HeaderNotice } from './HeaderNotice.jsx';
 export { default as AiGenerationWizard } from './AiGenerationWizard.jsx';
+export { default as AiGenerationSummary } from './AiGenerationSummary.jsx';
 export { default as ManualEditor } from './ManualEditor.jsx';
 export { default as ActionFooter } from './ActionFooter.jsx';
 export { default as KnowledgeEntryLoading } from './KnowledgeEntryLoading.jsx';

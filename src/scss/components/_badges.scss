@@ -5,6 +5,11 @@
  * @version 2.0.0
  */
 
+@use 'sass:color';
+@use '../components/buttons' as buttons;
+@use '../variables' as *;
+@use '../mixins' as *;
+
 // ===================================
 // PROFESSIONAL BADGE SYSTEM
 // ===================================
@@ -39,7 +44,7 @@
   &--success {
     @include aria-badge-success;
     
-    background: linear-gradient(135deg, $aria-success-light 0%, lighten($aria-success-light, 5%) 100%);
+    background: linear-gradient(135deg, $aria-success-light 0%, color.adjust($aria-success-light, $lightness: 5%) 100%);
     color: $aria-success-dark;
     border-color: $aria-success;
     box-shadow: 0 1px 3px rgba($aria-success, 0.2);
@@ -59,7 +64,7 @@
   &--warning {
     @include aria-badge-warning;
     
-    background: linear-gradient(135deg, $aria-warning-light 0%, lighten($aria-warning-light, 5%) 100%);
+    background: linear-gradient(135deg, $aria-warning-light 0%, color.adjust($aria-warning-light, $lightness: 5%) 100%);
     color: $aria-warning-dark;
     border-color: $aria-warning;
     box-shadow: 0 1px 3px rgba($aria-warning, 0.2);
@@ -68,7 +73,7 @@
   &--error {
     @include aria-badge-error;
     
-    background: linear-gradient(135deg, $aria-error-light 0%, lighten($aria-error-light, 5%) 100%);
+    background: linear-gradient(135deg, $aria-error-light 0%, color.adjust($aria-error-light, $lightness: 5%) 100%);
     color: $aria-error-dark;
     border-color: $aria-error;
     box-shadow: 0 1px 3px rgba($aria-error, 0.2);
@@ -77,14 +82,14 @@
   &--info {
     @include aria-badge-info;
     
-    background: linear-gradient(135deg, $aria-primary-light 0%, lighten($aria-primary-light, 5%) 100%);
+    background: linear-gradient(135deg, $aria-primary-light 0%, color.adjust($aria-primary-light, $lightness: 5%) 100%);
     color: $aria-primary-dark;
     border-color: $aria-primary;
     box-shadow: 0 1px 3px rgba($aria-primary, 0.2);
   }
   
   &--default {
-    background: linear-gradient(135deg, $aria-gray-100 0%, lighten($aria-gray-100, 3%) 100%);
+    background: linear-gradient(135deg, $aria-gray-100 0%, color.adjust($aria-gray-100, $lightness: 3%) 100%);
     color: $aria-gray-700;
     border-color: $aria-gray-300;
     box-shadow: 0 1px 3px rgba($aria-gray-500, 0.1);
@@ -228,13 +233,15 @@
   }
   
   .aria-trial-action {
-    @extend .aria-btn;
-    @extend .aria-btn--primary;
-    @extend .aria-btn--small;
-    
-    background: linear-gradient(135deg, #FB923C 0%, #F97316 100%);
-    border-color: #FB923C;
-    
+    @include buttons.aria-btn-base-styles();
+    @include buttons.aria-btn-primary-styles();
+    @include buttons.aria-btn-small-styles();
+
+    & {
+      background: linear-gradient(135deg, #FB923C 0%, #F97316 100%);
+      border-color: #FB923C;
+    }
+
     &:hover {
       background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
     }

@@ -26,6 +26,8 @@ const defaultDesignSettings = {
 	textColor: '#1e1e1e',
 	title: 'Chat with us',
 	welcomeMessage: 'Hi! How can I help you today?',
+	iconUrl: '',
+	avatarUrl: '',
 };
 
 const mergeDesignSettings = (incoming = {}) => ({
@@ -41,6 +43,34 @@ const Design = () => {
 
 	const updateSetting = (key, value) => {
 		setSettings((prev) => ({ ...prev, [key]: value }));
+	};
+
+	const openMediaFrame = (onSelect) => {
+		const media = window?.wp?.media;
+
+		if (!media) {
+			setNotice({
+				type: 'error',
+				message: __('Unable to open the WordPress media library. Please try again.', 'aria'),
+			});
+			return;
+		}
+
+		const frame = media({
+			title: __('Select Image', 'aria'),
+			button: { text: __('Use this image', 'aria') },
+			library: { type: 'image' },
+			multiple: false,
+		});
+
+		frame.on('select', () => {
+			const attachment = frame.state().get('selection').first()?.toJSON();
+			if (attachment?.url) {
+				onSelect(attachment);
+			}
+		});
+
+		frame.open();
 	};
 
 	const handleSave = async () => {
@@ -70,15 +100,15 @@ const Design = () => {
 	};
 
 	const uploadIcon = () => {
-		// TODO: Implement file upload
-		// eslint-disable-next-line no-console
-		console.log('Upload icon functionality to be implemented');
+		openMediaFrame((attachment) => {
+			updateSetting('iconUrl', attachment.url);
+		});
 	};
 
 	const uploadAvatar = () => {
-		// TODO: Implement file upload
-		// eslint-disable-next-line no-console
-		console.log('Upload avatar functionality to be implemented');
+		openMediaFrame((attachment) => {
+			updateSetting('avatarUrl', attachment.url);
+		});
 	};
 
 	useEffect(() => {
@@ -147,22 +177,24 @@ const Design = () => {
 
 				<DesignColorsSection settings={settings} onChange={updateSetting} />
 
-				<DesignBrandingSection
-					settings={settings}
-					onChange={updateSetting}
-					onUploadIcon={uploadIcon}
-					onUploadAvatar={uploadAvatar}
-				/>
+					<DesignBrandingSection
+						settings={settings}
+						onChange={updateSetting}
+						onUploadIcon={uploadIcon}
+						onUploadAvatar={uploadAvatar}
+					/>
 
-				<DesignPreviewSection
-					title={settings.title}
-					welcomeMessage={settings.welcomeMessage}
-					colors={{
-						primaryColor: settings.primaryColor,
-						backgroundColor: settings.backgroundColor,
-						textColor: settings.textColor,
-					}}
-				/>
+					<DesignPreviewSection
+						title={settings.title}
+						welcomeMessage={settings.welcomeMessage}
+						colors={{
+							primaryColor: settings.primaryColor,
+							backgroundColor: settings.backgroundColor,
+							textColor: settings.textColor,
+						}}
+						iconUrl={settings.iconUrl}
+						avatarUrl={settings.avatarUrl}
+					/>
 
 				<DesignActions onSave={handleSave} isSaving={saving} />
 			</div>

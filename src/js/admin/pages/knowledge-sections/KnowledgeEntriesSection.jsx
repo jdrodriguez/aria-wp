@@ -1,11 +1,16 @@
 import PropTypes from 'prop-types';
 import { __ } from '@wordpress/i18n';
-import { Button } from '@wordpress/components';
+import { Button, Icon } from '@wordpress/components';
 import { SectionCard } from '../../components';
 import ModernKnowledgeEntryCard from '../../components/ModernKnowledgeEntryCard.jsx';
+import { tableOfContents } from '@wordpress/icons';
+import { ResultsSummary } from '../../components';
 
 const KnowledgeEntriesSection = ({
 	entries,
+	totalCount,
+	filteredCount,
+	isFiltered,
 	onAddEntry,
 	onEditEntry,
 	onDeleteEntry,
@@ -22,6 +27,14 @@ const KnowledgeEntriesSection = ({
 			</Button>
 		}
 	>
+		{totalCount > 0 && (
+			<ResultsSummary
+				totalCount={totalCount}
+				filteredCount={filteredCount}
+				isFiltered={isFiltered}
+				label={__('knowledge entries', 'aria')}
+			/>
+		)}
 		{entries.length > 0 ? (
 			<div className="aria-knowledge__entries-list">
 				{entries.map((entry) => (
@@ -35,18 +48,19 @@ const KnowledgeEntriesSection = ({
 			</div>
 		) : (
 			<div className="aria-knowledge__empty">
-				<span
-					role="img"
-					aria-hidden="true"
-					className="aria-knowledge__empty-icon"
-				>
-					📚
-				</span>
+				<div className="aria-knowledge__empty-icon" aria-hidden="true">
+					<Icon icon={tableOfContents} size={36} />
+				</div>
 				<p>
-					{__(
-						'No knowledge entries yet. Start by adding your key business information.',
-						'aria'
-					)}
+					{isFiltered
+						? __(
+							'No knowledge entries match your filters. Adjust your search or category to see more results.',
+							'aria'
+						)
+						: __(
+							'No knowledge entries yet. Start by adding your key business information.',
+							'aria'
+						)}
 				</p>
 				<Button variant="primary" onClick={onAddEntry}>
 					{__('Add Knowledge Entry', 'aria')}
@@ -72,6 +86,9 @@ KnowledgeEntriesSection.propTypes = {
 			totalChunks: PropTypes.number,
 		})
 	).isRequired,
+	totalCount: PropTypes.number.isRequired,
+	filteredCount: PropTypes.number.isRequired,
+	isFiltered: PropTypes.bool.isRequired,
 	onAddEntry: PropTypes.func.isRequired,
 	onEditEntry: PropTypes.func.isRequired,
 	onDeleteEntry: PropTypes.func.isRequired,

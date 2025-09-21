@@ -12,15 +12,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
+<?php
+	$ajax_url        = admin_url( 'admin-ajax.php' );
+	$admin_nonce     = wp_create_nonce( 'aria_admin_nonce' );
+	$generate_nonce  = wp_create_nonce( 'aria_generate_knowledge' );
+?>
+
 <div class="wrap aria-knowledge">
-	<div id="aria-knowledge-root"></div>
+	<div
+		id="aria-knowledge-root"
+		data-ajax-url="<?php echo esc_url( $ajax_url ); ?>"
+		data-nonce="<?php echo esc_attr( $admin_nonce ); ?>"
+		data-generate-nonce="<?php echo esc_attr( $generate_nonce ); ?>"
+	></div>
 </div>
 
 <script type="text/javascript">
 	// Pass WordPress data to React component
 	window.ariaKnowledge = {
-		nonce: '<?php echo esc_js( wp_create_nonce( 'aria_admin_nonce' ) ); ?>',
-		ajaxUrl: '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>',
+		nonce: '<?php echo esc_js( $admin_nonce ); ?>',
+		generateNonce: '<?php echo esc_js( $generate_nonce ); ?>',
+		ajaxUrl: '<?php echo esc_url( $ajax_url ); ?>',
 		adminUrl: '<?php echo esc_url( admin_url() ); ?>',
 		pluginUrl: '<?php echo esc_url( ARIA_PLUGIN_URL ); ?>',
 		strings: {

@@ -5,6 +5,7 @@
 - `includes/` houses PHP services (loaders, AI providers, security, database updaters) autoloaded under the `Aria\` namespace.
 - `admin/` renders the WP admin experience; shared UI assets live in `admin/js` and `admin/partials`.
 - `src/` contains modern JS/React modules (`src/admin`, `src/public`) plus SCSS that webpack compiles into `dist/`.
+- Local development: WordPress Studio install lives at `/Users/josuerodriguez/Studio/aria`; plugin code is symlinked into `wp-content/plugins/aria` so edits under the repo update Studio instantly. The Studio stack uses the Homebrew MySQL 8 instance configured in `wp-config.php` (DB host `127.0.0.1`, database `aria_studio`).
 - `assets/` stores media and icons, `languages/` holds translation files, and `tests/` includes PHPUnit specs plus `visual/` Playwright scenarios.
 - We are completing the migration from legacy PHP admin views to the React interface. Treat React (`src/js/admin`) as the single source of truth for new work and consult `docs/FINAL_EXECUTION_PLAN.md` for sequencing.
 - Shared admin layout primitives live under `src/js/admin/components` (`PageShell`, `SectionCard`, `MetricCard`, etc.). All admin pages should compose page-specific sections from these primitives; new section modules belong in `src/js/admin/pages/<page>-sections/` with matching SCSS in `src/scss/pages/`.

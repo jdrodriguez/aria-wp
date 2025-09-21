@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import { __ } from '@wordpress/i18n';
-import { RangeControl, Notice } from '@wordpress/components';
+import { RangeControl, Notice, Icon } from '@wordpress/components';
 import { SectionCard, SelectControl, TextControl } from '../../components';
+import { stack, cog } from '@wordpress/icons';
 
 const AIConfigModelSection = ({
 	provider,
@@ -58,7 +59,9 @@ const AIConfigModelSection = ({
 			<div className="aria-ai-config__form-grid">
 				<div className="aria-ai-config__panel">
 					<div className="aria-ai-config__panel-heading">
-						<span className="aria-ai-config__panel-icon" aria-hidden="true">🧠</span>
+						<span className="aria-ai-config__panel-icon" aria-hidden="true">
+							<Icon icon={stack} size={20} />
+						</span>
 						<div className="aria-ai-config__panel-text">
 							<h3>{__('Select Model', 'aria')}</h3>
 							<p>{__(
@@ -84,7 +87,9 @@ const AIConfigModelSection = ({
 
 				<div className="aria-ai-config__panel">
 					<div className="aria-ai-config__panel-heading">
-						<span className="aria-ai-config__panel-icon" aria-hidden="true">⚙️</span>
+						<span className="aria-ai-config__panel-icon" aria-hidden="true">
+							<Icon icon={cog} size={20} />
+						</span>
 						<div className="aria-ai-config__panel-text">
 							<h3>{__('Response Controls', 'aria')}</h3>
 							<p>{__(

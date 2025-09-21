@@ -1,120 +1,54 @@
-import { Flex } from '@wordpress/components';
 import PropTypes from 'prop-types';
+import { __ } from '@wordpress/i18n';
 
-/**
- * Status indicator component for displaying connection/service status
- *
- * @param {Object} props            - Component props
- * @param {string} props.status     - Status type (connected, disconnected, pending, error)
- * @param {string} [props.label]    - Status label text
- * @param {string} [props.size]     - Size (small, medium, large)
- * @param {boolean} [props.animate] - Whether to animate pending status
- * @return {JSX.Element} StatusIndicator component
- */
-const StatusIndicator = ({ 
-	status, 
-	label, 
-	size = 'medium',
-	animate = true 
-}) => {
-	const getStatusConfig = () => {
-		switch (status) {
-			case 'connected':
-				return {
-					color: '#28a745',
-					bgColor: '#d4edda',
-					icon: '●',
-					text: label || 'Connected'
-				};
-			case 'disconnected':
-				return {
-					color: '#dc3545',
-					bgColor: '#f8d7da',
-					icon: '●',
-					text: label || 'Disconnected'
-				};
-			case 'pending':
-				return {
-					color: '#fd7e14',
-					bgColor: '#fff3cd',
-					icon: '●',
-					text: label || 'Connecting...'
-				};
-			case 'error':
-				return {
-					color: '#dc3545',
-					bgColor: '#f8d7da',
-					icon: '⚠',
-					text: label || 'Error'
-				};
-			default:
-				return {
-					color: '#6c757d',
-					bgColor: '#e2e3e5',
-					icon: '●',
-					text: label || 'Unknown'
-				};
-		}
-	};
+const STATUS_PRESETS = {
+	connected: {
+		icon: '●',
+		label: __('Connected', 'aria'),
+		className: 'aria-status-indicator--connected',
+	},
+	disconnected: {
+		icon: '●',
+		label: __('Disconnected', 'aria'),
+		className: 'aria-status-indicator--disconnected',
+	},
+	pending: {
+		icon: '●',
+		label: __('Connecting…', 'aria'),
+		className: 'aria-status-indicator--pending',
+	},
+	error: {
+		icon: '⚠',
+		label: __('Error', 'aria'),
+		className: 'aria-status-indicator--error',
+	},
+};
 
-	const getSizeConfig = () => {
-		switch (size) {
-			case 'small':
-				return {
-					fontSize: '12px',
-					padding: '4px 8px',
-					iconSize: '8px'
-				};
-			case 'large':
-				return {
-					fontSize: '16px',
-					padding: '8px 16px',
-					iconSize: '12px'
-				};
-			default: // medium
-				return {
-					fontSize: '14px',
-					padding: '6px 12px',
-					iconSize: '10px'
-				};
-		}
-	};
+const SIZE_PRESETS = {
+	small: 'aria-status-indicator--small',
+	medium: 'aria-status-indicator--medium',
+	large: 'aria-status-indicator--large',
+};
 
-	const statusConfig = getStatusConfig();
-	const sizeConfig = getSizeConfig();
+const StatusIndicator = ({ status, label, size = 'medium', animate = true }) => {
+	const preset = STATUS_PRESETS[status] || STATUS_PRESETS.disconnected;
+	const sizeClass = SIZE_PRESETS[size] || SIZE_PRESETS.medium;
+
+	const indicatorClassNames = ['aria-status-indicator', preset.className, sizeClass]
+		.filter(Boolean)
+		.join(' ');
+
+	const iconClassNames = ['aria-status-indicator__icon', animate && status === 'pending' ? 'is-animated' : '']
+		.filter(Boolean)
+		.join(' ');
 
 	return (
-		<Flex 
-			align="center" 
-			gap={2}
-			style={{
-				display: 'inline-flex',
-				backgroundColor: statusConfig.bgColor,
-				color: statusConfig.color,
-				fontSize: sizeConfig.fontSize,
-				fontWeight: '500',
-				padding: sizeConfig.padding,
-				borderRadius: '16px',
-				border: `1px solid ${statusConfig.color}20`
-			}}
-		>
-			<span 
-				style={{
-					fontSize: sizeConfig.iconSize,
-					color: statusConfig.color,
-					animation: (status === 'pending' && animate) ? 'pulse 1.5s infinite' : 'none'
-				}}
-			>
-				{statusConfig.icon}
+		<span className={indicatorClassNames}>
+			<span className={iconClassNames} aria-hidden="true">
+				{preset.icon}
 			</span>
-			<span>{statusConfig.text}</span>
-			<style jsx>{`
-				@keyframes pulse {
-					0%, 100% { opacity: 1; }
-					50% { opacity: 0.5; }
-				}
-			`}</style>
-		</Flex>
+			<span className="aria-status-indicator__label">{label || preset.label}</span>
+		</span>
 	);
 };
 

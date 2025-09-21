@@ -2,13 +2,12 @@ import { __, sprintf } from '@wordpress/i18n';
 import { Button } from '@wordpress/components';
 import PropTypes from 'prop-types';
 
-const categoryStyles = {
-	general: { bg: '#f0f6fc', color: '#0969da', border: '#d1d9e0' },
-	products: { bg: '#f0f9ff', color: '#0284c7', border: '#bae6fd' },
-	support: { bg: '#f0fdf4', color: '#059669', border: '#bbf7d0' },
-	company: { bg: '#fef3c7', color: '#d97706', border: '#fde68a' },
-	policies: { bg: '#fdf2f8', color: '#be185d', border: '#fce7f3' },
-	default: { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0' },
+const CATEGORY_CLASS_MAP = {
+	general: 'modern-knowledge-card__category--general',
+	products: 'modern-knowledge-card__category--products',
+	support: 'modern-knowledge-card__category--support',
+	company: 'modern-knowledge-card__category--company',
+	policies: 'modern-knowledge-card__category--policies',
 };
 
 const formatStatusLabel = (status = '') =>
@@ -18,9 +17,9 @@ const formatStatusLabel = (status = '') =>
 
 const ModernKnowledgeEntryCard = ({ entry, onEdit, onDelete }) => {
 	const formatDate = (dateString) => new Date(dateString).toLocaleDateString();
-	const styles = categoryStyles[entry.category] || categoryStyles.default;
 	const status = entry.status || 'pending_processing';
 	const statusLabel = formatStatusLabel(status);
+	const categoryClass = CATEGORY_CLASS_MAP[entry.category] || 'modern-knowledge-card__category--default';
 
 	const chunkMeta =
 		typeof entry.totalChunks === 'number'
@@ -37,14 +36,7 @@ const ModernKnowledgeEntryCard = ({ entry, onEdit, onDelete }) => {
 			</div>
 
 			<div className="modern-knowledge-card__meta">
-				<span
-					className="modern-knowledge-card__category"
-					style={{
-						backgroundColor: styles.bg,
-						color: styles.color,
-						borderColor: styles.border,
-					}}
-				>
+				<span className={`modern-knowledge-card__category ${categoryClass}`}>
 					{entry.categoryLabel}
 				</span>
 				<span className="modern-knowledge-card__date">

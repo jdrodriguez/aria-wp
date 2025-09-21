@@ -1,4 +1,5 @@
-@import '../variables';
+@use '../components/layout' as layout;
+@use '../variables' as *;
 
 .aria-ai-config {
 	&__notice {
@@ -107,47 +108,8 @@
 	}
 
 	&__usage-grid {
-		display: grid;
-		gap: $aria-space-6;
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 		margin-bottom: $aria-space-6;
-		align-items: stretch;
-	}
-
-	&__metric {
-		display: flex;
-		flex-direction: column;
-		gap: $aria-space-2;
-		align-items: center;
-		justify-content: center;
-		padding: $aria-space-5;
-		border-radius: $aria-radius-lg;
-		border: 1px solid $aria-gray-200;
-		background: linear-gradient(135deg, $aria-white 0%, $aria-gray-50 100%);
-		box-shadow: $aria-shadow-xs;
-		text-align: center;
-	}
-
-	&__metric-value {
-		font-size: $aria-text-3xl;
-		font-weight: $aria-font-bold;
-		color: $aria-gray-900;
-
-		&--primary {
-			color: $aria-primary;
-		}
-
-		&--secondary {
-			color: $aria-success;
-		}
-	}
-
-	&__metric-label {
-		font-size: $aria-text-xs;
-		font-weight: $aria-font-semibold;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: $aria-gray-600;
+		@include layout.aria-grid-metrics();
 	}
 
 	&__activity {

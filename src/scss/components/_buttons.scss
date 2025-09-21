@@ -5,30 +5,36 @@
  * @version 2.0.0
  */
 
+@use 'sass:color';
+@use '../variables' as *;
+@use '../mixins' as *;
+
 // ===================================
 // PROFESSIONAL BUTTON SYSTEM
 // ===================================
 
 // Base button styles with proper accessibility
-.aria-btn {
+@mixin aria-btn-base-styles() {
   @include aria-button-base;
-  position: relative;
-  overflow: hidden;
-  
-  // Professional button enhancement
-  font-weight: $aria-font-semibold;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  
+  & {
+    position: relative;
+    overflow: hidden;
+
+    // Professional button enhancement
+    font-weight: $aria-font-semibold;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   // Focus accessibility
   &:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba($aria-primary, 0.3);
     z-index: 10;
   }
-  
+
   // Disabled state
   &:disabled,
   &.disabled {
@@ -36,12 +42,12 @@
     cursor: not-allowed;
     pointer-events: none;
   }
-  
+
   // Loading state
   &.loading {
     color: transparent;
     pointer-events: none;
-    
+
     &::after {
       content: '';
       position: absolute;
@@ -58,138 +64,174 @@
   }
 }
 
+.aria-btn {
+  @include aria-btn-base-styles();
+}
+
 @keyframes button-spin {
   to { transform: rotate(360deg); }
 }
 
 // Primary Button - Main Call to Action
-.aria-btn--primary,
-.button.aria-btn-primary {
+@mixin aria-btn-primary-styles() {
   @include aria-button-primary;
-  
-  background: linear-gradient(135deg, $aria-primary 0%, darken($aria-primary, 8%) 100%);
-  color: $aria-white;
-  border: 2px solid $aria-primary;
-  box-shadow: 0 2px 8px rgba($aria-primary, 0.25);
-  
+  & {
+    background: linear-gradient(135deg, $aria-primary 0%, color.adjust($aria-primary, $lightness: -8%) 100%);
+    color: $aria-white;
+    border: 2px solid $aria-primary;
+    box-shadow: 0 2px 8px rgba($aria-primary, 0.25);
+  }
+
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, lighten($aria-primary, 5%) 0%, $aria-primary 100%);
+    background: linear-gradient(135deg, color.adjust($aria-primary, $lightness: 5%) 0%, $aria-primary 100%);
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba($aria-primary, 0.35);
   }
-  
+
   &:active:not(:disabled) {
     transform: translateY(0);
     box-shadow: 0 2px 8px rgba($aria-primary, 0.25);
   }
 }
 
+.aria-btn--primary,
+.button.aria-btn-primary {
+  @include aria-btn-primary-styles();
+}
+
 // Secondary Button - Supporting Actions
-.aria-btn--secondary,
-.button.aria-btn-secondary {
+@mixin aria-btn-secondary-styles() {
   @include aria-button-secondary;
-  
-  background: $aria-white;
-  color: $aria-primary;
-  border: 2px solid $aria-primary;
-  box-shadow: 0 1px 3px rgba($aria-gray-900, 0.1);
-  
+  & {
+    background: $aria-white;
+    color: $aria-primary;
+    border: 2px solid $aria-primary;
+    box-shadow: 0 1px 3px rgba($aria-gray-900, 0.1);
+  }
+
   &:hover:not(:disabled) {
     background: $aria-primary;
     color: $aria-white;
     transform: translateY(-1px);
     box-shadow: 0 4px 15px rgba($aria-primary, 0.25);
   }
-  
+
   &:active:not(:disabled) {
     transform: translateY(0);
     box-shadow: 0 1px 3px rgba($aria-gray-900, 0.1);
   }
 }
 
+.aria-btn--secondary,
+.button.aria-btn-secondary {
+  @include aria-btn-secondary-styles();
+}
+
 // Ghost Button - Subtle Actions
 .aria-btn--ghost,
 .button.aria-btn-ghost {
   @include aria-button-ghost;
-  
-  background: transparent;
-  color: $aria-gray-700;
-  border: 2px solid transparent;
-  
+
+  & {
+    background: transparent;
+    color: $aria-gray-700;
+    border: 2px solid transparent;
+  }
+
   &:hover:not(:disabled) {
     background: $aria-gray-100;
     color: $aria-gray-900;
     border-color: $aria-gray-200;
   }
-  
+
   &:active:not(:disabled) {
     background: $aria-gray-200;
   }
 }
 
 // Small Button Variant
-.aria-btn--small {
-  padding: $aria-space-2 $aria-space-3;
-  font-size: $aria-text-sm;
-  border-radius: $aria-radius-base;
-  
+@mixin aria-btn-small-styles() {
+  & {
+    padding: $aria-space-2 $aria-space-3;
+    font-size: $aria-text-sm;
+    border-radius: $aria-radius-base;
+  }
+
   svg {
     width: 14px;
     height: 14px;
   }
 }
 
+.aria-btn--small {
+  @include aria-btn-small-styles();
+}
+
 // Large Button Variant
-.aria-btn--large {
-  padding: $aria-space-4 $aria-space-6;
-  font-size: $aria-text-lg;
-  border-radius: $aria-radius-lg;
-  
+@mixin aria-btn-large-styles() {
+  & {
+    padding: $aria-space-4 $aria-space-6;
+    font-size: $aria-text-lg;
+    border-radius: $aria-radius-lg;
+  }
+
   svg {
     width: 20px;
     height: 20px;
   }
 }
 
+.aria-btn--large {
+  @include aria-btn-large-styles();
+}
+
 // Button with Icon
-.aria-btn--icon {
-  display: inline-flex;
-  align-items: center;
-  gap: $aria-space-2;
-  
+@mixin aria-btn-icon-styles() {
+  & {
+    display: inline-flex;
+    align-items: center;
+    gap: $aria-space-2;
+  }
+
   svg {
     transition: transform 0.2s ease;
   }
-  
+
   &:hover svg {
     transform: translateX(2px);
   }
+}
+
+.aria-btn--icon {
+  @include aria-btn-icon-styles();
 }
 
 // ===================================
 // PROFESSIONAL LINK SYSTEM
 // ===================================
 
-.aria-link {
-  color: $aria-primary;
-  text-decoration: none;
-  font-weight: $aria-font-medium;
-  transition: all 0.2s ease;
-  position: relative;
-  
+@mixin aria-link-styles() {
+  & {
+    color: $aria-primary;
+    text-decoration: none;
+    font-weight: $aria-font-medium;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
   &:hover {
-    color: darken($aria-primary, 10%);
+    color: color.adjust($aria-primary, $lightness: -10%);
     text-decoration: underline;
     text-underline-offset: 3px;
     text-decoration-thickness: 2px;
   }
-  
+
   &:focus {
     outline: none;
     box-shadow: 0 0 0 2px rgba($aria-primary, 0.3);
     border-radius: $aria-radius-sm;
   }
-  
+
   // External link indicator
   &.external::after {
     content: '↗';
@@ -199,27 +241,35 @@
   }
 }
 
+.aria-link {
+  @include aria-link-styles();
+}
+
 // ===================================
 // SPECIALIZED DASHBOARD BUTTONS
 // ===================================
 
 // Setup Card Action Button
 .aria-setup-card__action {
-  @extend .aria-btn;
-  @extend .aria-btn--secondary;
-  @extend .aria-btn--small;
-  
-  font-size: $aria-text-sm;
-  padding: $aria-space-2 $aria-space-4;
-  min-width: 80px;
-  text-align: center;
+  @include aria-btn-base-styles();
+  @include aria-btn-secondary-styles();
+  @include aria-btn-small-styles();
+
+  & {
+    font-size: $aria-text-sm;
+    padding: $aria-space-2 $aria-space-4;
+    min-width: 80px;
+    text-align: center;
+  }
 }
 
 // Action Card Link
 .aria-action-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  
+  & {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
   &:hover {
     text-decoration: none;
     transform: translateY(-4px) scale(1.02);
@@ -238,17 +288,19 @@
 
 // View All Link
 .aria-view-all-link {
-  @extend .aria-link;
-  
-  display: inline-flex;
-  align-items: center;
-  gap: $aria-space-2;
-  padding: $aria-space-2 $aria-space-3;
-  border: 1px solid transparent;
-  border-radius: $aria-radius-base;
-  font-size: $aria-text-sm;
-  font-weight: $aria-font-semibold;
-  
+  @include aria-link-styles();
+
+  & {
+    display: inline-flex;
+    align-items: center;
+    gap: $aria-space-2;
+    padding: $aria-space-2 $aria-space-3;
+    border: 1px solid transparent;
+    border-radius: $aria-radius-base;
+    font-size: $aria-text-sm;
+    font-weight: $aria-font-semibold;
+  }
+
   &:hover {
     background: $aria-primary-light;
     border-color: $aria-primary;
@@ -267,9 +319,11 @@
 
 // Empty State Action Button
 .aria-empty-action {
-  @extend .aria-btn;
-  @extend .aria-btn--primary;
-  @extend .aria-btn--icon;
-  
-  margin-top: $aria-space-4;
+  @include aria-btn-base-styles();
+  @include aria-btn-primary-styles();
+  @include aria-btn-icon-styles();
+
+  & {
+    margin-top: $aria-space-4;
+  }
 }

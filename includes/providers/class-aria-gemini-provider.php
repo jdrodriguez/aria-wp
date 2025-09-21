@@ -17,8 +17,15 @@ class Aria_Gemini_Provider extends Aria_AI_Provider_Base {
 	 * @param string $api_key Gemini API key.
 	 */
 	public function __construct( $api_key ) {
-		$this->model = get_option( 'aria_gemini_model', 'gemini-1.5-flash-8b' );
-		$this->api_endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' . $this->model . ':generateContent';
+		$stored_model = get_option( 'aria_gemini_model', 'gemini-1.5-flash-8b' );
+		$normalized_model = self::normalize_model_slug( $stored_model );
+
+		$this->set_model( $normalized_model );
+
+		if ( $normalized_model !== $stored_model ) {
+			update_option( 'aria_gemini_model', $normalized_model );
+		}
+
 		parent::__construct( $api_key );
 	}
 
@@ -142,13 +149,95 @@ class Aria_Gemini_Provider extends Aria_AI_Provider_Base {
 				)
 			);
 
+			delete_transient( 'aria_ai_provider_error' );
+
 			return trim( $response );
 
 		} catch ( Exception $e ) {
 			// Log error
 			Aria_Logger::error( 'Aria Gemini Error: ' . $e->getMessage() );
+
+			if ( function_exists( 'sanitize_text_field' ) ) {
+				set_transient(
+					'aria_ai_provider_error',
+					array(
+						'provider' => 'gemini',
+						'message'  => sanitize_text_field( $e->getMessage() ),
+					),
+					HOUR_IN_SECONDS
+				);
+			}
 			throw $e;
 		}
+	}
+
+	/**
+	 * Normalize and assign Gemini model while keeping endpoint in sync.
+	 *
+	 * @param string $model Gemini model identifier.
+	 */
+	private function set_model( $model ) {
+		$this->model = $model;
+		$this->api_endpoint = $this->build_endpoint( $model );
+	}
+
+	/**
+	 * Build API endpoint for a given model.
+	 *
+	 * @param string $model Gemini model identifier.
+	 * @return string
+	 */
+	private function build_endpoint( $model ) {
+		return sprintf(
+			'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
+			rawurlencode( $model )
+		);
+	}
+
+	/**
+	 * Ensure legacy model identifiers remain compatible with current Gemini API.
+	 *
+	 * @param string $model Stored model value.
+	 * @return string Normalized model value.
+	 */
+	public static function normalize_model_slug( $model ) {
+		$default_model = 'gemini-1.5-flash-8b';
+		$model = is_string( $model ) ? trim( $model ) : '';
+
+		if ( '' === $model ) {
+			return $default_model;
+		}
+
+		if ( 0 === stripos( $model, 'models/' ) ) {
+			$model = substr( $model, 7 );
+		}
+
+		$legacy_map = array(
+			'gemini-pro'                     => 'gemini-1.5-flash',
+			'gemini-pro-vision'              => 'gemini-1.5-flash',
+			'gemini-ultra'                   => 'gemini-1.5-flash',
+			'gemini-1.0-pro'                 => 'gemini-1.5-flash',
+			'gemini-1.0-pro-vision'          => 'gemini-1.5-flash',
+			'gemini-2.5-flash-lite-preview-06-17' => 'gemini-2.0-flash',
+		);
+
+		$normalized_lookup = strtolower( $model );
+		if ( isset( $legacy_map[ $normalized_lookup ] ) ) {
+			return $legacy_map[ $normalized_lookup ];
+		}
+
+		$available_models = array_keys( self::get_available_models() );
+		if ( in_array( $model, $available_models, true ) ) {
+			return $model;
+		}
+
+		foreach ( $available_models as $available_model ) {
+			if ( strtolower( $available_model ) === $normalized_lookup ) {
+				return $available_model;
+			}
+		}
+
+		return $default_model;
 	}
 
 	/**
@@ -194,25 +283,32 @@ class Aria_Gemini_Provider extends Aria_AI_Provider_Base {
 	public static function get_available_models() {
 		return array(
 			'gemini-1.5-flash-8b' => array(
-				'label'       => 'Gemini 1.5 Flash-8B',
-				'description' => 'Ultra-compact model optimized for efficiency. Perfect for high-volume customer queries, FAQs, and straightforward conversations. Delivers fast responses at minimal cost.',
+				'label'       => 'Gemini 1.5 Flash 8B',
+				'description' => __( 'Ultra-efficient 8B model ideal for FAQs, quick replies, and high-volume support.', 'aria' ),
 				'max_tokens'  => 8192,
 				'cost_level'  => 'low',
-				'cost_note'   => 'Lowest cost - Free tier (2 RPM), then $0.0375 per million tokens',
+				'cost_note'   => __( 'Lowest cost – free tier available, then ~$0.04 per million tokens.', 'aria' ),
+			),
+			'gemini-1.5-flash' => array(
+				'label'       => 'Gemini 1.5 Flash',
+				'description' => __( 'Balanced performance for richer conversations and smarter follow-ups.', 'aria' ),
+				'max_tokens'  => 8192,
+				'cost_level'  => 'medium',
+				'cost_note'   => __( 'Balanced cost – great mix of speed and capability.', 'aria' ),
+			),
+			'gemini-1.5-pro' => array(
+				'label'       => 'Gemini 1.5 Pro',
+				'description' => __( 'Premium reasoning and multimodal support for complex customer questions.', 'aria' ),
+				'max_tokens'  => 8192,
+				'cost_level'  => 'high',
+				'cost_note'   => __( 'Premium pricing – best for advanced use cases.', 'aria' ),
 			),
 			'gemini-2.0-flash' => array(
 				'label'       => 'Gemini 2.0 Flash',
-				'description' => 'Latest generation Flash model with enhanced capabilities. Excellent balance of speed, intelligence, and multimodal understanding. Ideal for most business conversations.',
+				'description' => __( 'Latest Flash generation with improved quality and tool-following.', 'aria' ),
 				'max_tokens'  => 8192,
 				'cost_level'  => 'medium',
-				'cost_note'   => 'Moderate cost - Free tier available, competitive pricing',
-			),
-			'gemini-2.5-flash-lite-preview-06-17' => array(
-				'label'       => 'Gemini 2.5 Flash Lite Preview',
-				'description' => 'Latest experimental model with cutting-edge capabilities. Preview release with advanced features and improvements. Best for testing next-generation AI capabilities.',
-				'max_tokens'  => 8192,
-				'cost_level'  => 'high',
-				'cost_note'   => '⚠️ Premium pricing - $0.10/$0.40 per million tokens (2.7x more than Flash-8B)',
+				'cost_note'   => __( 'Next-gen Flash – competitive pricing with better output.', 'aria' ),
 			),
 		);
 	}
@@ -238,9 +334,10 @@ class Aria_Gemini_Provider extends Aria_AI_Provider_Base {
 	public static function calculate_cost( $tokens, $model = 'gemini-1.5-flash-8b' ) {
 		// Gemini pricing per 1M tokens (averaged input/output)
 		$pricing = array(
-			'gemini-1.5-flash-8b' => 0.0375,  // $0.0375 per 1M tokens
-			'gemini-2.0-flash'    => 0.075,   // Estimated based on typical Flash pricing
-			'gemini-2.5-flash-lite-preview-06-17' => 0.25,    // ($0.10 input + $0.40 output) / 2
+			'gemini-1.5-flash-8b' => 0.0375, // $0.0375 per 1M tokens
+			'gemini-1.5-flash'    => 0.06,   // Approximate list pricing
+			'gemini-1.5-pro'      => 0.30,   // Premium tier pricing estimate
+			'gemini-2.0-flash'    => 0.075,  // Next-gen Flash pricing
 		);
 		
 		$cost_per_million = isset( $pricing[ $model ] ) ? $pricing[ $model ] : $pricing['gemini-1.5-flash-8b'];

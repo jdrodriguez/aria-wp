@@ -1,30 +1,30 @@
 import PropTypes from 'prop-types';
-import { MetricCard } from '../../components';
+import ModernMetricCard from '../../components/ModernMetricCard.jsx';
 
 const ConversationMetrics = ({ metrics }) => (
 	<div className="aria-grid-metrics">
-		<MetricCard
+		<ModernMetricCard
 			icon={metrics.totalConversations.icon}
 			title={metrics.totalConversations.title}
 			value={metrics.totalConversations.value}
 			subtitle={metrics.totalConversations.subtitle}
 			theme={metrics.totalConversations.theme}
 		/>
-		<MetricCard
+		<ModernMetricCard
 			icon={metrics.activeConversations.icon}
 			title={metrics.activeConversations.title}
 			value={metrics.activeConversations.value}
 			subtitle={metrics.activeConversations.subtitle}
 			theme={metrics.activeConversations.theme}
 		/>
-		<MetricCard
+		<ModernMetricCard
 			icon={metrics.avgResponseTime.icon}
 			title={metrics.avgResponseTime.title}
 			value={metrics.avgResponseTime.value}
 			subtitle={metrics.avgResponseTime.subtitle}
 			theme={metrics.avgResponseTime.theme}
 		/>
-		<MetricCard
+		<ModernMetricCard
 			icon={metrics.satisfactionRate.icon}
 			title={metrics.satisfactionRate.title}
 			value={metrics.satisfactionRate.value}
@@ -37,7 +37,7 @@ const ConversationMetrics = ({ metrics }) => (
 ConversationMetrics.propTypes = {
 	metrics: PropTypes.shape({
 		totalConversations: PropTypes.shape({
-			icon: PropTypes.string.isRequired,
+			icon: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
 			title: PropTypes.string.isRequired,
 			value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
 				.isRequired,
@@ -45,7 +45,7 @@ ConversationMetrics.propTypes = {
 			theme: PropTypes.string.isRequired,
 		}).isRequired,
 		activeConversations: PropTypes.shape({
-			icon: PropTypes.string.isRequired,
+			icon: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
 			title: PropTypes.string.isRequired,
 			value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
 				.isRequired,
@@ -53,7 +53,7 @@ ConversationMetrics.propTypes = {
 			theme: PropTypes.string.isRequired,
 		}).isRequired,
 		avgResponseTime: PropTypes.shape({
-			icon: PropTypes.string.isRequired,
+			icon: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
 			title: PropTypes.string.isRequired,
 			value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
 				.isRequired,
@@ -61,7 +61,7 @@ ConversationMetrics.propTypes = {
 			theme: PropTypes.string.isRequired,
 		}).isRequired,
 		satisfactionRate: PropTypes.shape({
-			icon: PropTypes.string.isRequired,
+			icon: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
 			title: PropTypes.string.isRequired,
 			value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
 				.isRequired,

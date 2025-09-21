@@ -1,3 +1,5 @@
+@use '../variables' as *;
+
 // Admin Common Styles
 // Consistent styling across all ARIA admin pages
 
@@ -71,6 +73,16 @@
       margin-bottom: 0; // Remove margin from last card
     }
   }
+}
+
+// ===================================
+// RESULTS SUMMARY
+// ===================================
+
+.aria-results-summary {
+	font-size: $aria-text-sm;
+	color: $aria-gray-600;
+	margin-bottom: $aria-space-4;
 }
 
 // ===================================

@@ -1,10 +1,12 @@
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect, useMemo, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { PageHeader, PageShell } from '../components';
+import { makeAjaxRequest } from '../utils/api';
 import {
 	ConversationNotice,
 	ConversationMetrics,
 	ConversationFilters,
+	ConversationStatusPills,
 	ConversationList,
 	ConversationDetailModal,
 	ConversationLoading,
@@ -28,28 +30,28 @@ const CONVERSATION_SOURCES = [
 const Conversations = () => {
 	const [metrics, setMetrics] = useState({
 		totalConversations: {
-			icon: '💬',
+			icon: 'chat',
 			title: __('Total Conversations', 'aria'),
 			value: 0,
 			subtitle: __('All Time', 'aria'),
 			theme: 'primary',
 		},
 		activeConversations: {
-			icon: '🟢',
+			icon: 'activity',
 			title: __('Active Conversations', 'aria'),
 			value: 0,
 			subtitle: __('Currently Active', 'aria'),
 			theme: 'success',
 		},
 		avgResponseTime: {
-			icon: '⏱️',
+			icon: 'clock',
 			title: __('Avg Response Time', 'aria'),
-			value: '0m',
+			value: '—',
 			subtitle: __('AI Response Speed', 'aria'),
 			theme: 'info',
 		},
 		satisfactionRate: {
-			icon: '😊',
+			icon: 'smile',
 			title: __('Satisfaction Rate', 'aria'),
 			value: '0%',
 			subtitle: __('Visitor Satisfaction', 'aria'),
@@ -72,121 +74,49 @@ const Conversations = () => {
 	const loadConversations = async () => {
 		setLoading(true);
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			const data = await makeAjaxRequest('aria_get_conversations_data', {
+				limit: 50,
+			});
 
-			const mockConversations = [
-				{
-					id: 1,
-					visitor_name: 'John Smith',
-					visitor_email: 'john@example.com',
-					status: 'active',
-					source: 'Website Widget',
-					created_at: '2024-01-15 10:30 AM',
-					message_count: 8,
-					last_message:
-						'Thank you for your help! I have one more question about the pricing…',
-					tags: ['pricing', 'support'],
-					messages: [
-						{
-							sender: 'visitor',
-							content:
-								'Hi, I need help with pricing information.',
-							timestamp: '10:30 AM',
-						},
-						{
-							sender: 'aria',
-							content:
-								"I'd be happy to help you with pricing information! What specific details would you like to know?",
-							timestamp: '10:31 AM',
-						},
-						{
-							sender: 'visitor',
-							content: 'What are the different plans available?',
-							timestamp: '10:32 AM',
-						},
-					],
-				},
-				{
-					id: 2,
-					visitor_name: 'Sarah Johnson',
-					visitor_email: 'sarah@company.com',
-					status: 'resolved',
-					source: 'Website Widget',
-					created_at: '2024-01-14 3:45 PM',
-					message_count: 5,
-					last_message: 'Perfect, that solved my issue. Thank you!',
-					tags: ['technical', 'resolved'],
-					messages: [
-						{
-							sender: 'visitor',
-							content:
-								"I'm having trouble with the installation process.",
-							timestamp: '3:45 PM',
-						},
-						{
-							sender: 'aria',
-							content:
-								'I can help you with that! What step are you currently on?',
-							timestamp: '3:46 PM',
-						},
-					],
-				},
-				{
-					id: 3,
-					visitor_name: null,
-					visitor_email: null,
-					status: 'pending',
-					source: 'Website Widget',
-					created_at: '2024-01-14 1:20 PM',
-					message_count: 2,
-					last_message: 'Hello, is anyone there?',
-					tags: ['pending'],
-					messages: [
-						{
-							sender: 'visitor',
-							content: 'Hello, is anyone there?',
-							timestamp: '1:20 PM',
-						},
-					],
-				},
-			];
-
-			setConversations(mockConversations);
-			setMetrics({
+			const metricsPayload = data?.metrics ?? {};
+			setMetrics((prev) => ({
 				totalConversations: {
-					icon: '💬',
-					title: __('Total Conversations', 'aria'),
-					value: mockConversations.length,
-					subtitle: __('All Time', 'aria'),
-					theme: 'primary',
+					...prev.totalConversations,
+					value: metricsPayload.totalConversations ?? 0,
 				},
 				activeConversations: {
-					icon: '🟢',
-					title: __('Active Conversations', 'aria'),
-					value: mockConversations.filter(
-						(c) => c.status === 'active'
-					).length,
-					subtitle: __('Currently Active', 'aria'),
-					theme: 'success',
+					...prev.activeConversations,
+					value: metricsPayload.activeConversations ?? 0,
 				},
 				avgResponseTime: {
-					icon: '⏱️',
-					title: __('Avg Response Time', 'aria'),
-					value: '2.5m',
-					subtitle: __('AI Response Speed', 'aria'),
-					theme: 'info',
+					...prev.avgResponseTime,
+					value: metricsPayload.avgResponseTime || '—',
 				},
 				satisfactionRate: {
-					icon: '😊',
-					title: __('Satisfaction Rate', 'aria'),
-					value: '94%',
-					subtitle: __('Visitor Satisfaction', 'aria'),
-					theme: 'warning',
+					...prev.satisfactionRate,
+					value:
+						typeof metricsPayload.satisfactionRate === 'number'
+							? `${metricsPayload.satisfactionRate}%`
+						: metricsPayload.satisfactionRate || '0%',
 				},
-			});
+			}));
+
+			const conversationList = Array.isArray(data?.conversations)
+				? data.conversations.map((conversation) => ({
+						...conversation,
+						source: conversation.source || __('Website Widget', 'aria'),
+						status: (conversation.status || 'pending').toLowerCase(),
+						tags: Array.isArray(conversation.tags) ? conversation.tags : [],
+						messages: Array.isArray(conversation.messages) ? conversation.messages : [],
+				  }))
+				: [];
+
+			setConversations(conversationList);
 		} catch (error) {
-			// eslint-disable-next-line no-console
-			console.error('Failed to load conversations:', error);
+			setNotice({
+				type: 'error',
+				message: error?.message || __('Failed to load conversations.', 'aria'),
+			});
 		} finally {
 			setLoading(false);
 		}
@@ -199,7 +129,13 @@ const Conversations = () => {
 
 	const handleUpdateStatus = async (conversationId, newStatus) => {
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 500));
+			const response = await makeAjaxRequest(
+				'aria_update_conversation_status',
+				{
+					conversation_id: conversationId,
+					status: newStatus,
+				}
+			);
 
 			setConversations((prev) =>
 				prev.map((conversation) =>
@@ -209,18 +145,25 @@ const Conversations = () => {
 				)
 			);
 
+			setSelectedConversation((prev) =>
+				prev && prev.id === conversationId
+					? { ...prev, status: newStatus }
+					: prev
+			);
+
 			setNotice({
 				type: 'success',
-				message: __(
-					'Conversation status updated successfully!',
-					'aria'
-				),
+				message:
+					response?.message ||
+					__('Conversation status updated successfully!', 'aria'),
 			});
 			setTimeout(() => setNotice(null), 3000);
 		} catch (error) {
 			setNotice({
 				type: 'error',
-				message: __('Failed to update conversation status.', 'aria'),
+				message:
+					error?.message ||
+					__('Failed to update conversation status.', 'aria'),
 			});
 		}
 	};
@@ -242,9 +185,9 @@ const Conversations = () => {
 		const matchesStatus =
 			selectedStatus === 'all' || conversation.status === selectedStatus;
 
+		const sourceValue = (conversation.source || '').toLowerCase();
 		const matchesSource =
-			selectedSource === 'all' ||
-			conversation.source.toLowerCase().includes(selectedSource);
+			selectedSource === 'all' || sourceValue.includes(selectedSource);
 
 		return matchesSearch && matchesStatus && matchesSource;
 	});
@@ -261,6 +204,22 @@ const Conversations = () => {
 	const statusOptionsForCards = CONVERSATION_STATUSES.filter(
 		(option) => option.value !== 'all'
 	);
+
+	const statusPillOptions = useMemo(() => {
+		const counts = conversations.reduce((acc, conversation) => {
+			const statusKey = conversation.status || 'pending';
+			acc[statusKey] = (acc[statusKey] || 0) + 1;
+			return acc;
+		}, {});
+
+		return CONVERSATION_STATUSES.map((status) => ({
+			...status,
+			count:
+				status.value === 'all'
+					? conversations.length
+					: counts[status.value] || 0,
+		})).filter((status) => status.value === 'all' || status.count > 0);
+	}, [conversations]);
 
 	return (
 		<PageShell
@@ -282,6 +241,11 @@ const Conversations = () => {
 
 			<div className="aria-stack-lg">
 				<ConversationMetrics metrics={metrics} />
+				<ConversationStatusPills
+					statuses={statusPillOptions}
+					activeValue={selectedStatus}
+					onSelect={setSelectedStatus}
+				/>
 				<ConversationFilters
 					searchValue={searchTerm}
 					onSearchChange={setSearchTerm}
@@ -297,7 +261,8 @@ const Conversations = () => {
 					statusOptions={statusOptionsForCards}
 					onView={handleViewConversation}
 					onUpdateStatus={handleUpdateStatus}
-					count={filteredConversations.length}
+					totalCount={conversations.length}
+					filteredCount={filteredConversations.length}
 					hasFiltersApplied={hasFiltersApplied}
 				/>
 			</div>

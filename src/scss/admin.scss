@@ -8,33 +8,38 @@
 // ===================================
 // 1. FOUNDATION
 // ===================================
-@import 'variables';
-@import 'mixins';
-@import 'base';
+@use 'variables' as *;
+@use 'mixins' as *;
+@use 'base';
 
 // ===================================
 // 2. COMPONENTS
 // ===================================
-@import 'components/layout';
-@import 'components/buttons';
-@import 'components/cards';
-@import 'components/badges';
-@import 'components/modern-components';
+@use 'components/layout';
+@use 'components/buttons';
+@use 'components/cards';
+@use 'components/badges';
+@use 'components/modern-metric-card';
+@use 'components/modern-components';
+@use 'components/quick-action-button';
+@use 'components/search';
+@use 'components/knowledge-modal';
+@use 'components/ai-knowledge-generator';
 
 // ===================================
 // 3. PAGES
 // ===================================
-@import 'pages/dashboard';
-@import 'pages/react-dashboard';
-@import 'pages/admin-common';
-@import 'pages/ai-config';
-@import 'pages/design';
-@import 'pages/personality';
-@import 'pages/knowledge';
-@import 'pages/knowledge-entry';
-@import 'pages/settings';
-@import 'pages/conversations';
-@import 'pages/content-indexing';
+@use 'pages/admin-common';
+@use 'pages/dashboard';
+@use 'pages/react-dashboard';
+@use 'pages/ai-config';
+@use 'pages/design';
+@use 'pages/personality';
+@use 'pages/knowledge';
+@use 'pages/knowledge-entry';
+@use 'pages/settings';
+@use 'pages/conversations';
+@use 'pages/content-indexing';
 
 // ===================================
 // 4. UTILITIES

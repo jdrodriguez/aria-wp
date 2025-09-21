@@ -1,78 +1,41 @@
 import { Card, CardHeader, CardBody, Flex } from '@wordpress/components';
 import PropTypes from 'prop-types';
+import { __ } from '@wordpress/i18n';
 
-/**
- * Reusable form card component for consistent form sections
- *
- * @param {Object} props               - Component props
- * @param {string} props.title         - Card title
- * @param {string} [props.description] - Optional description text
- * @param {string} [props.icon]        - Optional icon to display
- * @param {*}      props.children      - Form content
- * @param {string} [props.size]        - Card size (small, medium, large)
- * @param {boolean} [props.isLoading]  - Loading state
- * @return {JSX.Element} FormCard component
- */
-const FormCard = ({ 
-	title, 
-	description, 
-	icon, 
-	children, 
+const FormCard = ({
+	title,
+	description,
+	icon,
+	children,
 	size = 'large',
-	isLoading = false 
+	isLoading = false,
 }) => {
+	const cardClasses = [
+		'aria-form-card',
+		isLoading ? 'aria-form-card--loading' : '',
+	]
+		.filter(Boolean)
+		.join(' ');
+
 	return (
-		<Card 
-			size={size} 
-			style={{ 
-				padding: '24px', 
-				marginBottom: '24px',
-				opacity: isLoading ? 0.6 : 1,
-				transition: 'opacity 0.2s ease'
-			}}
-		>
-			<CardHeader style={{ paddingBottom: '16px' }}>
+		<Card size={size} className={cardClasses}>
+			<CardHeader className="aria-form-card__header">
 				<Flex align="center" gap={3}>
 					{icon && (
-						<div style={{ 
-							fontSize: '20px', 
-							color: '#2271b1',
-							minWidth: '20px'
-						}}>
+						<span className="aria-form-card__icon" aria-hidden="true">
 							{icon}
-						</div>
+						</span>
 					)}
-					<div style={{ flex: 1 }}>
-						<h3 style={{
-							fontSize: '18px',
-							fontWeight: '600',
-							color: '#1e1e1e',
-							margin: 0,
-							marginBottom: description ? '4px' : 0
-						}}>
-							{title}
-						</h3>
-						{description && (
-							<p style={{
-								fontSize: '14px',
-								color: '#757575',
-								margin: 0,
-								lineHeight: '1.4'
-							}}>
-								{description}
-							</p>
-						)}
+					<div className="aria-form-card__header-text">
+						<h3 className="aria-form-card__title">{title}</h3>
+						{description && <p className="aria-form-card__description">{description}</p>}
 					</div>
 				</Flex>
 			</CardHeader>
-			<CardBody style={{ padding: isLoading ? '20px 0' : '0' }}>
+			<CardBody className="aria-form-card__body">
 				{isLoading ? (
-					<div style={{
-						textAlign: 'center',
-						color: '#757575',
-						fontSize: '14px'
-					}}>
-						Loading...
+					<div className="aria-form-card__loading" role="status">
+						{__('Loading…', 'aria')}
 					</div>
 				) : (
 					children
@@ -85,7 +48,7 @@ const FormCard = ({
 FormCard.propTypes = {
 	title: PropTypes.string.isRequired,
 	description: PropTypes.string,
-	icon: PropTypes.string,
+	icon: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
 	children: PropTypes.node.isRequired,
 	size: PropTypes.oneOf(['small', 'medium', 'large']),
 	isLoading: PropTypes.bool,

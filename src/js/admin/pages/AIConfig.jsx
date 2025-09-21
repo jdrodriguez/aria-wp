@@ -19,11 +19,12 @@ export const AIConfig = () => {
 	const [testingKeyType, setTestingKeyType] = useState(null);
 	const [saving, setSaving] = useState(false);
 	const [notice, setNotice] = useState(null);
+	const [autoTestTriggered, setAutoTestTriggered] = useState(false);
 	const [modelSettings, setModelSettings] = useState({
 		openai_model: 'gpt-3.5-turbo',
 		openai_max_tokens: 500,
 		openai_temperature: 0.7,
-		gemini_model: 'gemini-pro',
+		gemini_model: 'gemini-1.5-flash-8b',
 		gemini_max_tokens: 500,
 	});
 	const [currentApiKey, setCurrentApiKey] = useState('');
@@ -172,6 +173,18 @@ export const AIConfig = () => {
 		}
 	};
 
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		if (!autoTestTriggered && params.get('autoTest') === '1' && currentApiKey) {
+			setAutoTestTriggered(true);
+			handleTestApi({ useCurrentKey: true });
+			params.delete('autoTest');
+			const url = `${window.location.pathname}?${params.toString()}`.replace(/\?$/, '');
+			window.history.replaceState({}, '', url);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [autoTestTriggered, currentApiKey]);
+
 	const getProviderModels = () => {
 		const models = {
 			openai: [
@@ -202,16 +215,28 @@ export const AIConfig = () => {
 			],
 			gemini: [
 				{
-					value: 'gemini-pro',
-					label: 'Gemini Pro',
-					description: __("Google's most capable model", 'aria'),
+					value: 'gemini-1.5-flash-8b',
+					label: __('Gemini 1.5 Flash 8B', 'aria'),
+					description: __('Ultra-efficient option for FAQs and fast responses.', 'aria'),
+					cost_level: 'low',
+				},
+				{
+					value: 'gemini-1.5-flash',
+					label: __('Gemini 1.5 Flash', 'aria'),
+					description: __('Balanced cost and quality for richer conversations.', 'aria'),
 					cost_level: 'medium',
 				},
 				{
-					value: 'gemini-pro-vision',
-					label: 'Gemini Pro Vision',
-					description: __('Multimodal with image support', 'aria'),
+					value: 'gemini-1.5-pro',
+					label: __('Gemini 1.5 Pro', 'aria'),
+					description: __('Premium reasoning and multimodal support.', 'aria'),
 					cost_level: 'high',
+				},
+				{
+					value: 'gemini-2.0-flash',
+					label: __('Gemini 2.0 Flash', 'aria'),
+					description: __('Next-gen Flash model with improved quality.', 'aria'),
+					cost_level: 'medium',
 				},
 			],
 		};

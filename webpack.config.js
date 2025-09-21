@@ -55,7 +55,12 @@ module.exports = (env, argv) => {
                 }
               }
             },
-            'sass-loader'
+            {
+              loader: 'sass-loader',
+              options: {
+                api: 'modern',
+              },
+            }
           ]
         },
         {
@@ -101,7 +106,6 @@ module.exports = (env, argv) => {
       '@wordpress/data': 'wp.data',
       '@wordpress/hooks': 'wp.hooks',
       '@wordpress/compose': 'wp.compose',
-      '@wordpress/icons': 'wp.components.icons',
       'react': 'React',
       'react-dom': 'ReactDOM',
       'jquery': 'jQuery'

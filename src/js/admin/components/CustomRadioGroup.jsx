@@ -13,6 +13,12 @@ import PropTypes from 'prop-types';
  * @param {string}   props.minWidth - Minimum width for grid items
  * @return {JSX.Element} Custom radio group component
  */
+const THEME_CLASS_MAP = {
+	blue: 'aria-radio-option--theme-blue',
+	purple: 'aria-radio-option--theme-purple',
+	green: 'aria-radio-option--theme-green',
+};
+
 const CustomRadioGroup = ({
 	options,
 	value,
@@ -22,125 +28,50 @@ const CustomRadioGroup = ({
 	columns = 'auto-fit',
 	minWidth = '280px',
 }) => {
-	const getThemeColors = () => {
-		switch (theme) {
-			case 'purple':
-				return {
-					borderColor: '#667eea',
-					background:
-						'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.02) 100%)',
-					shadow: '0 4px 16px rgba(102, 126, 234, 0.15)',
-					checkBg:
-						'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-				};
-			case 'green':
-				return {
-					borderColor: '#28a745',
-					background:
-						'linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(32, 201, 151, 0.02) 100%)',
-					shadow: '0 4px 16px rgba(40, 167, 69, 0.15)',
-					checkBg:
-						'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-				};
-			default:
-				return {
-					borderColor: '#2271b1',
-					background:
-						'linear-gradient(135deg, rgba(34, 113, 177, 0.05) 0%, rgba(34, 113, 177, 0.02) 100%)',
-					shadow: '0 4px 16px rgba(34, 113, 177, 0.15)',
-					checkBg: '#2271b1',
-				};
-		}
+	const gridStyles = {
+		'--aria-radio-grid-columns': columns,
+		'--aria-radio-min-width': minWidth,
 	};
 
-	const colors = getThemeColors();
+	const themeClass = THEME_CLASS_MAP[theme] || THEME_CLASS_MAP.blue;
 
 	return (
-		<div
-			style={{
-				display: 'grid',
-				gridTemplateColumns: `repeat(${columns}, minmax(${minWidth}, 1fr))`,
-				gap: '16px',
-			}}
-		>
-			{options.map((option) => (
-				<div key={option.value} style={{ position: 'relative' }}>
-					<label
-						htmlFor={`${name}-${option.value}`}
-						style={{
-							display: 'flex',
-							alignItems: 'flex-start',
-							padding: '20px',
-							border:
-								value === option.value
-									? `2px solid ${colors.borderColor}`
-									: '2px solid #e1e4e8',
-							borderRadius: '12px',
-							cursor: 'pointer',
-							transition: 'all 0.2s ease',
-							background:
-								value === option.value
-									? colors.background
-									: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-							boxShadow:
-								value === option.value
-									? colors.shadow
-									: '0 2px 8px rgba(0, 0, 0, 0.08)',
-						}}
-					>
-						<input
-							type="radio"
-							id={`${name}-${option.value}`}
-							name={name}
-							value={option.value}
-							checked={value === option.value}
-							onChange={() => onChange(option.value)}
-							style={{ display: 'none' }}
-						/>
-						<div style={{ flex: 1 }}>
-							<div
-								style={{
-									fontSize: '16px',
-									fontWeight: '600',
-									color: '#1e1e1e',
-									marginBottom: '6px',
-								}}
-							>
-								{option.label}
+		<div className="aria-radio-grid" style={gridStyles}>
+			{options.map((option) => {
+				const isActive = value === option.value;
+				const optionClasses = [
+					'aria-radio-option',
+					themeClass,
+					isActive ? 'aria-radio-option--selected' : '',
+				]
+					.filter(Boolean)
+					.join(' ');
+
+				return (
+					<div key={option.value} className="aria-radio-grid__item">
+						<label className={optionClasses} htmlFor={`${name}-${option.value}`}>
+							<input
+								type="radio"
+								id={`${name}-${option.value}`}
+								name={name}
+								value={option.value}
+								checked={isActive}
+								onChange={() => onChange(option.value)}
+								className="aria-radio-option__input"
+							/>
+							<div className="aria-radio-option__body">
+								<div className="aria-radio-option__title">{option.label}</div>
+								<p className="aria-radio-option__description">{option.description}</p>
 							</div>
-							<div
-								style={{
-									fontSize: '14px',
-									color: '#757575',
-									lineHeight: '1.4',
-								}}
-							>
-								{option.description}
-							</div>
-						</div>
-						{value === option.value && (
-							<div
-								style={{
-									width: '24px',
-									height: '24px',
-									borderRadius: '50%',
-									background: colors.checkBg,
-									color: 'white',
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'center',
-									fontSize: '14px',
-									fontWeight: '600',
-									marginLeft: '12px',
-									flexShrink: 0,
-								}}
-							>
-								✓
-							</div>
-						)}
-					</label>
-				</div>
-			))}
+							{isActive && (
+								<div className="aria-radio-option__check" aria-hidden="true">
+									✓
+								</div>
+							)}
+						</label>
+					</div>
+				);
+			})}
 		</div>
 	);
 };

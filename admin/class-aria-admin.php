@@ -38,6 +38,7 @@ class Aria_Admin {
 		add_action( 'admin_init', array( $this, 'sanitize_admin_globals' ), 0 );
 		add_action( 'admin_init', array( $this, 'validate_knowledge_entry_request' ), 1 );
 		add_filter( 'admin_title', array( $this, 'ensure_admin_title' ), 10, 2 );
+		add_filter( 'admin_page_title', array( $this, 'ensure_admin_page_title' ), 10, 2 );
 	}
 
 	/**
@@ -351,7 +352,7 @@ class Aria_Admin {
 		if ( ! get_option( 'aria_ai_api_key' ) ) {
 			$screen = get_current_screen();
 			$screen_id = $screen && isset( $screen->id ) ? (string) $screen->id : '';
-			
+
 			if ( $screen_id && str_contains( $screen_id, 'aria' ) && 'aria_page_aria-ai-config' !== $screen_id ) {
 				?>
 				<div class="notice notice-warning">
@@ -359,6 +360,46 @@ class Aria_Admin {
 						<?php esc_html_e( 'Aria needs an AI provider to start conversations. Please configure your API settings.', 'aria' ); ?>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=aria-ai-config' ) ); ?>" class="button button-primary" style="margin-left: 10px;">
 							<?php esc_html_e( 'Configure AI', 'aria' ); ?>
+						</a>
+					</p>
+				</div>
+				<?php
+			}
+		}
+
+		$ai_error = get_transient( 'aria_ai_provider_error' );
+		if ( $ai_error && ! empty( $ai_error['message'] ) ) {
+			$screen = get_current_screen();
+			$screen_id = $screen && isset( $screen->id ) ? (string) $screen->id : '';
+
+			if ( $screen_id && str_contains( $screen_id, 'aria' ) ) {
+				$provider_label = '';
+				if ( ! empty( $ai_error['provider'] ) ) {
+					$provider_label = sprintf(
+						' [%s]',
+						esc_html( ucfirst( $ai_error['provider'] ) )
+					);
+				}
+
+				$ai_config_url = admin_url( 'admin.php?page=aria-ai-config' );
+				$ai_test_url   = add_query_arg( 'autoTest', '1', $ai_config_url );
+
+				?>
+				<div class="notice notice-error">
+					<p>
+						<?php
+						printf(
+							'%s%s %s',
+							esc_html__( 'Aria\'s AI provider reported an error:', 'aria' ),
+							$provider_label,
+							esc_html( $ai_error['message'] )
+						);
+						?>
+						<a href="<?php echo esc_url( $ai_config_url ); ?>" class="button button-secondary" style="margin-left: 10px;">
+							<?php esc_html_e( 'Review AI Setup', 'aria' ); ?>
+						</a>
+						<a href="<?php echo esc_url( $ai_test_url ); ?>" class="button" style="margin-left: 10px;">
+							<?php esc_html_e( 'Retest Connection', 'aria' ); ?>
 						</a>
 					</p>
 				</div>
@@ -445,16 +486,34 @@ class Aria_Admin {
 			return;
 		}
 		
-		// Ensure critical $_GET parameters that WordPress core expects are never null
+		if ( headers_sent() ) {
+			return;
+		}
+
+		if ( ! isset( $_GET['page'] ) ) {
+			return;
+		}
+
+		$page = sanitize_text_field( wp_unslash( $_GET['page'] ) );
+
+		// Only sanitize query parameters for Aria screens to avoid touching core pages
+		if ( 0 !== strpos( $page, 'aria' ) ) {
+			return;
+		}
+
+		$_GET['page'] = $page;
+
+		// Ensure critical plugin parameters are never null when present
 		$safe_defaults = array(
-			'page'   => '',
 			'action' => '',
 			'id'     => '0',
 		);
-		
+
 		foreach ( $safe_defaults as $key => $default ) {
 			if ( ! isset( $_GET[ $key ] ) || null === $_GET[ $key ] ) {
 				$_GET[ $key ] = $default;
+			} else {
+				$_GET[ $key ] = sanitize_text_field( wp_unslash( $_GET[ $key ] ) );
 			}
 		}
 	}
@@ -507,6 +566,33 @@ class Aria_Admin {
 			return wp_strip_all_tags( $title );
 		}
 
- 		return $admin_title;
+		return $admin_title;
+	}
+
+	/**
+	 * Provide a fallback admin page title for hidden Aria screens (PHP 8.1 compatibility).
+	 *
+	 * @param string|null $title       The computed admin page title.
+	 * @param string      $hook_suffix The current admin hook suffix.
+	 * @return string
+	 */
+	public function ensure_admin_page_title( $title, $hook_suffix ) {
+		if ( ! empty( $title ) ) {
+			return $title;
+		}
+
+		if ( isset( $_GET['page'] ) ) {
+			$page = sanitize_text_field( wp_unslash( $_GET['page'] ) );
+
+			if ( 'aria-knowledge-entry' === $page ) {
+				return __( 'Knowledge Entry', 'aria' );
+			}
+
+			if ( 0 === strpos( $page, 'aria' ) ) {
+				return __( 'Aria', 'aria' );
+			}
+		}
+
+		return (string) $title;
 	}
 }

@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import { __ } from '@wordpress/i18n';
-import { Button } from '@wordpress/components';
+import { Button, Icon } from '@wordpress/components';
 import { ToggleControl } from '../../components';
+import { file as fileIcon, calendar, typography, link as linkIcon } from '@wordpress/icons';
 
 const statusClassMap = {
 	indexed: 'is-indexed',
@@ -29,16 +30,16 @@ const ContentIndexingItemCard = ({ item, onToggleIndex, onViewContent }) => {
 				</header>
 				<div className="aria-content-indexing__item-meta">
 					<span className="aria-content-indexing__item-meta-chip">
-						📄 {item.type}
+						<Icon icon={fileIcon} size={14} /> {item.typeLabel || item.type}
 					</span>
 					<span className="aria-content-indexing__item-meta-chip">
-						📅 {item.updated_at}
+						<Icon icon={calendar} size={14} /> {item.updated_at}
 					</span>
 					<span className="aria-content-indexing__item-meta-chip">
-						🔢 {item.word_count} {__('words', 'aria')}
+						<Icon icon={typography} size={14} /> {item.word_count} {__('words', 'aria')}
 					</span>
 					<span className="aria-content-indexing__item-meta-chip">
-						🔗 {item.url}
+						<Icon icon={linkIcon} size={14} /> {item.url}
 					</span>
 				</div>
 				<p className="aria-content-indexing__item-excerpt">
@@ -84,7 +85,8 @@ ContentIndexingItemCard.propTypes = {
 		id: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
 			.isRequired,
 		title: PropTypes.string.isRequired,
-		type: PropTypes.string.isRequired,
+				type: PropTypes.string.isRequired,
+			typeLabel: PropTypes.string,
 		status: PropTypes.string.isRequired,
 		url: PropTypes.string.isRequired,
 		updated_at: PropTypes.string.isRequired,

@@ -82,6 +82,14 @@ export const fetchDashboardData = () => {
 	return makeAjaxRequest('aria_get_dashboard_data');
 };
 
+export const fetchGeneralSettings = () => {
+	return makeAjaxRequest('aria_get_general_settings');
+};
+
+export const saveGeneralSettings = (settings) => {
+	return makeAjaxRequest('aria_save_general_settings', settings);
+};
+
 /**
  * Save personality settings
  * @param {Object} settings - Personality settings
